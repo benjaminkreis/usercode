@@ -97,19 +97,20 @@ DistributionAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       if(jet->bDiscriminator("simpleSecondaryVertexBJetTags")>=2.02) nBJets30++;
     }
   }
+
   
   //fill histograms
   //note jetpt is already filled!
-  histContainer_["jets30"]->Fill(nJets30);
-  histContainer_["bjets30"]->Fill(nBJets30);   //number of bjets with pt>30GeV
-  histContainer_["photons"]->Fill(photons->size() );
-  histContainer_["elecs" ]->Fill(electrons->size());
-  histContainer_["muons"]->Fill(muons->size() );
-  histContainer_["taus" ]->Fill(taus->size()  );
-  histContainer_["met_et"    ]->Fill(mets->empty() ? 0 : (*mets)[0].et()); //corrected met
+  histContainer_["jet30_size"        ]->Fill(nJets30);
+  histContainer_["bjet30_size"       ]->Fill(nBJets30);   //number of bjets with pt>30GeV
+  histContainer_["photon_size"       ]->Fill(photons->size());
+  histContainer_["electron_size"     ]->Fill(electrons->size());
+  histContainer_["muon_size"         ]->Fill(muons->size());
+  histContainer_["tau_size"          ]->Fill(taus->size());
+  histContainer_["met_et"            ]->Fill(mets->empty() ? 0 : (*mets)[0].et()); //corrected met
   histContainer_["met_uncorrectedPt" ]->Fill(mets->empty() ? 0 : (*mets)[0].uncorrectedPt()); //uncorrected met
-  histContainer_["met_corSumEt"   ]->Fill(mets->empty() ? 0 : (*mets)[0].corSumEt()); //corrected et
-  histContainer_["met_sumEt"  ]->Fill(mets->empty() ? 0 : (*mets)[0].sumEt()); //uncorrected et
+  histContainer_["met_corSumEt"      ]->Fill(mets->empty() ? 0 : (*mets)[0].corSumEt()); //corrected et
+  histContainer_["met_sumEt"         ]->Fill(mets->empty() ? 0 : (*mets)[0].sumEt()); //uncorrected et
 
 }
 
@@ -120,14 +121,14 @@ DistributionAnalyzer::beginJob()
   edm::Service<TFileService> fs;
   
   // book histograms:
-  histContainer_["photons" ]=fs->make<TH1F>("photons", "photon multiplicity",      10, 0,  10);
-  histContainer_["elecs"   ]=fs->make<TH1F>("elecs",   "electron multiplicity",    10, 0,  10);
-  histContainer_["muons"   ]=fs->make<TH1F>("muons",   "muon multiplicity",        10, 0,  10);
-  histContainer_["taus"    ]=fs->make<TH1F>("taus",    "tau multiplicity",         10, 0,  10);
-  histContainer_["jets30"  ]=fs->make<TH1F>("jets30",  "jet>30GeV multiplicity",   10, 0,  10);
-  histContainer_["bjets30" ]=fs->make<TH1F>("bjets30", "bjet>30GeV multiplicity",  10, 0,  10);
-  histContainer_["jetpt"   ]=fs->make<TH1F>("jetpt",   "jet p_{T}",                100, 0, 100); 
-  histContainer_["met_et"  ]=fs->make<TH1F>("met_et",  "met.et()",                 100, 0, 600);
+  histContainer_["photon_size"       ]=fs->make<TH1F>("photon_size",       "photon.size()",       10, 0,  10);
+  histContainer_["electron_size"     ]=fs->make<TH1F>("electron_size",     "electron.size()",     10, 0,  10);
+  histContainer_["muon_size"         ]=fs->make<TH1F>("muon_size",         "muon.size()",         10, 0,  10);
+  histContainer_["tau_size"          ]=fs->make<TH1F>("tau_size",          "tau.size()",          10, 0,  10);
+  histContainer_["jet30_size"        ]=fs->make<TH1F>("jet30_size",        "jet>30GeV size",      10, 0,  10);
+  histContainer_["bjet30_size"       ]=fs->make<TH1F>("bjet30_size",       "bjet>30GeV size",     10, 0,  10);
+  histContainer_["jet_pt"            ]=fs->make<TH1F>("jet_pt",            "jet.pt()",            100, 0, 100); 
+  histContainer_["met_et"            ]=fs->make<TH1F>("met_et",            "met.et()",            100, 0, 600);
   histContainer_["met_uncorrectedPt" ]=fs->make<TH1F>("met_uncorrectedPt", "met.uncorrectedPt()", 100, 0, 600);
   histContainer_["met_corSumEt"      ]=fs->make<TH1F>("met_corSumEt",      "met.corSumEt()",      100, 0, 1000);
   histContainer_["met_sumEt"         ]=fs->make<TH1F>("met_sumEt",         "met.sumEt()",         100, 0, 2000);
