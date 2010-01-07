@@ -421,18 +421,19 @@ PreliminaryFilter::beginJob()
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 PreliminaryFilter::endJob() {
-  std::cout << "nEvents_ = " << nEvents_ << std::endl;
-//std::cout << "nTrigs_ = " << nTrigs_ << std::endl;
-  //std::cout << "nEv1Mu_ = " << nEv1Mu_ << std::endl;  
-  std::cout << "nEvJets_ = " << nEvJets_ << std::endl;
-  std::cout << "nEvLargePtJets_ = " << nEvLargePtJets_ << std::endl;
-  std::cout << "nEvMET_ = " << nEvMET_ << std::endl;
-  std::cout << "nEvDeltaPhi_ = " << nEvDeltaPhi_ << std::endl;
-  std::cout << "nEvBJets_ = " << nEvBJets_ << std::endl;
-  std::cout << "nEv0Lepton_ = " << nEv0Lepton_ << ", nEv1Lepton_ = " << nEv1Lepton_
-	    << ", nEv2SSLepton_ = " << nEv2SSLepton_<< ", nEv2OSLepton_ = " << nEv2OSLepton_<< std::endl;
-  // std::cout << "nEvNoLooseMu_ = " << nEvNoLooseMu_ << std::endl;
-  // std::cout << "nEvNoLooseEle_ = " << nEvNoLooseEle_ << std::endl;
+  std::cout << "\nCUT FLOW:" << std::endl;
+  std::cout << "nEvents_ = "          << nEvents_        << std::endl;
+  std::cout << "nEvJets_ = "          << nEvJets_        << " (" << (float) nEvJets_/nEvents_*100.0        << "%)" << std::endl;
+  std::cout << "nEvLargePtJets_ = "   << nEvLargePtJets_ << " (" << (float) nEvLargePtJets_/nEvJets_*100.0 << "%)" << std::endl;
+  std::cout << "nEvMET_ = "           << nEvMET_         << " (" << (float) nEvMET_/nEvLargePtJets_*100.0  << "%)" << std::endl;
+  std::cout << "nEvDeltaPhi_ = "      << nEvDeltaPhi_    << " (" << (float) nEvDeltaPhi_/nEvMET_*100.0     << "%)" << std::endl;
+  std::cout << "nEvBJets_ = "         << nEvBJets_       << " (" << (float) nEvBJets_/nEvDeltaPhi_*100.0   << "%)" << std::endl;
+  std::cout << "\nLEPTON BREAKDOWN:" << std::endl;
+  std::cout << "nEv0Lepton_ = "       << nEv0Lepton_     << " (" << (float) nEv0Lepton_/nEvBJets_*100.0    << "%)" << std::endl;
+  std::cout << "nEv1Lepton_ = "     << nEv1Lepton_       << " (" << (float) nEv1Lepton_/nEvBJets_*100.0    << "%)" << std::endl;
+  std::cout << "nEv2SSLepton_ = "   << nEv2SSLepton_     << " (" << (float) nEv2SSLepton_/nEvBJets_*100.0  << "%)" << std::endl;
+  std::cout << "nEv2OSLepton_ = "   << nEv2OSLepton_     << " (" << (float) nEv2OSLepton_/nEvBJets_*100.0  << "%)" << std::endl;
+ 
 
 }
 
