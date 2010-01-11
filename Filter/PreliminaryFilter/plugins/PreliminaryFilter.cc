@@ -38,11 +38,13 @@ private:
   unsigned int nGoodJets_;
   unsigned int nLargePtJets_;
   unsigned int nBJets_;
+  unsigned int nGoodBJets_;
   unsigned int nEvJets_;
   unsigned int nEvLargePtJets_;
   unsigned int nEvMET_;
   unsigned int nEvDeltaPhi_;
   unsigned int nEvBJets_;
+  unsigned int nEvGoodBJets_;
   unsigned int nElectrons_;
   unsigned int nMuons_;
   unsigned int nLeptons_;
@@ -276,54 +278,62 @@ PreliminaryFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  
 	  //STEP 3: bJet cut
 	  nBJets_ = 0;
+	  nGoodBJets_ = 0;
 	  for(edm::View<pat::Jet>::const_iterator jet=jets->begin(); jet!=jets->end(); ++jet){
-	    if(jet->bDiscriminator("simpleSecondaryVertexBJetTags")>=1.74) nBJets_++;
+	    if(jet->bDiscriminator("simpleSecondaryVertexBJetTags")>=1.74){
+	      nBJets_++;
+	      if(jet->pt()>30 && fabs(jet->eta())<2.4) nGoodBJets_++;
+	    }
 	  }
-	  if(nBJets_>=2){
+	  if(nBJets_>=3){
 	    nEvBJets_++;
 	    
-	    ///////////
-	    //LEPTONS//
-	    ///////////
-	    nElectrons_ = 0;
-	    nMuons_ = 0;
-	    nLeptons_ = 0;
-	    nPositive_ = 0;
-	    nNegative_ = 0;
-	    
-	    //electrons
-	    for(edm::View<pat::Electron>::const_iterator electron=electrons->begin(); electron!=electrons->end(); ++electron){
-	      double EIso = electron->caloIso()+electron->trackIso();
-	      double ERelIso = 0;
-	      if(electron->pt()) ERelIso = EIso/electron->pt();
-	      if(fabs(electron->eta()) < 2.5 && electron->pt()>20 && ERelIso < 0.1) {
-		nElectrons_ ++;
-		if(electron->charge()>0)nPositive_++;
-		else nNegative_++;
+	    if(nGoodBJets_>=3){
+	      nEvGoodBJets_++;
+
+
+	      ///////////
+	      //LEPTONS//
+	      ///////////
+	      nElectrons_ = 0;
+	      nMuons_ = 0;
+	      nLeptons_ = 0;
+	      nPositive_ = 0;
+	      nNegative_ = 0;
+	      
+	      //electrons
+	      for(edm::View<pat::Electron>::const_iterator electron=electrons->begin(); electron!=electrons->end(); ++electron){
+		double EIso = electron->caloIso()+electron->trackIso();
+		double ERelIso = 0;
+		if(electron->pt()) ERelIso = EIso/electron->pt();
+		if(fabs(electron->eta()) < 2.5 && electron->pt()>20 && ERelIso < 0.1) {
+		  nElectrons_ ++;
+		  if(electron->charge()>0)nPositive_++;
+		  else nNegative_++;
+		}
 	      }
-	    }
-	    //muons
-	    for(edm::View<pat::Muon>::const_iterator muon=muons->begin(); muon!=muons->end(); ++muon){
-	      double Iso = muon->caloIso()+muon->trackIso();
-	      double MuRelIso = 0;
-	      if(muon->pt()) MuRelIso = Iso/muon->pt();
-	      if(muon->isGlobalMuon() && fabs(muon->eta()) < 2.5 && muon->pt() > 20 && MuRelIso < 0.1){
-		nMuons_++;
-		if(muon->charge() > 0) nPositive_++;
-		else nNegative_++;
+	      //muons
+	      for(edm::View<pat::Muon>::const_iterator muon=muons->begin(); muon!=muons->end(); ++muon){
+		double Iso = muon->caloIso()+muon->trackIso();
+		double MuRelIso = 0;
+		if(muon->pt()) MuRelIso = Iso/muon->pt();
+		if(muon->isGlobalMuon() && fabs(muon->eta()) < 2.5 && muon->pt() > 20 && MuRelIso < 0.1){
+		  nMuons_++;
+		  if(muon->charge() > 0) nPositive_++;
+		  else nNegative_++;
+		}
 	      }
-	    }
-	    
-	    nLeptons_ = nElectrons_ + nMuons_;
-	    
-	    if(nLeptons_ == 0) nEv0Lepton_++;
-	    else if(nLeptons_ == 1) nEv1Lepton_++;
-	    else if(nLeptons_ == 2){
-	      if(nPositive_ == nNegative_) nEv2OSLepton_++;
-	      else nEv2SSLepton_++;
-	    }
-	    
-	    
+	      
+	      nLeptons_ = nElectrons_ + nMuons_;
+	      
+	      if(nLeptons_ == 0) nEv0Lepton_++;
+	      else if(nLeptons_ == 1) nEv1Lepton_++;
+	      else if(nLeptons_ == 2){
+		if(nPositive_ == nNegative_) nEv2OSLepton_++;
+		else nEv2SSLepton_++;
+	      }
+	      
+	    } //good bjet
 	  } //bjet
 	} //phi  
       } //metcut
@@ -413,6 +423,7 @@ PreliminaryFilter::beginJob()
   nEvMET_ = 0;
   nEvDeltaPhi_ = 0;
   nEvBJets_ = 0;
+  nEvGoodBJets_=0;
   //nEvNoLooseMu_ = 0;
   //nEvNoLooseEle_ = 0;
 
@@ -428,11 +439,12 @@ PreliminaryFilter::endJob() {
   std::cout << "nEvMET_ = "           << nEvMET_         << " (" << (float) nEvMET_/nEvLargePtJets_*100.0  << "%)" << std::endl;
   std::cout << "nEvDeltaPhi_ = "      << nEvDeltaPhi_    << " (" << (float) nEvDeltaPhi_/nEvMET_*100.0     << "%)" << std::endl;
   std::cout << "nEvBJets_ = "         << nEvBJets_       << " (" << (float) nEvBJets_/nEvDeltaPhi_*100.0   << "%)" << std::endl;
+  std::cout << "nEvGoodBJets_ = "     << nEvGoodBJets_   << " (" << (float) nEvGoodBJets_/nEvBJets_*100.0  << "%)" << std::endl;
   std::cout << "\nLEPTON BREAKDOWN:" << std::endl;
-  std::cout << "nEv0Lepton_ = "       << nEv0Lepton_     << " (" << (float) nEv0Lepton_/nEvBJets_*100.0    << "%)" << std::endl;
-  std::cout << "nEv1Lepton_ = "     << nEv1Lepton_       << " (" << (float) nEv1Lepton_/nEvBJets_*100.0    << "%)" << std::endl;
-  std::cout << "nEv2SSLepton_ = "   << nEv2SSLepton_     << " (" << (float) nEv2SSLepton_/nEvBJets_*100.0  << "%)" << std::endl;
-  std::cout << "nEv2OSLepton_ = "   << nEv2OSLepton_     << " (" << (float) nEv2OSLepton_/nEvBJets_*100.0  << "%)" << std::endl;
+  std::cout << "nEv0Lepton_ = "       << nEv0Lepton_     << " (" << (float) nEv0Lepton_/nEvGoodBJets_*100.0    << "%)" << std::endl;
+  std::cout << "nEv1Lepton_ = "     << nEv1Lepton_       << " (" << (float) nEv1Lepton_/nEvGoodBJets_*100.0    << "%)" << std::endl;
+  std::cout << "nEv2SSLepton_ = "   << nEv2SSLepton_     << " (" << (float) nEv2SSLepton_/nEvGoodBJets_*100.0  << "%)" << std::endl;
+  std::cout << "nEv2OSLepton_ = "   << nEv2OSLepton_     << " (" << (float) nEv2OSLepton_/nEvGoodBJets_*100.0  << "%)" << std::endl;
  
 
 }
