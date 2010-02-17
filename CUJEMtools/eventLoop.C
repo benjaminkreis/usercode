@@ -72,14 +72,27 @@ void selectData(TString sample, TString maxindex="") {
   }
   else  {
     if (maxindex!="") {
-      for (int ind=1; ind<=maxindex.Atoi(); ind++) {
-	TString mypath=path;
-	mypath+=sampleid_;
-	mypath += "_Summer09_7TeV_CUJEM_V09_";
-	mypath +=ind;
-	mypath +=".root";
-	cout<<"Adding to list of input files: "<<mypath<<endl;
-	fileNames.push_back(string(mypath.Data()));
+      if(sample.Contains("TTBar")) {
+	for (int ind=1; ind<=maxindex.Atoi(); ind++) {
+	  TString mypath = "rfio:/castor/cern.ch/user/k/kreis/CUSusy/CUJEM/Summer09/7TeV/Output/";
+	  mypath+=sampleid_;
+	  mypath += "_Summer09_7TeV_CUJEM_V09_";
+	  mypath +=ind;
+	  mypath +=".root";
+	  cout<<"Adding to list of input files: "<<mypath<<endl;
+	  fileNames.push_back(string(mypath.Data()));
+	}
+      }
+      else{
+	for (int ind=1; ind<=maxindex.Atoi(); ind++) {
+	  TString mypath=path;
+	  mypath+=sampleid_;
+	  mypath += "_Summer09_7TeV_CUJEM_V09_";
+	  mypath +=ind;
+	  mypath +=".root";
+	  cout<<"Adding to list of input files: "<<mypath<<endl;
+	  fileNames.push_back(string(mypath.Data()));
+	}
       }
     }
     else {
@@ -97,14 +110,15 @@ void selectData(TString sample, TString maxindex="") {
 bool passBJetCuts(JetIter jet){
   if( jet->pt < 30 ) return false;
   if( jet->btagSecVertex < 1.74 ) return false;
-  if( jet->eta > 2.4 ) return false;
+  if( fabs(jet->eta) > 2.4 ) return false;
   return true; 
 }//end passBJetCuts
 
 
 //+++PASS JET CUTS+++//
 bool passJetCuts(JetIter jet){
-  if ( jet->eta > 2.4) return false;
+  if( jet->pt < 30 ) return false;
+  if ( fabs(jet->eta) > 2.4) return false;
   return true;
 }//end passJetCuts
 
@@ -167,7 +181,7 @@ void eventLoop(TString reqNumBTags = ""){
   //Jet Pt
   float jetptmin=0;
   float jetptmax=1000;
-  histo.make("H_jetPT", "Jet PT Total",nbins,jetptmin,jetptmax);   
+  histo.make("H_jetPT", "Jet PT Total",700,jetptmin,7000);   
   histo.make("H_jetPT1","Jet PT 1",nbins,jetptmin,jetptmax);
   histo.make("H_jetPT2","Jet PT 2",nbins,jetptmin,jetptmax);
   histo.make("H_jetPT3","Jet PT 3",nbins,jetptmin,jetptmax);
@@ -178,7 +192,7 @@ void eventLoop(TString reqNumBTags = ""){
   histo.make("H_jeteta1","eta of lead jet",nbins,-maxJetEta,maxJetEta);
 
   //Jet multiplicity 
-  int nbins_jets=10;
+  int nbins_jets=20;
   string xtitle="N Jets";
   histo.make("H_NJets","N Jets",nbins_jets,-0.5,nbins_jets-0.5,xtitle);
   
@@ -277,14 +291,18 @@ void eventLoop(TString reqNumBTags = ""){
       }//end loop over jets
       
       TString nBJetsStatus;
-      if (nbjets < 2 ) nBJetsStatus = "nBJetsLT2";
-      else if( nbjets == 2 ) nBJetsStatus = "nBJetsEQ2";
-      else if( nbjets > 2 ) nBJetsStatus = "nBJetsGT2";
+      if (nbjets < 2 ) nBJetsStatus = "nBTagsLT2";
+      else if( nbjets == 2 ) nBJetsStatus = "nBTagsEQ2";
+      else if( nbjets > 2 ) nBJetsStatus = "nBTagsGT2";
+
+      // cout << "0. reqNumBTags:" << reqNumBTags << endl;
+      // cout << "1. nBJetsStatus:" << nBJetsStatus << " because nbjets=" << nbjets << endl;
+      
       
       //FILL HISTOGRAMS IF EVENT HAS CORRECT NUMBER OF BJETS
-      //  if(nBJetsStatus == reqNumBTags){
-      if(true){
-	
+      if(nBJetsStatus == reqNumBTags){
+      	
+	//	cout << "passed IF" << endl;
 
 	histo["H_MET"]->Fill(metPT);
 	histo["H_MET_UncorrPT"]->Fill(metUnCorrPt);
@@ -335,12 +353,12 @@ void eventLoop(TString reqNumBTags = ""){
 	      jetpt4 = jet->pt;
 	    }//end find leading jets
 	    
-	    	    //BJet related
+	    //we already know nbjets. here we find MC
+	    if ( (jet->genPartonId==5) || (jet->genPartonId==-5)) ngoodMCbjets++;
+	    
+	    //BJet related
 	    if (passBJetCuts(jet)){
 	      
-	      //we already know nbjets. here we find MC
-	      if ( (jet->genPartonId)==5 ) ngoodMCbjets++;
-	        
 	      //Find leading b jets
 	      if(jet->pt > bjetpt1) {
 		bjet4 = bjet4;
@@ -370,16 +388,18 @@ void eventLoop(TString reqNumBTags = ""){
 		bjet4 = jet;
 		bjetpt4 = jet->pt;
 	      }//end find leading b jets
-	      
+	     
 	      
 	    }//end pass bjet cuts
-	   
+	  
 	  }//end jet cuts
-	}//end loop over jets
 	
+	}//end loop over jets
+
 	//Fill Histograms that depend on jet loop being done
-	histo["H_NJets"]->Fill(njets);
+	//	histo["H_NJets"]->Fill(njets);
 	histo["H_jetPT"]->Fill(jetpt);
+
 	if (njets ==1) {
 	  histo["H_jetPT1"]->Fill(jetpt1);
 	  histo["H_jeteta1"]->Fill(jet1->eta);
@@ -412,7 +432,7 @@ void eventLoop(TString reqNumBTags = ""){
 	  histo["H_jetPT4"]->Fill(jetpt4);
 	  histo["H_DeltaPhi4"]->Fill( getDeltaPhi(jet4, h_met->front()) );
 	}
-	
+
 	//Fill Bjet Histograms
 	histo["H_Nbjets"]->Fill(nbjets);
 	histo["H_NbjetsMC"]->Fill(ngoodMCbjets);
@@ -423,7 +443,7 @@ void eventLoop(TString reqNumBTags = ""){
 	  histo["H_bjetPT1"]->Fill(bjetpt1);
 	  histo["H_bjetPT2"]->Fill(bjetpt2);
 	}
-	
+		
       }//correct number of bjets
     }//end try
     catch(std::exception& e) {
@@ -431,7 +451,7 @@ void eventLoop(TString reqNumBTags = ""){
       continue;
     }
     
-    //if(cnt == 10) break;//for debugging purposes
+    //if(cnt == 50) break;//for debugging purposes
     
   }//end loop over events
   cout << "event count: " << cnt << endl;
