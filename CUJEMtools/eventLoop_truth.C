@@ -83,6 +83,28 @@ void selectData(TString sample, TString maxindex="") {
 	  fileNames.push_back(string(mypath.Data()));
 	}
       }
+      else if(sample.Contains("QCD_Pt170")) {
+	for (int ind=1; ind<=maxindex.Atoi(); ind++) {
+	  TString mypath = "rfio:/castor/cern.ch/user/k/kreis/CUSusy/CUJEM/Summer09/7TeV/Output/";
+	  mypath+=sampleid_;
+	  mypath += "_Summer09_7TeV_CUJEM_V09_";
+	  mypath +=ind;
+	  mypath +=".root";
+	  cout<<"Adding to list of input files: "<<mypath<<endl;
+	  fileNames.push_back(string(mypath.Data()));
+	}
+      }
+      else if(sample.Contains("QCD_Pt80")) {
+	for (int ind=1; ind<=maxindex.Atoi(); ind++) {
+	  TString mypath = "rfio:/castor/cern.ch/user/j/joshmt/CUSusy/CUJEM/Summer09/7TeV/Output/";
+	  mypath+=sampleid_;
+	  mypath += "_Summer09_7TeV_CUJEM_V09_";
+	  mypath +=ind;
+	  mypath +=".root";
+	  cout<<"Adding to list of input files: "<<mypath<<endl;
+	  fileNames.push_back(string(mypath.Data()));
+	}
+      }
       else{
 	for (int ind=1; ind<=maxindex.Atoi(); ind++) {
 	  TString mypath=path;
@@ -221,7 +243,7 @@ void eventLoop_truth(TString reqNumBJets = ""){
   //LOOP OVER EVENTS
   int cnt = 0;
   for( ev.toBegin(); !ev.atEnd(); ++ev) {
-    
+    //cout << "Event " << cnt << endl;
     //Counter output 
     cnt++;
     if( cnt==1 )        std::cout << "     Event " << cnt << std::endl;
@@ -453,7 +475,7 @@ void eventLoop_truth(TString reqNumBJets = ""){
       continue;
     }
     
-    //if(cnt == 1000) break;//for debugging purposes
+    //if(cnt == 50) break;//for debugging purposes
     
   }//end loop over events
   cout << "event count: " << cnt << endl;
