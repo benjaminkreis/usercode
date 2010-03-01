@@ -272,7 +272,8 @@ void eventLoop_jets_ABCD(TString reqNumBJets = ""){
       //LOOP OVER JETS TO COUNT BJETS 
       int ngoodMCbjets = 0;
       for( JetIter jet = jets.begin(); jet != jets.end(); ++jet ) {
-	if( passMCBJetCuts(jet) ) ngoodMCbjets++; 
+	//if( passMCBJetCuts(jet) ) ngoodMCbjets++; 
+	if( passBTagCuts(jet) ) ngoodMCbjets++; 
       }//end loop over jets
       
       TString nBJetsStatus;
@@ -327,18 +328,20 @@ void eventLoop_jets_ABCD(TString reqNumBJets = ""){
 	      jetpt4 = jet->pt;
 	    }//end find leading jets
 	    
-	    //min delta phi is calculated from leading three jets
-	    float dPhi1 = acos(cos(fabs((h_met->front()).phi - jet1->phi)));
-	    float dPhi2 = acos(cos(fabs((h_met->front()).phi - jet2->phi)));
-	    float dPhi3 = acos(cos(fabs((h_met->front()).phi - jet3->phi)));
-	    float dPhiMin=-1.0;
-	    if(dPhi1<=dPhi2 && dPhi1<=dPhi3){ dPhiMin = dPhi1;}
-	    else if(dPhi2<=dPhi1 && dPhi2<=dPhi3){ dPhiMin = dPhi2;}
-	    else { dPhiMin = dPhi3; }
+	    if(jetpt1>180 && jetpt2>150 && jetpt3>50){//cut0
+	      
+	      //min delta phi is calculated from leading three jets
+	      float dPhi1 = acos(cos(fabs((h_met->front()).phi - jet1->phi)));
+	      float dPhi2 = acos(cos(fabs((h_met->front()).phi - jet2->phi)));
+	      float dPhi3 = acos(cos(fabs((h_met->front()).phi - jet3->phi)));
+	      float dPhiMin=-1.0;
+	      if(dPhi1<=dPhi2 && dPhi1<=dPhi3){ dPhiMin = dPhi1;}
+	      else if(dPhi2<=dPhi1 && dPhi2<=dPhi3){ dPhiMin = dPhi2;}
+	      else { dPhiMin = dPhi3; }
+	      
+	      histo.find2("H_minDPhi_MET")->Fill(metPT,dPhiMin);
+	    }//cut 0
 	    
-	    histo.find2("H_minDPhi_MET")->Fill(metPT,dPhiMin);
-
-
 	  }//end jet cuts
 	  
 	}//end loop over jets
