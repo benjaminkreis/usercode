@@ -2,6 +2,7 @@
 #include "TChain.h"
 #include "TH1.h"
 #include "TH2F.h"
+#include "TF1.h"
 #include "TProfile.h"
 #include "TCanvas.h"
 #include "TLegend.h"
@@ -51,20 +52,28 @@ void analyzeABCD(){
   float borderh1b=0.3;
   float borderh2a=0.3;
   float borderh2b=pi;
-  
+
+
+  // HISTOGRAM for fit 
   const Double_t yBins[4] = {borderh1a, borderh1b, borderh2a, borderh2b};
-  
+ 
   int fitNum = 5;
-  float r_xWidth = (borderv1b-borderv1a)/fitNum;
-  int r_xNum = xax->GetXmax()/r_xWidth;
-  cout << "r_xWidth = " << r_xWidth << ", and r_xNum = " << r_xNum << endl;
-  Double_t xBins[r_xNum];
-  for(int i = 0; i<=r_xNum; i++){
-    xBins[i]=borderv1a+i*r_xWidth;
+  float f_xWidth = (borderv1b-borderv1a)/fitNum;
+  Double_t f_xBins[fitNum+1];
+  for(int i = 0; i<=fitNum; i++){
+    f_xBins[i]=borderv1a+i*f_xWidth;
+    cout <<"histf " << f_xBins[i] << endl;
   }
-
-  TH2F* histr = new TH2F("H_ratio_setup","Ratio Setup",r_xNum-1, xBins, 3, yBins);
-
+  TH2F* histf = new TH2F("H_ratio_setup","Ratio Setup",fitNum, f_xBins, 3, yBins);
+  
+  // HISTOGRAM for extension
+  int extendedNum = 20;
+  float e_xWidth = (borderv2b-borderv2a)/extendedNum;
+  Double_t e_xBins[extendedNum+1];
+  for(int i = 0; i<=extendedNum; i++){
+    e_xBins[i]=borderv2a+i*e_xWidth;
+    cout << "histe " << e_xBins[i] << endl;
+  }
 
   TLine* lineAb = new TLine(borderv1a,borderh1a,borderv1b, borderh1a);
   TLine* lineAt = new TLine(borderv1a,borderh1b,borderv1b, borderh1b);
@@ -144,7 +153,7 @@ void analyzeABCD(){
       //cout << "xlow " << xlow << endl;
       //cout << "ylow " << ylow << endl;
 
-      histr->Fill(xlow,ylow,hist1->GetBinContent(xbin,ybin));
+      histf->Fill(xlow,ylow,hist1->GetBinContent(xbin,ybin));
 
       if( (xlow>=borderv1a) && (xlow<borderv1b) && (ylow>=borderh1a) && (ylow<borderh1b) ){
 	nA+=hist1->GetBinContent(xbin,ybin);
@@ -161,29 +170,29 @@ void analyzeABCD(){
       else { assert(0);}
       
     }//end loop over ybin
-          
   }//end loop over xbin
-  std::cout<<endl;
   
-  // histr->Draw("COLZ");
-
-  // TH2F* histrb = new TH2F("H_ratio","Ratio",r_xNum-1, xBins, 100, 0, 10);
-  for(int i =1; i<=fitNum; i++){
-    int rb_xBin =  histr->GetBinCenter(i);
-    float ratio =  histr->GetBinContent(i,3)/histr->GetBinContent(i,1);
-    cout << "ratio(" << rb_xBin << "): " << ratio << endl;
-    // histrb->Fill(rb_xBin,ratio);
-  }
-  // histrb->Draw();
-
+  //histf->Draw("COLZ");
+  
   float gr1x[fitNum];
   float gr1y[fitNum];
   for(int i =0; i<fitNum; i++){
-    gr1x[i] = histr->GetBinCenter(i+1);
-    gr1y[i] = histr->GetBinContent(i+1,3)/histr->GetBinContent(i+1,1);
+    gr1x[i] = histf->GetBinCenter(i+1);
+    gr1y[i] = histf->GetBinContent(i+1,3)/histf->GetBinContent(i+1,1);
+    cout << "ratio: (" << gr1x[i] << ", " << gr1y[i] << ")" << endl;
   }
   TGraph * gr1 = new TGraph(fitNum, gr1x, gr1y);
   // gr1->Draw("A*");
+
+  TF1 *flin1 = new TF1("flin1", "[0]+[1]*x",borderv1a, borderv1b );
+  gr1->Fit("flin1","R");
+  Double_t par[2];
+  flin1->GetParameters(par);
+  cout << "Fit result: ratio = " << par[0] << " + " << par[1] << "*x" << endl;
+
+  //for(int i = 
+  cout << "bin = " << int(borderv2a/(f_xWidth)) << ", hist " << histf->GetBinCenter(int(borderv2a/(f_xWidth)))<<endl;
+
 
 
   float classicalEstimate = nD*nB/nA;
