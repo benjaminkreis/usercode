@@ -32,7 +32,7 @@ void analyzeABCD(){
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
 
-  TString filename = "plots_LM0_nBJetsLT2";
+  TString filename = "plots_QCD_Pt80_nBJetsLT2";
   TString treename = "T_minDPhi_MET"; 
   TString histname = "H_minDPhi_MET";
   
@@ -221,7 +221,10 @@ void analyzeABCD(){
     else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh2a) && (y<borderh2b) ){
       nC++;
     }
-    else { assert(0);}
+    else {
+      cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
+      //assert(0);
+    }
     
     //Fill histogram A, B, C, D
     histA->Fill(x,y);
@@ -252,7 +255,7 @@ void analyzeABCD(){
   float gr1x[fitNum];
   float gr1y[fitNum];
   for(int i =0; i<fitNum; i++){
-    gr1x[i] = histA->GetBinCenter(i+1);
+    gr1x[i] = xaxA->GetBinCenter(i+1);
     gr1y[i] = histB->GetBinContent(i+1,1)/histA->GetBinContent(i+1,1);
     cout << "ratio: (" << gr1x[i] << ", " << gr1y[i] << ")" << endl;
   }
@@ -284,10 +287,10 @@ void analyzeABCD(){
 
   float extendedEstimate=0;
   for(int i =1; i<=extendedNum; i++){
-    float xvalue = histD->GetBinCenter(i);
+    float xvalue = xaxD->GetBinCenter(i);
     float ratiox = par[0] + par[1]*xvalue;
-    cout << "xvalue: " << xvalue << ", ratiox: " << ratiox << ", histD(x): " << histD->GetBinContent(i)( endl;
-    extendedEstimate+=ratiox*(histD->GetBinContent(i));
+    //cout << "xvalue: " << xvalue << ", ratiox: " << ratiox << ", histD(x): " << histD->GetBinContent(i,1) << endl;
+    extendedEstimate+=ratiox*(histD->GetBinContent(i,1));
   }
 
   ///////////////////////////////////
