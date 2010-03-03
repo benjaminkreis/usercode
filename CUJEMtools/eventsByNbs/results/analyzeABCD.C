@@ -31,9 +31,16 @@ void analyzeABCD(){
   gROOT->SetStyle("Plain");
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
-  
-  float pi=4*atan(1.0);
 
+  TString filename = "plots_LM0_nBJetsLT2";
+  TString treename = "T_minDPhi_MET"; 
+  TString histname = "H_minDPhi_MET";
+  
+  TString yTitle = "min Delta Phi (MET, jet 1 2 3)";
+  TString xTitle = "MET (GeV)";
+
+  float pi=4*atan(1.0);
+  
   float borderv1a=0.0;
   float borderv1b=150.0;
   float borderv2a=150.0;
@@ -42,24 +49,32 @@ void analyzeABCD(){
   float borderh1b=0.3;
   float borderh2a=0.3;
   float borderh2b=pi;
+  
+  float nA=0, nB=0, nC=0, nD=0;
+  
 
-   float nA=0, nB=0, nC=0, nD=0;
-
-   TCanvas * C_ABCD = new TCanvas("C_ABCD", "Canvas ABCD", 1000, 1000);
-   C_ABCD->Divide(2,2);
-   C_ABCD->cd(1);
+  ///////////////////
+  //    CANVAS     //
+  ///////////////////
+  TCanvas * C_fit = new TCanvas("C_fit", "Canvas fit", 800, 700);
+  C_fit->cd(1);
+  TCanvas * C_ABCD = new TCanvas("C_ABCD", "Canvas ABCD", 1000, 1000);
+  C_ABCD->Divide(2,2);
+  C_ABCD->cd(1);
+  TCanvas * C_hist1 = new TCanvas ("C_hist1", "Canvas hist1", 800, 700);
+  C_hist1->cd(1);
+  
   /////////////////////////////
   //        HISTOGRAMS       //
   /////////////////////////////
-
+ 
   //plot 2d histogram for visual purposes
-  TString histname = "H_minDPhi_MET";
-  TFile* file1 = TFile::Open("plots_LM0_nBJetsLT2.root","READ");
+  TFile* file1 = TFile::Open(filename+".root","READ");
   TH2F* hist1 = (TH2F*) gDirectory->Get(histname);
   TAxis* xax =  hist1->GetXaxis();
   TAxis* yax =  hist1->GetYaxis();
-  xax->SetTitle("MET (GeV)");
-  yax->SetTitle("min Delta Phi (MET, jet 1 2 3)");
+  xax->SetTitle(xTitle);
+  yax->SetTitle(yTitle);
   hist1->Draw("COLZ");
   gPad->SetRightMargin(.18);
   gPad->Modified();
@@ -129,7 +144,8 @@ void analyzeABCD(){
   lineDt->Draw();
   lineDl->Draw();
   lineDr->Draw();
-  
+  C_hist1->Print(filename+"_"+treename+"_hist1.pdf");
+
   //prep for histograms A, B, C, D
   const Double_t yBinsL[2] = {borderh1a, borderh1b};
   const Double_t yBinsU[2] = {borderh2a, borderh2b};
@@ -155,11 +171,31 @@ void analyzeABCD(){
   TH2F* histB = new TH2F("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
   TH2F* histC = new TH2F("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2F* histD = new TH2F("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
-
+  TAxis *xaxA = histA->GetXaxis();
+  TAxis *xaxB = histB->GetXaxis();
+  TAxis *xaxC = histC->GetXaxis();
+  TAxis *xaxD = histD->GetXaxis();
+  TAxis *yaxA = histA->GetYaxis();
+  TAxis *yaxB = histB->GetYaxis();
+  TAxis *yaxC = histC->GetYaxis();
+  TAxis *yaxD = histD->GetYaxis();
+  xaxA->SetTitle(xTitle);
+  xaxB->SetTitle(xTitle);
+  xaxC->SetTitle(xTitle);
+  xaxD->SetTitle(xTitle);
+  yaxA->SetTitleOffset(1.4);
+  yaxB->SetTitleOffset(1.15);
+  yaxC->SetTitleOffset(1.15);
+  yaxD->SetTitleOffset(1.4);
+  yaxA->SetTitle(yTitle);
+  yaxB->SetTitle(yTitle);
+  yaxC->SetTitle(yTitle);
+  yaxD->SetTitle(yTitle);
+  
   //////////////////
   //LOOP over TREE//
   //////////////////
-  TString treename = "T_minDPhi_MET";
+
   TTree* tree1 = (TTree*) gDirectory->Get(treename);
   int numEntries = tree1->GetEntries();
   cout << "numEntries: " << numEntries << endl;
@@ -196,14 +232,23 @@ void analyzeABCD(){
   }//end loop tree
   
   C_ABCD->cd(3);
+  gPad->SetLeftMargin(.14);
+  gPad->Modified();
   histA->Draw("COLZ");
   C_ABCD->cd(1);
   histB->Draw("COLZ");
   C_ABCD->cd(2);
   histC->Draw("COLZ");
   C_ABCD->cd(4);
+  gPad->SetLeftMargin(.14);
+  gPad->Modified();
   histD->Draw("COLZ");
+  C_ABCD->Print(filename+"_"+treename+"_ABCD.pdf");
 
+  /////////////////////////////////
+  //EXTENDED NORMALIZATION METHOD//
+  /////////////////////////////////
+  C_fit->cd();
   float gr1x[fitNum];
   float gr1y[fitNum];
   for(int i =0; i<fitNum; i++){
@@ -212,7 +257,12 @@ void analyzeABCD(){
     cout << "ratio: (" << gr1x[i] << ", " << gr1y[i] << ")" << endl;
   }
   TGraph * gr1 = new TGraph(fitNum, gr1x, gr1y);
-  //gr1->Draw("A*");
+  gr1->SetTitle("Fit of N_B(x)/N_A(x)");
+  TAxis* xaxG = gr1->GetXaxis();
+  TAxis* yaxG = gr1->GetYaxis();
+  xaxG->SetTitle(xTitle);
+  yaxG->SetTitle(yTitle);
+  gr1->Draw("A*");
 
   TF1 *flin1 = new TF1("flin1", "[0]+[1]*x",borderv1a, borderv1b );
   gr1->Fit("flin1","R");
@@ -220,12 +270,35 @@ void analyzeABCD(){
   flin1->GetParameters(par);
   cout << "Fit result: ratio = " << par[0] << " + " << par[1] << "*x" << endl;
 
+  TPaveText *pt = new TPaveText(.15, .8, .9, .9, "NDC");
+  TString par0 = "";
+  par0+=par[0];
+  TString par1 = "";
+  par1+=par[1];
+  pt->SetFillColor(0);
+  pt->SetTextSize(0.04);
+  pt->SetTextAlign(12);
+  pt->AddText( "Fit result: ratio = "+par0+" + "+par1+"*x");
+  pt->Draw();
+  C_fit->Print(filename+"_"+treename+"_fit.pdf");
+
+  float extendedEstimate=0;
+  for(int i =1; i<=extendedNum; i++){
+    float xvalue = histD->GetBinCenter(i);
+    float ratiox = par[0] + par[1]*xvalue;
+    cout << "xvalue: " << xvalue << ", ratiox: " << ratiox << ", histD(x): " << histD->GetBinContent(i)( endl;
+    extendedEstimate+=ratiox*(histD->GetBinContent(i));
+  }
+
+  ///////////////////////////////////
   float classicalEstimate = nD*nB/nA;
+  ///////////////////////////////////
 
   cout << "nA: " << nA << endl;
   cout << "nB: " << nB << endl;
   cout << "nC: " << nC << endl;
   cout << "nD: " << nD << endl;
+  cout << endl;
   cout << "classical estimate for nC: " << classicalEstimate << endl;
-
+  cout << "extended estimate for nC: " << extendedEstimate << endl;
 }//0
