@@ -32,7 +32,7 @@ void analyzeABCD(){
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
 
-  TString filename = "plots_QCD_Pt80_nBJetsLT2";
+  TString filename = "plots_QCD_Pt170_nBJetsLT2";
   TString treename = "T_minDPhi_MET"; 
   TString histname = "H_minDPhi_MET";
   
@@ -235,14 +235,18 @@ void analyzeABCD(){
   }//end loop tree
   
   C_ABCD->cd(3);
+  gPad->SetRightMargin(.22);
   gPad->SetLeftMargin(.14);
   gPad->Modified();
   histA->Draw("COLZ");
   C_ABCD->cd(1);
+  gPad->SetRightMargin(.22);
   histB->Draw("COLZ");
   C_ABCD->cd(2);
+  gPad->SetRightMargin(.22);
   histC->Draw("COLZ");
   C_ABCD->cd(4);
+  gPad->SetRightMargin(.22);
   gPad->SetLeftMargin(.14);
   gPad->Modified();
   histD->Draw("COLZ");
