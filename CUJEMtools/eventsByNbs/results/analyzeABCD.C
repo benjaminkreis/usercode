@@ -3,6 +3,7 @@
 #include "TH1.h"
 #include "TH2F.h"
 #include "TF1.h"
+#include "TFormula.h"
 #include "TProfile.h"
 #include "TCanvas.h"
 #include "TLegend.h"
@@ -12,13 +13,17 @@
 #include "TMatrixT.h"
 #include "TVectorT.h"
 #include "TGraph.h"
+#include "TGraphErrors.h"
 #include "TROOT.h"
+#include "TFitter.h"
 #include <iostream>
 #include <vector>
 #include <exception>
 #include <cmath> 
 #include <iomanip>
 #include <assert.h>
+
+using namespace std;
 
 ////////
 //B//C//
@@ -150,21 +155,26 @@ void analyzeABCD(){
   const Double_t yBinsL[2] = {borderh1a, borderh1b};
   const Double_t yBinsU[2] = {borderh2a, borderh2b};
   
-  int fitNum = 5; //number of bins in xL region, used to fit ratio
+ 
+  int fitNum = 10; //number of bins in xL region, used to fit ratio
   float xWidthL = (borderv1b-borderv1a)/fitNum;
   Double_t xBinsL[fitNum+1];
+  cout << "xBinsL: ";
   for(int i = 0; i<=fitNum; i++){
     xBinsL[i]=borderv1a+i*xWidthL;
-    cout <<"xBinsL: " << xBinsL[i] << endl;
+    cout << xBinsL[i] << " ";
   }
-  
+  cout << endl;
+
   int extendedNum = 20; //number of bins in xU region, used to calculate nC
   float xWidthU = (borderv2b-borderv2a)/extendedNum;
-  Double_t xBinsU[extendedNum+1];
+  Double_t xBinsU[extendedNum+1]; 
+  cout << "xBinsU: ";
   for(int i = 0; i<=extendedNum; i++){
     xBinsU[i]=borderv2a+i*xWidthU;
-    cout << "xBinsU: " << xBinsU[i] << endl;
+    cout << xBinsU[i] << " ";
   }
+  cout << endl;
   
   // histogram for A, B, C, D
   TH2F* histA = new TH2F("H_A", "Region A", fitNum, xBinsL, 1, yBinsL);
@@ -258,12 +268,17 @@ void analyzeABCD(){
   C_fit->cd();
   float gr1x[fitNum];
   float gr1y[fitNum];
+  float gr1x_error[fitNum];
+  float gr1y_error[fitNum];
   for(int i =0; i<fitNum; i++){
     gr1x[i] = xaxA->GetBinCenter(i+1);
+    gr1x_error[i] = 0;
     gr1y[i] = histB->GetBinContent(i+1,1)/histA->GetBinContent(i+1,1);
-    cout << "ratio: (" << gr1x[i] << ", " << gr1y[i] << ")" << endl;
+    gr1y_error[i] = gr1y[i]*sqrt((histB->GetBinError(i+1,1)/histB->GetBinContent(i+1,1))*(histB->GetBinError(i+1,1)/histB->GetBinContent(i+1,1))+
+				 (histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1))*(histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1)));
+    cout << "ratio: (" << gr1x[i] << " +- " << gr1x_error[i] <<", " << gr1y[i] << " +- " << gr1y_error[i] << ")" << endl;
   }
-  TGraph * gr1 = new TGraph(fitNum, gr1x, gr1y);
+  TGraphErrors * gr1 = new TGraphErrors(fitNum, gr1x, gr1y, gr1x_error, gr1y_error);
   gr1->SetTitle("Fit of N_B(x)/N_A(x)");
   TAxis* xaxG = gr1->GetXaxis();
   TAxis* yaxG = gr1->GetYaxis();
@@ -271,41 +286,58 @@ void analyzeABCD(){
   yaxG->SetTitle(yTitle);
   gr1->Draw("A*");
 
+  //FIT
   TF1 *flin1 = new TF1("flin1", "[0]+[1]*x",borderv1a, borderv1b );
+  flin1->SetParameters(2.0,-.02);
   gr1->Fit("flin1","R");
   Double_t par[2];
   flin1->GetParameters(par);
-  cout << "Fit result: ratio = " << par[0] << " + " << par[1] << "*x" << endl;
+  cout << "Fit result: ratio = (" << par[0] << " +- " << flin1->GetParError(0) <<") + (" << par[1] << " +- " << flin1->GetParError(1) << ")*x" << endl;
 
-  TPaveText *pt = new TPaveText(.15, .8, .9, .9, "NDC");
+  TPaveText *pt = new TPaveText(.3, .8, .88, .88, "NDC");
   TString par0 = "";
   par0+=par[0];
   TString par1 = "";
   par1+=par[1];
   pt->SetFillColor(0);
-  pt->SetTextSize(0.04);
+  pt->SetTextSize(0.03);
   pt->SetTextAlign(12);
   pt->AddText( "Fit result: ratio = "+par0+" + "+par1+"*x");
   pt->Draw();
   C_fit->Print(filename+"_"+treename+"_fit.pdf");
 
   float extendedEstimate=0;
+  float ext_serror=0;
   for(int i =1; i<=extendedNum; i++){
+    float xError = 0;
     float xvalue = xaxD->GetBinCenter(i);
     float ratiox = par[0] + par[1]*xvalue;
     //cout << "xvalue: " << xvalue << ", ratiox: " << ratiox << ", histD(x): " << histD->GetBinContent(i,1) << endl;
     extendedEstimate+=ratiox*(histD->GetBinContent(i,1));
+    
+    //calculate error squared
+    ext_serror += ratiox*(histD->GetBinError(i,1)) * ratiox*(histD->GetBinError(i,1));
+    ext_serror += (xvalue * (histD->GetBinContent(i,1)) * (flin1->GetParError(1))) * (xvalue * (histD->GetBinContent(i,1)) * (flin1->GetParError(1)));
+    ext_serror += (par[1] * (histD->GetBinContent(i,1)) * xError) * (par[1] * (histD->GetBinContent(i,1)) * xError);
+    ext_serror += (histD->GetBinContent(i,1)) * (flin1->GetParError(0)) * (histD->GetBinContent(i,1)) * (flin1->GetParError(0));
   }
-
+  float ext_error = sqrt(ext_serror);
+  
+  ///////////////////////////////////
+  //CLASSICAL ESTIMATE
   ///////////////////////////////////
   float classicalEstimate = nD*nB/nA;
-  ///////////////////////////////////
+  float nA_error = sqrt(nA);
+  float nB_error = sqrt(nB);
+  float nD_error = sqrt(nD);
+  float classicalEstimate_error =  classicalEstimate * sqrt( (nA_error/nA)*(nA_error/nA)+(nB_error/nB)*(nB_error/nB)+(nD_error/nD)*(nD_error/nD) );
+  /////////////////////////////
 
+  
   cout << "nA: " << nA << endl;
   cout << "nB: " << nB << endl;
   cout << "nC: " << nC << endl;
   cout << "nD: " << nD << endl;
-  cout << endl;
-  cout << "classical estimate for nC: " << classicalEstimate << endl;
-  cout << "extended estimate for nC: " << extendedEstimate << endl;
+  cout << "classical estimate for nC: " << classicalEstimate << " +- " << classicalEstimate_error << endl;
+  cout << "extended estimate for nC: " << extendedEstimate << " +- " << ext_error << endl;
 }//0
