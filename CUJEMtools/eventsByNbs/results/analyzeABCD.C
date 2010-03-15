@@ -217,21 +217,23 @@ void analyzeABCD(){
   tree1->SetBranchAddress("MET",&x);
   tree1->SetBranchAddress("minDPhi",&y);
   
+  float weight = 1.0;
+
   for(int i = 1; i<= numEntries; i++){ //loop over tree
     tree1->GetEvent(i);
     
     //COUNT nA, nB, nC, nD
     if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
-      nA++;
+      nA+=weight;
     }
     else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
-      nD++;
+      nD+=weight;
     }
     else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
-      nB++;
+      nB+=weight;
     }
     else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh2a) && (y<borderh2b) ){
-      nC++;
+      nC+=weight;
     }
     else {
       cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
@@ -239,10 +241,10 @@ void analyzeABCD(){
     }
     
     //Fill histogram A, B, C, D
-    histA->Fill(x,y);
-    histB->Fill(x,y);
-    histC->Fill(x,y);
-    histD->Fill(x,y);
+    histA->Fill(x,y, weight);
+    histB->Fill(x,y, weight);
+    histC->Fill(x,y, weight);
+    histD->Fill(x,y, weight);
     
   }//end loop tree
   
