@@ -27,64 +27,60 @@
 using namespace std;
 
 void analyzeTagRatio(){
+  gROOT->SetStyle("Plain");
+  gStyle->SetPalette(1);
+  gStyle->SetOptStat("euo");
+
+  float pi = 4*atan(1.0);
 
   TString treename = "T_tagRatio";
   TString filename = "plots_QCD_Pt170";
+  TString xaxis = "jeteta1";
 
   TFile* file1 = TFile::Open(filename+".root","READ");
-  
   TTree* tree1 = (TTree*) gDirectory->Get(treename);
   
   int numEntries = tree1->GetEntries();
   cout << "numEntries: " << numEntries << endl;
 
   //Histogram
-  TH2F* hist1 = new TH2F("hist1", "histogram 1", 100, 0, 1000, 100, 0, 1);
+  //TH2F* hist1 = new TH2F("hist1", filename, 50, 0, 500, 100, 0, 1); //met
+  //TH2F* hist1 = new TH2F("hist1", filename, 50, 0, 1500, 100, 0, 1); //jetpt1
+  TH2F* hist1 = new TH2F("hist1", filename, 50, -pi, pi, 100, 0, 1); //jeteta1
   hist1->Sumw2();
-  // TProfile* hist1prof = new TProfile("hist1prof", "histogram 1 profile", 100, 0, 1000, 0, 1);
  
-  //Arrays for TGraph
-  float r1x[numEntries];
-  float r1y[numEntries];
-  float r1x_e[numEntries];
-  float r1y_e[numEntries];
-  
   float x = -1;
   float njets = -1;
   float ntags = -1;
-  tree1->SetBranchAddress("MET",&x);
+  tree1->SetBranchAddress(xaxis,&x);
   tree1->SetBranchAddress("njets",&njets);
   tree1->SetBranchAddress("ntags",&ntags);
   
   /////LOOP OVER EVENTS/////
   for(int i = 0; i< numEntries; i++){ //loop over tree
+    
     tree1->GetEvent(i+1);
-   
     float y = ntags/njets;
-
-    //Fill arrays for TGraph
-    r1x[i] = x;
-    r1y[i] = y;
-    r1x_e[i] = 0;
-    r1x_e[i] = 0;
-
+   
     hist1->Fill(x,y);
-    //hist1prof->Fill(x,y);
 
   }
 
-  TGraphErrors * gr1 = new TGraphErrors(numEntries, r1x, r1y, r1x_e, r1y_e);
-  gr1->SetMarkerStyle(4);
-  gr1->Draw("AP");
-  
   hist1->Draw("COLZ");
 
-  //hist1prof->SetLineWidth(3);
-  //hist1prof->Draw();
-
+  //PROFILE HISTOGRAM
   TProfile *tpf = hist1->ProfileX();
-  tpf->SetAxisRange(.2, .4, "Y");
   tpf->SetLineWidth(3);
+  TAxis* xax = tpf->GetXaxis();
+  TAxis* yax = tpf->GetYaxis();
+  xax->SetTitle(xaxis);
+  yax->SetTitle("nTags/nJets");
+  yax->SetTitleOffset(1.15);
+
+  TCanvas* C_profile = new TCanvas("C_profile", "Profile Canvas",800,600);
+
   tpf->Draw();
+
+  C_profile->Print(filename+"_"+xaxis+".pdf");
   
 }
