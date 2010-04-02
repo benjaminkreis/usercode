@@ -134,10 +134,15 @@ bool passBTagCuts(JetIter jet){
   return true; 
 }//end passBTagCuts
 
-bool passMCBJetCuts(JetIter jet){
+bool passGoodMCBJetCuts(JetIter jet){
   if((jet->genPartonId!=5) && (jet->genPartonId!=-5)) return false;
   if( jet->pt < 30 ) return false;
   if( fabs(jet->eta) > 2.4 ) return false;
+  return true; 
+}//end passGoodMCBJetCuts
+
+bool passMCBJetCuts(JetIter jet){
+  if((jet->genPartonId!=5) && (jet->genPartonId!=-5)) return false;
   return true; 
 }//end passMCBJetCuts
 
@@ -192,13 +197,17 @@ void eventLoop_tagRatio(){
   float tree1_jeteta1;
   float tree1_njets;
   float tree1_ntags;
-  tree1->Branch("njets", &tree1_njets, "tree1_njets");
-  tree1->Branch("ntags", &tree1_ntags, "tree1_ntags");
-   tree1->Branch("jeteta1", &tree1_jeteta1, "tree1_jeteta1");
+  //  float tree1_nbjets;
+  float tree1_ngoodbjets;
   tree1->Branch("MET", &tree1_MET, "tree1_MET/F");
-  tree1->Branch("jetpt1", &tree1_jetpt1, "tree1_jetpt1");
+  tree1->Branch("njets", &tree1_njets, "tree1_njets/F");
+  // tree1->Branch("nbjets", &tree1_nbjets, "tree1_nbjets/F");
+  tree1->Branch("ngoodbjets", &tree1_ngoodbjets, "tree1_ngoodbjets/F");
+  tree1->Branch("ntags", &tree1_ntags, "tree1_ntags/F");
+  tree1->Branch("jetpt1", &tree1_jetpt1, "tree1_jetpt1/F");
+  tree1->Branch("jeteta1", &tree1_jeteta1, "tree1_jeteta1/F");
   
-
+ 
   //////////////////////////////////////////////////////////////////////////////////////////
 
   //LOOP OVER EVENTS
@@ -274,7 +283,8 @@ void eventLoop_tagRatio(){
       double metUnCorrPt = h_met->front().Upt;
       double sumET  = h_met->front().sumET;
 
-      
+      int ngoodBJets=0;
+      // int nBJets=0;
       int ngoodBTags=0;
       int nJets=0;
       float jetpt1 = 0;
@@ -284,7 +294,7 @@ void eventLoop_tagRatio(){
 	if(passJetCuts(jet)){
 	  nJets++;
 	  if( passBTagCuts(jet) ) ngoodBTags++;
-	  
+	  if( passGoodMCBJetCuts(jet) ) ngoodBJets++;
 	  if(jet->pt > jetpt1){
 	    jetpt1 = jet->pt;
 	    jeteta1 = jet->eta;
@@ -296,6 +306,8 @@ void eventLoop_tagRatio(){
       if(nJets>0){
 	tree1_njets = nJets;
 	tree1_ntags = ngoodBTags;
+	//tree1_nbjets = nBJets;
+	tree1_ngoodbjets = ngoodBJets;
 	tree1_MET = metPT;
 	tree1_jetpt1 = jetpt1;
 	tree1_jeteta1 = jeteta1;
