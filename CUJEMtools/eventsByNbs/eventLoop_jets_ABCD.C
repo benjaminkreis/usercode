@@ -8,6 +8,7 @@
 
 #include "TFile.h"
 #include "TChain.h"
+#include "TTree.h"
 #include "TH1.h"
 #include "TH2F.h"
 #include "TProfile.h"
@@ -195,6 +196,17 @@ void eventLoop_jets_ABCD(TString reqNumBJets = ""){
   int nbins_MET = 100;
   histo.make2("H_minDPhi_MET","min Delta Phi vs MET",nbins_MET,0,1000,nbins_Phi,0,pi);
 
+
+  //DECLARE TREES//
+  TTree *tree1 = new TTree("T_minDPhi_MET", "min Delta Phi and MET");
+  float tree1_minDPhi;
+  float tree1_MET;
+  float tree1_njets;
+  tree1->Branch("minDPhi", &tree1_minDPhi, "tree1_minDPhi/F");
+  tree1->Branch("MET", &tree1_MET, "tree1_MET/F");
+  tree1->Branch("njets", &tree1_njets, "tree1_njets/F");
+
+
   //////////////////////////////////////////////////////////////////////////////////////////
 
   //LOOP OVER EVENTS
@@ -269,11 +281,13 @@ void eventLoop_jets_ABCD(TString reqNumBJets = ""){
       double metUnCorrPt = h_met->front().Upt;
       double sumET  = h_met->front().sumET;
 
-      //LOOP OVER JETS TO COUNT BJETS 
+      //LOOP OVER JETS TO COUNT BJETS AND JETS
       int ngoodMCbjets = 0;
+      int njets = 0;
       for( JetIter jet = jets.begin(); jet != jets.end(); ++jet ) {
 	//if( passMCBJetCuts(jet) ) ngoodMCbjets++; 
 	if( passBTagCuts(jet) ) ngoodMCbjets++; 
+	if( passJetCuts(jet)  ) njets+=1.0;
       }//end loop over jets
       
       TString nBJetsStatus;
@@ -339,7 +353,15 @@ void eventLoop_jets_ABCD(TString reqNumBJets = ""){
 	      else if(dPhi2<=dPhi1 && dPhi2<=dPhi3){ dPhiMin = dPhi2;}
 	      else { dPhiMin = dPhi3; }
 	      
+	      //fill histogram
 	      histo.find2("H_minDPhi_MET")->Fill(metPT,dPhiMin);
+
+	      //fill tree
+	      tree1_minDPhi = dPhiMin;
+	      tree1_MET = metPT;
+	      tree1_njets = njets;
+	      tree1->Fill();
+
 	    }//cut 0
 	    
 	  }//end jet cuts
@@ -352,10 +374,11 @@ void eventLoop_jets_ABCD(TString reqNumBJets = ""){
       continue;
     }
     
-    // if(cnt == 1000) break;//for debugging purposes
+    //if(cnt == 10) break;//for debugging purposes
     
   }//end loop over events
   cout << "event count: " << cnt << endl;
+  tree1->Print();
   fout.Write();
   fout.Close();
 }//end eventLoop_jets_ABCD()
