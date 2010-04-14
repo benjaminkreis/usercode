@@ -32,12 +32,12 @@ using namespace std;
 ////////
 //C is signal region
 
-void analyzeABCD(){
+void analyzeABCD( ){
   gROOT->SetStyle("Plain");
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
 
-  TString filename = "plots_QCD_Pt170_nBJetsLT2";
+  TString filename = "plots_QCD_Pt80_LM1_merged";
   TString treename = "T_minDPhi_MET"; 
   TString histname = "H_minDPhi_MET";
   
@@ -56,7 +56,7 @@ void analyzeABCD(){
   float borderh2b=pi;
   
   float nA=0, nB=0, nC=0, nD=0;
-  
+  float nA_e=0, nB_e=0, nC_e=0, nD_e=0; 
 
   ///////////////////
   //    CANVAS     //
@@ -158,7 +158,7 @@ void analyzeABCD(){
   const Double_t yBinsU[2] = {borderh2a, borderh2b};
   
  
-  int fitNum = 10; //number of bins in xL region, used to fit ratio
+  int fitNum = 3; //number of bins in xL region, used to fit ratio
   float xWidthL = (borderv1b-borderv1a)/fitNum;
   Double_t xBinsL[fitNum+1];
   cout << "xBinsL: ";
@@ -168,7 +168,7 @@ void analyzeABCD(){
   }
   cout << endl;
 
-  int extendedNum = 20; //number of bins in xU region, used to calculate nC
+  int extendedNum = 6; //number of bins in xU region, used to calculate nC
   float xWidthU = (borderv2b-borderv2a)/extendedNum;
   Double_t xBinsU[extendedNum+1]; 
   cout << "xBinsU: ";
@@ -183,6 +183,10 @@ void analyzeABCD(){
   TH2F* histB = new TH2F("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
   TH2F* histC = new TH2F("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2F* histD = new TH2F("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
+  histA->Sumw2();
+  histB->Sumw2();
+  histC->Sumw2();
+  histD->Sumw2();
   TAxis *xaxA = histA->GetXaxis();
   TAxis *xaxB = histB->GetXaxis();
   TAxis *xaxC = histC->GetXaxis();
@@ -214,26 +218,30 @@ void analyzeABCD(){
   
   float x = -1;
   float y = -1;
+  float weight = -1;
   tree1->SetBranchAddress("MET",&x);
   tree1->SetBranchAddress("minDPhi",&y);
+  tree1->SetBranchAddress("weight",&weight);
   
-  float weight = 1.0;
-
   for(int i = 1; i<= numEntries; i++){ //loop over tree
     tree1->GetEvent(i);
     
     //COUNT nA, nB, nC, nD
     if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
       nA+=weight;
+      nA_e+=weight*weight;
     }
     else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
       nD+=weight;
+      nD_e+=weight*weight;
     }
     else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
       nB+=weight;
+      nB_e+=weight*weight;
     }
     else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh2a) && (y<borderh2b) ){
       nC+=weight;
+      nC_e +=weight*weight;
     }
     else {
       cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
@@ -303,8 +311,8 @@ void analyzeABCD(){
   TAxis* yaxG0 = gr0->GetYaxis();
   xaxG0->SetTitle(xTitle);
   yaxG0->SetTitle(yTitle);
- gr0->SetMarkerStyle(4);  
- gr0->Draw("AP");
+  gr0->SetMarkerStyle(4);  
+  gr0->Draw("AP");
  
   TLine* line_gr0a = new TLine(borderv1a,yaxG0->GetXmin(),borderv1a, yaxG0->GetXmax());
   TLine* line_gr0b = new TLine(borderv1b,yaxG0->GetXmin(),borderv1b, yaxG0->GetXmax());
@@ -314,7 +322,7 @@ void analyzeABCD(){
   line_gr0b->SetLineWidth(3);
   line_gr0a->Draw();
   line_gr0b->Draw();
-  C_ratio->Print(filename+"_"+treename+"_ratio.pdf");
+ 
 
   ////////////////////////
   //GRAPH FOR FIT REGION//
@@ -324,12 +332,18 @@ void analyzeABCD(){
   float gr1y[fitNum];
   float gr1x_error[fitNum];
   float gr1y_error[fitNum];
+  float fitmax = borderv1b;
   for(int i =0; i<fitNum; i++){
+    if( (histB->GetBinContent(i+1,1)/histA->GetBinContent(i+1,1) == 0) ){
+      fitmax =  xaxA->GetBinCenter(i+1);
+    }
     gr1x[i] = xaxA->GetBinCenter(i+1);
     gr1x_error[i] = 0;
     gr1y[i] = histB->GetBinContent(i+1,1)/histA->GetBinContent(i+1,1);
+    
     gr1y_error[i] = gr1y[i]*sqrt((histB->GetBinError(i+1,1)/histB->GetBinContent(i+1,1))*(histB->GetBinError(i+1,1)/histB->GetBinContent(i+1,1))+
-				 (histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1))*(histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1)));
+    			 (histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1))*(histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1)));
+   
     cout << "ratio: (" << gr1x[i] << " +- " << gr1x_error[i] <<", " << gr1y[i] << " +- " << gr1y_error[i] << ")" << endl;
   }
   TGraphErrors * gr1 = new TGraphErrors(fitNum, gr1x, gr1y, gr1x_error, gr1y_error);
@@ -344,8 +358,9 @@ void analyzeABCD(){
   //////////////////////////////////
   ////////////LINEAR FIT////////////
   //////////////////////////////////
-  TF1 *flin1 = new TF1("flin1", "[0]+[1]*x",borderv1a, borderv1b );
-  flin1->SetParameters(2.0,-.02);
+  TF1 *flin1 = new TF1("flin1", "[0]+[1]*x",borderv1a, fitmax );
+  //flin1->SetParameters(2.0,-.02);
+  flin1->SetParameters(4.0,-.035);
   gr1->Fit("flin1","R");
   flin1->Draw("SAME");
   Double_t par[2];
@@ -355,7 +370,24 @@ void analyzeABCD(){
   TF1 *flin1b = new TF1("flin1", "[0]+[1]*x", borderv1a, borderv2b);
   flin1b->SetParameters(par[0],par[1]);
   
-  TPaveText *pt = new TPaveText(.3, .8, .88, .88, "NDC");
+
+
+  ////////////////////////////////////////////
+  /////////////EXPONENTIAL FIT////////////////
+  ////////////////////////////////////////////
+  TF1 *fexp1 = new TF1("fexp1", "[0]*exp([1]*x)", borderv1a, borderv1b);
+  //fexp1->SetParameters(2.0, -1.0/50.0);
+  fexp1->SetParameters(4.0, -1.0/20.0);
+ 
+  gr1->Fit("fexp1", "R");
+  fexp1->Draw("SAME");
+  Double_t par_exp[2];
+  fexp1->GetParameters(par_exp);
+  
+  TF1 *fexp1b = new TF1("fexp1", "[0]*exp([1]*x)", borderv1a, borderv2b);
+  fexp1b->SetParameters(par_exp[0], par_exp[1], par_exp[2]);
+
+  TPaveText *pt = new TPaveText(.25, .8, .88, .88, "NDC");
   TString par0 = "";
   par0+=par[0];
   TString par1 = "";
@@ -365,26 +397,25 @@ void analyzeABCD(){
   pt->SetTextAlign(12);
   pt->AddText( "Fit result: ratio = "+par0+" + "+par1+"*x");
   pt->Draw();
-  C_fit->Print(filename+"_"+treename+"_fit.pdf");
-
-  ////////////////////////////////////////////
-  /////////////EXPONENTIAL FIT////////////////
-  ////////////////////////////////////////////
-  TF1 *fexp1 = new TF1("fexp1", "[0]*exp([1]*x)", borderv1a, borderv1b);
-  fexp1->SetParameters(2.0, -1.0/50.0);
-  gr1->Fit("fexp1", "R");
-  fexp1->Draw("SAME");
-  Double_t par_exp[2];
-  fexp1->GetParameters(par_exp);
+  TPaveText *pt_exp = new TPaveText(.25, .72, .88, .80, "NDC");
+  TString par0_exp = "";
+  par0_exp+=par_exp[0];
+  TString par1_exp = "";
+  par1_exp+=par_exp[1];
+  pt_exp->SetFillColor(0);
+  pt_exp->SetTextSize(0.03);
+  pt_exp->SetTextAlign(12);
+  pt_exp->AddText( "Fit result: ratio = "+par0+" *exp( "+par1+"*x)");
+  pt_exp->Draw();
   
-  TF1 *fexp1b = new TF1("fexp1", "[0]*exp([1]*x)", borderv1a, borderv2b);
-  fexp1b->SetParameters(par_exp[0], par_exp[1], par_exp[2]);
+  C_fit->Print(filename+"_"+treename+"_fit.pdf");
 
   //add fit to C_ratio
   C_ratio->cd();
   flin1b->Draw("SAME");
   fexp1b->Draw("SAME");
-  
+  C_ratio->Print(filename+"_"+treename+"_ratio.pdf");
+
   ////////////////////////////////////////////////
   ///Calculate linear estimate with uncertainty///
   ////////////////////////////////////////////////
@@ -425,17 +456,18 @@ void analyzeABCD(){
   //CLASSICAL ESTIMATE//
   //////////////////////
   float classicalEstimate = nD*nB/nA;
-  float nA_error = sqrt(nA);
-  float nB_error = sqrt(nB);
-  float nD_error = sqrt(nD);
+  float nA_error = sqrt(nA_e);
+  float nB_error = sqrt(nB_e);
+  float nC_error = sqrt(nC_e);
+  float nD_error = sqrt(nD_e);
   float classicalEstimate_error =  classicalEstimate * sqrt( (nA_error/nA)*(nA_error/nA)+(nB_error/nB)*(nB_error/nB)+(nD_error/nD)*(nD_error/nD) );
   /////////////////////////////
 
   
-  cout << "nA: " << nA << endl;
-  cout << "nB: " << nB << endl;
-  cout << "nC: " << nC << endl;
-  cout << "nD: " << nD << endl;
+  cout << "nA: " << nA << " +- " << nA_error << endl;
+  cout << "nB: " << nB << " +- " << nB_error << endl;
+  cout << "nD: " << nD << " +- " << nD_error << endl;
+  cout << "nC: " << nC << " +- " << nC_error << endl;
   cout << "classical estimate for nC: " << classicalEstimate << " +- " << classicalEstimate_error << endl;
   cout << "linear extended estimate for nC: " << extendedEstimate << " +- " << ext_error << endl;
   cout << "exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
