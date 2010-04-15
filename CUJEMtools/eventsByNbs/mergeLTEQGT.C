@@ -12,7 +12,7 @@ using namespace std;
 void mergeLTEQGT()
 {
 
-  TString baseName = "plots_LM0_nBJets";
+  TString baseName = "plots_QCD_Pt170_nBJets";
 
   vector<TString> names;
   names.push_back(baseName+"LT2.root");

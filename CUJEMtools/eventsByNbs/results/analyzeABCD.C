@@ -37,6 +37,7 @@ void analyzeABCD( ){
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
 
+  TString extension = "20100313_results/";
   TString filename = "plots_QCD_Pt80_LM1_merged";
   TString treename = "T_minDPhi_MET"; 
   TString histname = "H_minDPhi_MET";
@@ -76,7 +77,7 @@ void analyzeABCD( ){
   /////////////////////////////
  
   //plot 2d histogram for visual purposes
-  TFile* file1 = TFile::Open(filename+".root","READ");
+  TFile* file1 = TFile::Open(extension+filename+".root","READ");
   TH2F* hist1 = (TH2F*) gDirectory->Get(histname);
   TAxis* xax =  hist1->GetXaxis();
   TAxis* yax =  hist1->GetYaxis();
