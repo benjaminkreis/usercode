@@ -306,7 +306,6 @@ void eventLoop_jets_ABCD(TString reqNumBJets = ""){
 	float jetpt1=0, jetpt2=0, jetpt3=0, jetpt4=0;
 	JetIter jet1= jets.end(), jet2= jets.end(), jet3= jets.end(), jet4= jets.end();
 
-
 	for( JetIter jet = jets.begin(); jet != jets.end(); ++jet ) {
 	 
 	  //Apply jet cuts
@@ -340,33 +339,34 @@ void eventLoop_jets_ABCD(TString reqNumBJets = ""){
 	    else if(jet->pt > jetpt4){
 	      jet4 = jet;
 	      jetpt4 = jet->pt;
-	    }//end find leading jets
-	    
-	    if(jetpt1>180 && jetpt2>150 && jetpt3>50){//cut0
-	      
-	      //min delta phi is calculated from leading three jets
-	      float dPhi1 = acos(cos(fabs((h_met->front()).phi - jet1->phi)));
-	      float dPhi2 = acos(cos(fabs((h_met->front()).phi - jet2->phi)));
-	      float dPhi3 = acos(cos(fabs((h_met->front()).phi - jet3->phi)));
-	      float dPhiMin=-1.0;
-	      if(dPhi1<=dPhi2 && dPhi1<=dPhi3){ dPhiMin = dPhi1;}
-	      else if(dPhi2<=dPhi1 && dPhi2<=dPhi3){ dPhiMin = dPhi2;}
-	      else { dPhiMin = dPhi3; }
-	      
-	      //fill histogram
-	      histo.find2("H_minDPhi_MET")->Fill(metPT,dPhiMin);
-
-	      //fill tree
-	      tree1_minDPhi = dPhiMin;
-	      tree1_MET = metPT;
-	      tree1_njets = njets;
-	      tree1->Fill();
-
-	    }//cut 0
-	    
+	    }
+	    //end find leading jets
+	 
 	  }//end jet cuts
-	  
 	}//end loop over jets
+	  
+	if(jetpt1>180 && jetpt2>150 && jetpt3>50){//cut0
+	    
+	  //min delta phi is calculated from leading three jets
+	  float dPhi1 = acos(cos(fabs((h_met->front()).phi - jet1->phi)));
+	  float dPhi2 = acos(cos(fabs((h_met->front()).phi - jet2->phi)));
+	  float dPhi3 = acos(cos(fabs((h_met->front()).phi - jet3->phi)));
+	  float dPhiMin=-1.0;
+	  if(dPhi1<=dPhi2 && dPhi1<=dPhi3){ dPhiMin = dPhi1;}
+	  else if(dPhi2<=dPhi1 && dPhi2<=dPhi3){ dPhiMin = dPhi2;}
+	  else { dPhiMin = dPhi3; }
+	  
+	  //fill histogram
+	  histo.find2("H_minDPhi_MET")->Fill(metPT,dPhiMin);
+	  
+	  //fill tree
+	  tree1_minDPhi = dPhiMin;
+	  tree1_MET = metPT;
+	  tree1_njets = njets;
+	  tree1->Fill();
+	  
+	}//cut 0
+	  
       }//correct number of bjets      
     }//end try
     catch(std::exception& e) {
@@ -374,7 +374,7 @@ void eventLoop_jets_ABCD(TString reqNumBJets = ""){
       continue;
     }
     
-    //if(cnt == 10) break;//for debugging purposes
+    // if(cnt == 10) break;//for debugging purposes
     
   }//end loop over events
   cout << "event count: " << cnt << endl;
