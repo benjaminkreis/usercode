@@ -37,8 +37,8 @@ void analyzeABCD( ){
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
 
-  TString extension = "20100313_results/";
-  TString filename = "plots_QCD_Pt80_LM1_merged";
+  TString extension = "20100419_results/";
+  TString filename = "plots_QCD_Pt170_nBJetsGT2";
   TString treename = "T_minDPhi_MET"; 
   TString histname = "H_minDPhi_MET";
   
@@ -152,7 +152,7 @@ void analyzeABCD( ){
   lineDt->Draw();
   lineDl->Draw();
   lineDr->Draw();
-  C_hist1->Print(filename+"_"+treename+"_hist1.pdf");
+  C_hist1->Print(extension+filename+"_"+treename+"_hist1.pdf");
 
   //prep for histograms A, B, C, D
   const Double_t yBinsL[2] = {borderh1a, borderh1b};
@@ -273,7 +273,7 @@ void analyzeABCD( ){
   gPad->SetLeftMargin(.14);
   gPad->Modified();
   histD->Draw("COLZ");
-  C_ABCD->Print(filename+"_"+treename+"_ABCD.pdf");
+  C_ABCD->Print(extension+filename+"_"+treename+"_ABCD.pdf");
 
   /////////////////////////////////
   //EXTENDED NORMALIZATION METHOD//
@@ -409,13 +409,13 @@ void analyzeABCD( ){
   pt_exp->AddText( "Fit result: ratio = "+par0+" *exp( "+par1+"*x)");
   pt_exp->Draw();
   
-  C_fit->Print(filename+"_"+treename+"_fit.pdf");
+  C_fit->Print(extension+filename+"_"+treename+"_fit.pdf");
 
   //add fit to C_ratio
   C_ratio->cd();
   flin1b->Draw("SAME");
   fexp1b->Draw("SAME");
-  C_ratio->Print(filename+"_"+treename+"_ratio.pdf");
+  C_ratio->Print(extension+filename+"_"+treename+"_ratio.pdf");
 
   ////////////////////////////////////////////////
   ///Calculate linear estimate with uncertainty///
