@@ -126,6 +126,21 @@ void selectData(TString sample, TString maxindex="") {
 
 }
 
+//+++PASS BJET CUTS+++//
+bool passBTagCuts(JetIter jet){
+  if( jet->pt < 30 ) return false;
+  if( jet->btagSecVertex < 1.74 ) return false;
+  if( fabs(jet->eta) > 2.4 ) return false;
+  return true; 
+}//end passBTagCuts
+
+bool passMCBJetCuts(JetIter jet){
+  if((jet->genPartonId!=5) && (jet->genPartonId!=-5)) return false;
+  if( jet->pt < 30 ) return false;
+  if( fabs(jet->eta) > 2.4 ) return false;
+  return true; 
+}//end passMCBJetCuts
+
 //+++PASS JET CUTS+++//
 bool passJetCuts(JetIter jet){
   if( jet->pt < 30 ) return false;
@@ -148,7 +163,7 @@ double getDeltaPhi(JetIter j1, JetIter j2) {
 
 
 //+++MAIN FUNCTION+++//
-void eventLoop_ABCD(){
+void eventLoop_MC(){
   
   double pi = 4*atan(1.0);
   float borderv2a = 150.0;
@@ -156,6 +171,12 @@ void eventLoop_ABCD(){
   float borderh2a = 0.3;
   float borderh2b = pi;
 
+  //COUNTERS
+  float P2Tot = 0.0;
+  float Pge2Tot = 0.0;
+  float Pge3Tot = 0.0;
+  float nSignalTot = 0.0;
+    
   //INPUT FILES
   // fileNames.push_back(); //need to add filename
   fwlite::ChainEvent ev(fileNames);
@@ -181,12 +202,18 @@ void eventLoop_ABCD(){
 
 
   //DECLARE TREES//
-  // TTree *tree1 = new TTree("T_minDPhi_MET", "min Delta Phi and MET");
-  // float tree1_minDPhi;
-  // float tree1_MET;
-  // tree1->Branch("minDPhi", &tree1_minDPhi, "tree1_minDPhi/F");
-  // tree1->Branch("MET", &tree1_MET, "tree1_MET/F");
-  
+  TTree *tree1 = new TTree("T_prob", "probabilities");
+  float tree1_P2;
+  float tree1_Pge2;
+  float tree1_Pge3;
+  float tree1_nbtags;
+  float tree1_ngoodMCbjets;
+  tree1->Branch("Probability for exactly 2 tags", &tree1_P2, "tree1_P2/F");
+  tree1->Branch("Probability for 2 or more tags", &tree1_Pge2, "tree1_Pge2/F");
+  tree1->Branch("Probability for 3 or more tags", &tree1_Pge3, "tree1_Pge3/F");
+  tree1->Branch("ngoodMCbjets", &tree1_ngoodMCbjets, "tree1_ngoodMCbjets/F");
+  tree1->Branch("nbtags", &tree1_nbtags, "tree1_nbtags/F");
+    
 
   //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -265,13 +292,23 @@ void eventLoop_ABCD(){
       //LOOP OVER JETS
       float jetpt1=0, jetpt2=0, jetpt3=0, jetpt4=0;
       JetIter jet1= jets.end(), jet2= jets.end(), jet3= jets.end(), jet4= jets.end();
-      
-      
+      float nbtags = 0;
+      float ngoodMCbjets = 0;
+
+      vector<float> jetEff;
+
       for( JetIter jet = jets.begin(); jet != jets.end(); ++jet ) {
 	
 	//Apply jet cuts
 	if( passJetCuts(jet) ){
+	
+	  if( passBTagCuts(jet) ) nbtags+=1.0; 
+	  if( passMCBJetCuts(jet) ) ngoodMCbjets+=1.0; 
 	  
+	  float thisJetEff = 0.1; // in future should come from some data-driven technique
+
+	  jetEff.push_back(thisJetEff);
+
 	  //Find leading jets
 	  if(jet->pt > jetpt1) {
 	    jet4 = jet3;
@@ -307,8 +344,9 @@ void eventLoop_ABCD(){
 	
       }//end loop over jets
       
-      
       if(jetpt1>180 && jetpt2>150 && jetpt3>50){//cut0
+	
+	assert(jetEff.size()>2);
 	
 	//min delta phi is calculated from leading three jets
 	float dPhi1 = acos(cos(fabs((h_met->front()).phi - jet1->phi)));
@@ -322,8 +360,65 @@ void eventLoop_ABCD(){
 	
 	//IF IN SIGNAL REGION - calculate probability that event passes b-tag cut
 	if( (metPT>=borderv2a) && (metPT<borderv2b) && (dPhiMin>=borderh2a) && (dPhiMin<borderh2b) ){
+
+	  nSignalTot++;
 	  
-	}
+	  // calculate probability for 0 tags
+	  float P0=1;
+	  for(int i = 0; i<jetEff.size(); i++){
+	    P0=P0*(1-jetEff[i]);
+	  }
+	  
+	  // calculate probability for exactly 1 tag
+	  float P1=1;
+	  for(int i = 0; i<jetEff.size(); i++){
+	   
+	    //second part
+	    float P1a = 1;
+	    for(int j = 0; j<jetEff.size(); j++){
+	      if(j!=i){
+		P1a=P1a*(1-jetEff[j]);
+	      }
+	    }
+	    
+	    P1+=jetEff[i]*P1a;
+	  }
+	  
+	  // calculate probability for exactly 2 tags
+	  float P2=1;
+	  for(int i=0; i<jetEff.size(); i++){
+	    for(int j=0; j<jetEff.size(); j++){
+	     
+	      float P2a=1;
+	      for(int k=0; k<jetEff.size(); k++){
+		if(k!=i && k!=j){
+		  P2a=P2a*(1-jetEff[k]);
+		}//if
+	      }//k loop
+	      
+	      P2+=jetEff[i]*jetEff[j]*P2a;
+	      
+	    }//j loop
+	  }// i loop
+
+
+	  // calculate probability for >= 2 tags and >=3 tags
+	  float Pge2, Pge3;
+	  Pge2 = 1 - P1 - P0;
+	  Pge3 = 1 - P2 - P1 - P0;
+	  
+	  tree1_P2=P2;
+	  tree1_Pge2 = Pge2;
+	  tree1_Pge3 = Pge3;
+	  tree1_ngoodMCbjets = ngoodMCbjets;
+	  tree1_nbtags = nbtags;
+	  tree1->Fill();
+
+	  P2Tot+=P2;
+	  Pge2Tot+=Pge2;
+	  Pge3Tot+=Pge3;
+
+	}// end if in signal region
 	
       }//cut 0
       
@@ -334,13 +429,18 @@ void eventLoop_ABCD(){
       continue;
     }
     
-    if(cnt == 10) break;//for debugging purposes
+    // if(cnt == 100000) break;//for debugging purposes
     
   }//end loop over events
-  cout << "event count: " << cnt << endl;
+  cout << "eventCount: " << cnt << endl;
+  cout << "nSignalTot: " << nSignalTot << endl;
+  cout << "P2Tot: " << P2Tot << endl;
+  cout << "Pge2Tot: " << Pge2Tot << endl;
+  cout << "Pge3Tot: " << Pge3Tot << endl;
+
   tree1->Print();
   fout.Write();
   fout.Close();
-}//end eventLoop_jets_ABCD()
+}//end eventLoop_MC()
 
 
