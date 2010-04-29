@@ -40,7 +40,7 @@ void eventLoop::Loop()
    
   if (fChain == 0) return;
   
-   Long64_t nentries = fChain->GetEntriesFast();
+   Long64_t nentries = fChain->GetEntries();
    Long64_t nbytes = 0, nb = 0;
 
    TFile finweight("weight_QCD.root");
