@@ -257,7 +257,7 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     float jet1phi = jet1->phi();
     float jet2phi = jet2->phi();
     float jet3phi = jet3->phi();
-    float myMHTphi = atan(myMHTy/myMHTx);
+    float myMHTphi = atan2(myMHTy,myMHTx);
     
     float jet1dPhi = acos(cos(jet1phi-myMHTphi));
     float jet2dPhi = acos(cos(jet2phi-myMHTphi));
