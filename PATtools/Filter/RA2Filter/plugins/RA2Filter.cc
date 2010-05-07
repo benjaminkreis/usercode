@@ -225,8 +225,8 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	}
 		
 	// add jet to MHT estimate
-	myMHTx+=jet->px();
-	myMHTy+=jet->py();
+	myMHTx+=-jet->px();
+	myMHTy+=-jet->py();
 	
 	//tight pT and eta cut
 	if( jet->pt()>50.0 && fabs(jet->eta())<2.5){
@@ -253,7 +253,7 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   //jet-phi stuff
   bool pass7 = false;
-  if(nLooseJets>=3){
+  if(nLooseJets>=3){ //could also check that there are three tight jets (bool pass3) since it is a previous cut and it is more restrictive
     float jet1phi = jet1->phi();
     float jet2phi = jet2->phi();
     float jet3phi = jet3->phi();
