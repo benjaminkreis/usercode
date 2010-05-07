@@ -309,7 +309,7 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     if(electron->gsfTrack().isAvailable()){
       float e_d0bs =  -1.0 * (electron->gsfTrack()->dxy(beamSpotPoint));
       float e_iso =  (electron->dr03TkSumPt()+electron->ecalIso()+electron->hcalIso())/electron->pt();
-      if( (electron->electronID("eidLoose")) && (e_d0bs<0.2) && (e_iso<0.5) && (electron->pt()>15)  ) isolatedElectron = true;
+      if( (electron->electronID("eidLoose")) && (fabs(e_d0bs)<0.2) && (e_iso<0.5) && (electron->pt()>15)  ) isolatedElectron = true;
     }//end gsfTrack available check
   }//end electron loop
 
