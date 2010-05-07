@@ -3,6 +3,7 @@
 
 // system include files
 #include <memory>
+#include <cmath>
 #include "assert.h"
 
 // user include files
