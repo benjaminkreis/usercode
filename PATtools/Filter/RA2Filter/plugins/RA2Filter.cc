@@ -6,11 +6,6 @@
 #include <cmath>
 #include "assert.h"
 
-//include root
-#include "TTree.h"
-#include "TFile.h"
-
-
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDFilter.h"
@@ -67,15 +62,6 @@ private:
   edm::InputTag triggerResultsTag_;
   edm::InputTag pvSrc_;
   edm::InputTag bsSrc_;
-
-  //Tree
-  TTree *tree1_;
-  float tree1_minDPhi_;
-  float tree1_MHT_;
-  float tree1_njets_;
-  float tree1_PtHat_;
-
-  TFile *fout_; 
 
 };
 
@@ -151,12 +137,12 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   edm::Handle<GenEventInfoProduct> genEvtInfo;
   bool hasGenEventInfo = iEvent.getByLabel("generator", genEvtInfo);
-
-   float pthat;
-   if(hasGenEventInfo){ pthat = ( genEvtInfo->hasBinningValues() ? (genEvtInfo->binningValues())[0] : 0.0);}
-   else {pthat = -1.0;}
-
- 
+  
+  float pthat;
+  if(hasGenEventInfo){ pthat = ( genEvtInfo->hasBinningValues() ? (genEvtInfo->binningValues())[0] : 0.0);}
+  else {pthat = -1.0;}
+  
+  
   
   //Trigger Cut/////////////////////////////////////////////
   //////////////////////////////////////////////////////////
@@ -206,8 +192,6 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   //Jet Stuff///////////////////////////////////////////////
   //////////////////////////////////////////////////////////
-  float dPhiMin = -1.0; 
-
   int nTightJets = 0;
   int nLooseJets = 0;
   
@@ -216,9 +200,6 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   float jetpt1=0, jetpt2=0, jetpt3=0;
   edm::View<pat::Jet>::const_iterator jet1=jets->end(), jet2=jets->end(),jet3=jets->end();
-  
-  float jetTpt1=0, jetTpt2=0, jetTpt3=0;
-  edm::View<pat::Jet>::const_iterator jetT1=jets->end(), jetT2=jets->end(),jetT3=jets->end();
   
   for(edm::View<pat::Jet>::const_iterator jet=jets->begin(); jet!=jets->end(); ++jet){
     
@@ -266,26 +247,6 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  
 	  nTightJets++;
 	  
-	  //find leading 3 jets
-	  if(jet->pt() > jetTpt1) {
-	    jetT3 = jetT2;
-	    jetTpt3 = jetTpt2;
-	    jetT2 = jetT1;
-	    jetTpt2 = jetTpt1;
-	    jetT1 = jet;
-	    jetTpt1 = jet->pt();
-	  }
-	  else if(jet->pt() > jetTpt2){
-	    jetT3 = jetT2;
-	    jetTpt3 = jetTpt2;
-	    jetT2 = jet;
-	    jetTpt2 = jet->pt();
-	  }
-	  else if(jet->pt() > jetTpt3){
-	    jetT3 = jet;
-	    jetTpt3 = jet->pt();
-	  }	  
-	  	  
 	  //add jet to HT estimate
 	  myHT += jet->pt();
 	  
@@ -306,7 +267,7 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   //RA2 jet-phi stuff
   bool pass7 = false;
-  if(nLooseJets>=3){ //could also check that there are three tight jets (bool pass3) since it is a previous cut and it is more restrictive
+  if(nLooseJets>=3){ 
     float jet1phi = jet1->phi();
     float jet2phi = jet2->phi();
     float jet3phi = jet3->phi();
@@ -318,27 +279,6 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
     if(jet1dPhi>0.3 && jet2dPhi>0.5  && jet3dPhi>0.3) pass7 = true;
   }
- 
-
-  //ABCD jet-phi stuff
-  if(nTightJets>=3){
-    float jet1phi = jetT1->phi();
-    float jet2phi = jetT2->phi();
-    float jet3phi = jetT3->phi();
-    float myMHTphi = atan2(myMHTy,myMHTx);
-    
-    float jet1dPhi = acos(cos(jet1phi-myMHTphi));
-    float jet2dPhi = acos(cos(jet2phi-myMHTphi));
-    float jet3dPhi = acos(cos(jet3phi-myMHTphi));
- 
-    
-    //mins
-    if(jet1dPhi <= jet2dPhi && jet1dPhi <= jet3dPhi){ dPhiMin = jet1dPhi; }
-    else if(jet2dPhi <= jet1dPhi && jet2dPhi <= jet3dPhi){ dPhiMin = jet2dPhi; }
-    else if(jet3dPhi <= jet1dPhi && jet3dPhi <= jet2dPhi){ dPhiMin = jet3dPhi; }
-    else{ assert(false); }
-  }
-  
   //end Jet Stuff//////////////////////////////////////////  
 
   // beam spot stuff //////////////////////////////////////
@@ -407,25 +347,16 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	nEvPass3_++;
 	if(pass4){
 	  nEvPass4_++;
-	  // if(pass5){
+	  //if(pass5){ // MHT cut
 	  if(true){
 	    nEvPass5_++;
 	    if(pass6){
 	      nEvPass6_++;
-
-	      //fill ABCD tree
-	      tree1_minDPhi_ = dPhiMin;
-	      tree1_MHT_= myMHT;
-	      tree1_njets_ = nTightJets;
-	      tree1_PtHat_ = pthat;
-	      tree1_->Fill();
-	      std::cout << "FILL" << std::endl;
-
-	      if(pass7){
+	      return true;
+	      //if(pass7){ // angular cuts
+	      if(true){
 		nEvPass7_++;
-		
-		//	return true;
-
+		//return true;
 	      }//end pass7
 	    }//end pass6
 	  }//end pass5
@@ -435,7 +366,7 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   }//end pass1
   
   return false;
-
+  
 }
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -450,26 +381,11 @@ RA2Filter::beginJob()
   nEvPass5_ = 0;
   nEvPass6_ = 0;
   nEvPass7_ = 0;
-
-  //  fout_ = new TFile("treeOut.root","RECREATE");
-
-  edm::Service<TFileService> fs;
-
-  tree1_ = fs->make<TTree>("T_ABCD", "ABCD TREE");
-  // tree1_ = new TTree("T_ABCD", "ABCD Tree");
-  tree1_->Branch("minDPhi", &tree1_minDPhi_, "tree1_minDPhi_/F");
-  tree1_->Branch("MHT", &tree1_MHT_, "tree1_MHT_/F");
-  tree1_->Branch("njets", &tree1_njets_, "tree1_njets_/F");
-  tree1_->Branch("PtHat", &tree1_PtHat_, "tree1_PtHat_/F");
-
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 RA2Filter::endJob() {
-  //  fout_->Write();
-  //  fout_->Close();
-
   std::cout << "\n2010 RA2CUT FLOW:" << std::endl;
   std::cout << "nEvPass0: " << nEvents_ << " +- " << sqrt(nEvents_) <<std::endl;
   std::cout << "nEvPass1: " << nEvPass1_ << " +- " << sqrt(nEvPass1_) << ", " << (float) nEvPass1_/nEvents_*100.0 << " %" << std::endl;
