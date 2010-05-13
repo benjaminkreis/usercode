@@ -13,8 +13,11 @@ process.source = cms.Source("PoolSource",
 )
 
 process.demo = cms.EDAnalyzer('FillABCD',
-                              
+jetSrc      = cms.untracked.InputTag("cleanLayer1Jets")                              
 )
+
+
+process.TFileService = cms.Service("TFileService",fileName = cms.string('T_ABCD.root') )
 
 
 process.p = cms.Path(process.demo)

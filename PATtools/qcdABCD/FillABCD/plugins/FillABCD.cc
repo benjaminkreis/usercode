@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Thu May 13 06:03:28 CEST 2010
-// $Id$
+// $Id: FillABCD.cc,v 1.1 2010/05/13 04:35:19 kreis Exp $
 //
 //
 
@@ -236,8 +236,7 @@ FillABCD::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    tree1_qScale_ = qScale;
    tree1_PtHat_ = pthat;
    tree1_->Fill();
-   std::cout << "FILL" << std::endl;
-
+  
    //end Jet Stuff//////////////////////////////////////////  
 
 
