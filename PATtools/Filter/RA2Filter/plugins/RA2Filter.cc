@@ -120,7 +120,7 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   // using namespace edm;
   nEvents_++;
-
+ 
   // get electron collection
   edm::Handle<edm::View<pat::Electron> > electrons;
   iEvent.getByLabel(elecSrc_,electrons);
@@ -150,11 +150,13 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   iEvent.getByLabel(bsSrc_, bsHandle);
 
   edm::Handle<GenEventInfoProduct> genEvtInfo;
-  //bool hasGenEvtInfo = iEvent.getByLabel("generator", genEvtInfo);
+  bool hasGenEventInfo = iEvent.getByLabel("generator", genEvtInfo);
 
+   float pthat;
+   if(hasGenEventInfo){ pthat = ( genEvtInfo->hasBinningValues() ? (genEvtInfo->binningValues())[0] : 0.0);}
+   else {pthat = -1.0;}
 
-  float pthat = ( genEvtInfo->hasBinningValues() ? (genEvtInfo->binningValues())[0] : 0.0);
-
+ 
   
   //Trigger Cut/////////////////////////////////////////////
   //////////////////////////////////////////////////////////
@@ -391,7 +393,7 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   if( !isolatedMuon && !isolatedElectron) pass6=true;
   ////////////////////////////////////////////////////////
 
-
+  
 
   ///////////////////////////
   // C    T        L    W  //
@@ -405,7 +407,8 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	nEvPass3_++;
 	if(pass4){
 	  nEvPass4_++;
-	  if(pass5){
+	  // if(pass5){
+	  if(true){
 	    nEvPass5_++;
 	    if(pass6){
 	      nEvPass6_++;
@@ -420,7 +423,9 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	      if(pass7){
 		nEvPass7_++;
-		return true;
+		
+		//	return true;
+
 	      }//end pass7
 	    }//end pass6
 	  }//end pass5
