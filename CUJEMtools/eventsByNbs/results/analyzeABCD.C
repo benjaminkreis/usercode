@@ -35,8 +35,11 @@ using namespace std;
 void analyzeABCD( ){
   
   gROOT->SetStyle("Plain");
-  gStyle->SetPalette(1);
+  gStyle->SetPalette(61);
   gStyle->SetOptStat("e");
+
+  int fitNum = 4; //number of bins in xL region, used to fit ratio
+  int extendedNum = 6; //number of bins in xR region, used in extrapolation
 
   TString extension = "rfio:/castor/cern.ch/user/k/kreis/CUSusy/RA2/ABCD/trees/";
   TString filename = "T_ABCD_QCD_Pt80";
@@ -81,8 +84,113 @@ void analyzeABCD( ){
   //plot 2d histogram for visual purposes
   TFile* file1 = TFile::Open(extension+filename+".root","READ");
  
-  /*
-  TH2F* hist1 = (TH2F*) gDirectory->Get(histname);
+  
+  //prep for histograms A, B, C, D
+  const Double_t yBinsL[2] = {borderh1a, borderh1b};
+  const Double_t yBinsU[2] = {borderh2a, borderh2b};
+  
+ 
+ 
+  float xWidthL = (borderv1b-borderv1a)/fitNum;
+  Double_t xBinsL[fitNum+1];
+  cout << "xBinsL: ";
+  for(int i = 0; i<=fitNum; i++){
+    xBinsL[i]=borderv1a+i*xWidthL;
+    cout << xBinsL[i] << " ";
+  }
+  cout << endl;
+
+
+  float xWidthU = (borderv2b-borderv2a)/extendedNum;
+  Double_t xBinsU[extendedNum+1]; 
+  cout << "xBinsU: ";
+  for(int i = 0; i<=extendedNum; i++){
+    xBinsU[i]=borderv2a+i*xWidthU;
+    cout << xBinsU[i] << " ";
+  }
+  cout << endl;
+  
+  // histogram for A, B, C, D
+  TH2F* hist1 = new TH2F("H_ABCD", "ABCD", 100,0,1000,160,0,pi);
+  TH2F* histA = new TH2F("H_A", "Region A", fitNum, xBinsL, 1, yBinsL);
+  TH2F* histB = new TH2F("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
+  TH2F* histC = new TH2F("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
+  TH2F* histD = new TH2F("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
+  histA->Sumw2();
+  histB->Sumw2();
+  histC->Sumw2();
+  histD->Sumw2();
+  TAxis *xaxA = histA->GetXaxis();
+  TAxis *xaxB = histB->GetXaxis();
+  TAxis *xaxC = histC->GetXaxis();
+  TAxis *xaxD = histD->GetXaxis();
+  TAxis *yaxA = histA->GetYaxis();
+  TAxis *yaxB = histB->GetYaxis();
+  TAxis *yaxC = histC->GetYaxis();
+  TAxis *yaxD = histD->GetYaxis();
+  xaxA->SetTitle(xTitle);
+  xaxB->SetTitle(xTitle);
+  xaxC->SetTitle(xTitle);
+  xaxD->SetTitle(xTitle);
+  yaxA->SetTitleOffset(1.4);
+  yaxB->SetTitleOffset(1.15);
+  yaxC->SetTitleOffset(1.15);
+  yaxD->SetTitleOffset(1.4);
+  yaxA->SetTitle(yTitle);
+  yaxB->SetTitle(yTitle);
+  yaxC->SetTitle(yTitle);
+  yaxD->SetTitle(yTitle);
+  
+  //////////////////
+  //LOOP over TREE//
+  //////////////////
+
+  TTree* tree1 = (TTree*) gDirectory->Get(treeextension+"/"+treename);
+  int numEntries = tree1->GetEntries();
+  cout << "numEntries: " << numEntries << endl;
+  
+  float x = -1;
+  float y = -1;
+  float weight = 1;
+  tree1->SetBranchAddress("MHT",&x);
+  tree1->SetBranchAddress("minDPhi",&y);
+  //tree1->SetBranchAddress("weight",&weight);
+  
+  for(int i = 1; i<= numEntries; i++){ //loop over tree
+    tree1->GetEvent(i);
+    
+    //COUNT nA, nB, nC, nD
+    if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
+      nA+=weight;
+      nA_e+=weight*weight;
+    }
+    else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
+      nD+=weight;
+      nD_e+=weight*weight;
+    }
+    else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
+      nB+=weight;
+      nB_e+=weight*weight;
+    }
+    else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh2a) && (y<borderh2b) ){
+      nC+=weight;
+      nC_e +=weight*weight;
+    }
+    else {
+      cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
+      //assert(0);
+    }
+    
+    //Fill histogram A, B, C, D
+    hist1->Fill(x,y, weight);
+    histA->Fill(x,y, weight);
+    histB->Fill(x,y, weight);
+    histC->Fill(x,y, weight);
+    histD->Fill(x,y, weight);
+    
+  }//end loop tree
+  
+
   TAxis* xax =  hist1->GetXaxis();
   TAxis* yax =  hist1->GetYaxis();
   xax->SetTitle(xTitle);
@@ -157,113 +265,7 @@ void analyzeABCD( ){
   lineDl->Draw();
   lineDr->Draw();
   C_hist1->Print(extension+filename+"_"+treename+"_hist1.pdf");
-  */
-  
-  //prep for histograms A, B, C, D
-  const Double_t yBinsL[2] = {borderh1a, borderh1b};
-  const Double_t yBinsU[2] = {borderh2a, borderh2b};
-  
  
-  int fitNum = 3; //number of bins in xL region, used to fit ratio
-  float xWidthL = (borderv1b-borderv1a)/fitNum;
-  Double_t xBinsL[fitNum+1];
-  cout << "xBinsL: ";
-  for(int i = 0; i<=fitNum; i++){
-    xBinsL[i]=borderv1a+i*xWidthL;
-    cout << xBinsL[i] << " ";
-  }
-  cout << endl;
-
-  int extendedNum = 6; //number of bins in xU region, used to calculate nC
-  float xWidthU = (borderv2b-borderv2a)/extendedNum;
-  Double_t xBinsU[extendedNum+1]; 
-  cout << "xBinsU: ";
-  for(int i = 0; i<=extendedNum; i++){
-    xBinsU[i]=borderv2a+i*xWidthU;
-    cout << xBinsU[i] << " ";
-  }
-  cout << endl;
-  
-  // histogram for A, B, C, D
-  TH2F* histA = new TH2F("H_A", "Region A", fitNum, xBinsL, 1, yBinsL);
-  TH2F* histB = new TH2F("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
-  TH2F* histC = new TH2F("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
-  TH2F* histD = new TH2F("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
-  histA->Sumw2();
-  histB->Sumw2();
-  histC->Sumw2();
-  histD->Sumw2();
-  TAxis *xaxA = histA->GetXaxis();
-  TAxis *xaxB = histB->GetXaxis();
-  TAxis *xaxC = histC->GetXaxis();
-  TAxis *xaxD = histD->GetXaxis();
-  TAxis *yaxA = histA->GetYaxis();
-  TAxis *yaxB = histB->GetYaxis();
-  TAxis *yaxC = histC->GetYaxis();
-  TAxis *yaxD = histD->GetYaxis();
-  xaxA->SetTitle(xTitle);
-  xaxB->SetTitle(xTitle);
-  xaxC->SetTitle(xTitle);
-  xaxD->SetTitle(xTitle);
-  yaxA->SetTitleOffset(1.4);
-  yaxB->SetTitleOffset(1.15);
-  yaxC->SetTitleOffset(1.15);
-  yaxD->SetTitleOffset(1.4);
-  yaxA->SetTitle(yTitle);
-  yaxB->SetTitle(yTitle);
-  yaxC->SetTitle(yTitle);
-  yaxD->SetTitle(yTitle);
-  
-  //////////////////
-  //LOOP over TREE//
-  //////////////////
-
-  TTree* tree1 = (TTree*) gDirectory->Get(treeextension+"/"+treename);
-  int numEntries = tree1->GetEntries();
-  cout << "numEntries: " << numEntries << endl;
-  
-  float x = -1;
-  float y = -1;
-  float weight = 1;
-  tree1->SetBranchAddress("MHT",&x);
-  tree1->SetBranchAddress("minDPhi",&y);
-  //tree1->SetBranchAddress("weight",&weight);
-  
-  cout << "MHT: " << x << ", minDPhi: " << y << ", weight: " << weight << endl;
-
-  for(int i = 1; i<= numEntries; i++){ //loop over tree
-    tree1->GetEvent(i);
-    
-    //COUNT nA, nB, nC, nD
-    if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
-      nA+=weight;
-      nA_e+=weight*weight;
-    }
-    else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
-      nD+=weight;
-      nD_e+=weight*weight;
-    }
-    else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
-      nB+=weight;
-      nB_e+=weight*weight;
-    }
-    else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh2a) && (y<borderh2b) ){
-      nC+=weight;
-      nC_e +=weight*weight;
-    }
-    else {
-      cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
-      //assert(0);
-    }
-    
-    //Fill histogram A, B, C, D
-    histA->Fill(x,y, weight);
-    histB->Fill(x,y, weight);
-    histC->Fill(x,y, weight);
-    histD->Fill(x,y, weight);
-    
-  }//end loop tree
-  
   C_ABCD->cd(3);
   gPad->SetRightMargin(.22);
   gPad->SetLeftMargin(.14);
