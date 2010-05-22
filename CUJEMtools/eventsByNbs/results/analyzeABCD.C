@@ -33,12 +33,13 @@ using namespace std;
 //C is signal region
 
 void analyzeABCD( ){
+  
   gROOT->SetStyle("Plain");
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
 
   TString extension = "20100419_results/";
-  TString filename = "plots_QCD_Pt170_nBJetsGT2";
+  TString filename = "plots_QCD_Pt170_merged";
   TString treename = "T_minDPhi_MET"; 
   TString histname = "H_minDPhi_MET";
   
@@ -470,6 +471,6 @@ void analyzeABCD( ){
   cout << "nD: " << nD << " +- " << nD_error << endl;
   cout << "nC: " << nC << " +- " << nC_error << endl;
   cout << "classical estimate for nC: " << classicalEstimate << " +- " << classicalEstimate_error << endl;
-  cout << "linear extended estimate for nC: " << extendedEstimate << " +- " << ext_error << endl;
   cout << "exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
+  cout << "linear extended estimate for nC: " << extendedEstimate << " +- " << ext_error << endl;
 }//0
