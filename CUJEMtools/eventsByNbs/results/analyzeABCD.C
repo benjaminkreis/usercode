@@ -38,11 +38,12 @@ void analyzeABCD( ){
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
 
-  TString extension = "20100419_results/";
-  TString filename = "plots_QCD_Pt170_merged";
-  TString treename = "T_minDPhi_MET"; 
+  TString extension = "rfio:/castor/cern.ch/user/k/kreis/CUSusy/RA2/ABCD/trees/";
+  TString filename = "T_ABCD_QCD_Pt80";
+  TString treename = "T_ABCD"; 
   TString histname = "H_minDPhi_MET";
-  
+  TString treeextension = "demo";
+
   TString yTitle = "min Delta Phi (MET, jet 1 2 3)";
   TString xTitle = "MET (GeV)";
 
@@ -79,6 +80,8 @@ void analyzeABCD( ){
  
   //plot 2d histogram for visual purposes
   TFile* file1 = TFile::Open(extension+filename+".root","READ");
+ 
+  /*
   TH2F* hist1 = (TH2F*) gDirectory->Get(histname);
   TAxis* xax =  hist1->GetXaxis();
   TAxis* yax =  hist1->GetYaxis();
@@ -154,7 +157,8 @@ void analyzeABCD( ){
   lineDl->Draw();
   lineDr->Draw();
   C_hist1->Print(extension+filename+"_"+treename+"_hist1.pdf");
-
+  */
+  
   //prep for histograms A, B, C, D
   const Double_t yBinsL[2] = {borderh1a, borderh1b};
   const Double_t yBinsU[2] = {borderh2a, borderh2b};
@@ -214,17 +218,19 @@ void analyzeABCD( ){
   //LOOP over TREE//
   //////////////////
 
-  TTree* tree1 = (TTree*) gDirectory->Get(treename);
+  TTree* tree1 = (TTree*) gDirectory->Get(treeextension+"/"+treename);
   int numEntries = tree1->GetEntries();
   cout << "numEntries: " << numEntries << endl;
   
   float x = -1;
   float y = -1;
-  float weight = -1;
-  tree1->SetBranchAddress("MET",&x);
+  float weight = 1;
+  tree1->SetBranchAddress("MHT",&x);
   tree1->SetBranchAddress("minDPhi",&y);
-  tree1->SetBranchAddress("weight",&weight);
+  //tree1->SetBranchAddress("weight",&weight);
   
+  cout << "MHT: " << x << ", minDPhi: " << y << ", weight: " << weight << endl;
+
   for(int i = 1; i<= numEntries; i++){ //loop over tree
     tree1->GetEvent(i);
     
@@ -465,7 +471,8 @@ void analyzeABCD( ){
   float classicalEstimate_error =  classicalEstimate * sqrt( (nA_error/nA)*(nA_error/nA)+(nB_error/nB)*(nB_error/nB)+(nD_error/nD)*(nD_error/nD) );
   /////////////////////////////
 
-  
+  cout << "fitNum: " << fitNum << endl;;
+  cout << "extendedNum: " << extendedNum << endl;
   cout << "nA: " << nA << " +- " << nA_error << endl;
   cout << "nB: " << nB << " +- " << nB_error << endl;
   cout << "nD: " << nD << " +- " << nD_error << endl;
