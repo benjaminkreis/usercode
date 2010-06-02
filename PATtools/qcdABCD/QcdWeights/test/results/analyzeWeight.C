@@ -21,6 +21,7 @@ TChain* QCDChain(){
   In_qcd->Add("/cu1/kreis/QCD/T_weight_QCD_Pt30.root");
   In_qcd->Add("/cu1/kreis/QCD/T_weight_QCD_Pt80.root");
   In_qcd->Add("/cu1/kreis/QCD/T_weight_QCD_Pt170.root");
+  In_qcd->Add("/cu1/kreis/QCD/T_weight_QCD_Pt300.root");
   In_qcd->Add("/cu1/kreis/QCD/T_weight_QCD_Pt470.root");
   In_qcd->Add("/cu1/kreis/QCD/T_weight_QCD_Pt800.root");
   In_qcd->Add("/cu1/kreis/QCD/T_weight_QCD_Pt1400.root");
@@ -145,10 +146,6 @@ void calculateQCDWeights(){
 
 void checkWeights(){
 
-  //STUFF FOR THIS FUNCTION TO USE
-  TH1D* histPtHat = new TH1D("histPtHat","Pt-Hat",8000,0,2000);
-  TH1D* histPtHat_noW = new TH1D("histPtHat_noW","Pt-Hat",8000,0,2000);
-  TFile fout("QCD_weight_plots.root", "RECREATE");
   
   //INPUT
   TFile finweight("weight_QCD.root");
@@ -160,6 +157,13 @@ void checkWeights(){
     cout << "ERROR loading weights" << endl;
   }
     
+  
+  //STUFF FOR THIS FUNCTION TO USE
+  TFile fout("QCD_weight_plots.root", "RECREATE");
+  TH1D* histPtHat = new TH1D("histPtHat","Pt-Hat",8000,0,2000);
+  TH1D* histPtHat_noW = new TH1D("histPtHat_noW","Pt-Hat",8000,0,2000);
+ 
+
   TChain* InputChain = QCDChain(); //function in analyzeWeightInput.h
   int numEntries = InputChain->GetEntries();
   cout <<"numEntries: " << numEntries << endl;
@@ -174,11 +178,11 @@ void checkWeights(){
     InputChain->GetEvent(i);
     
     //get weight
-    int bin = Hweight->FindBin(processPtHat);
+    int bin = Hweight->FindBin(pthat);
     double eventweight=Hweight->GetBinContent(bin);
     
-    histPtHat->Fill(processPtHat,eventweight);
-    histPtHat_noW->Fill(processPtHat);
+    histPtHat->Fill(pthat,eventweight);
+    histPtHat_noW->Fill(pthat);
     
   }//end loop on chain
   
