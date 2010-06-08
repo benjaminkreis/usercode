@@ -34,7 +34,7 @@ void analyzeFillABCD(){
   gStyle->SetOptStat("e");
   
   int fitNum = 4; //number of bins in xL region, used to fit ratio
-  int extendedNum = 6; //number of bins in xR region, used in extrapolation
+  int extendedNum = 2; //number of bins in xR region, used in extrapolation
   
  
   //LOAD WEIGHTS
@@ -51,7 +51,8 @@ void analyzeFillABCD(){
   finweight.Close();
    
  
-  TString yTitle = "min Delta Phi (MHT, jet 1 2 3)";
+  TString yTitle = "minDeltaPhi(MHT, jet 1 2 3)";
+  TString yTitle_ratio = "minDeltaPhi ratio";
   TString xTitle = "MHT (GeV)";
   
   float pi=4*atan(1.0);
@@ -67,7 +68,7 @@ void analyzeFillABCD(){
   
   float nA=0, nB=0, nC=0, nD=0;
   float nA_e=0, nB_e=0, nC_e=0, nD_e=0; 
-  
+  int nOutside=0;
   ///////////////////
   //    CANVAS     //
   ///////////////////
@@ -164,51 +165,59 @@ void analyzeFillABCD(){
   InputChain->SetBranchAddress("MHT",&x);
   InputChain->SetBranchAddress("minDPhi",&y);
   InputChain->SetBranchAddress("PtHat", &pthat);
-  
+  InputChain->SetBranchAddress("btag", &nbtags);
   
   for(int i = 1; i<=numEntries; i++){
     InputChain->GetEvent(i);
    
-    //get weight
-    int bin = Hweight.FindBin(pthat);
-    double weight=Hweight.GetBinContent(bin);
-    // weight = 1;
-    histPtHat->Fill(pthat,weight);
-    histPtHat_noW->Fill(pthat);
+    //btag requirement
+    bool bcontinue=false;
+    if(nbtags==2) bcontinue=true;
     
-    //COUNT nA, nB, nC, nD
-    if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
-      nA+=weight;
-      nA_e+=weight*weight;
-    }
-    else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
-      nD+=weight;
-      nD_e+=weight*weight;
-    }
-    else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
-      nB+=weight;
-      nB_e+=weight*weight;
-    }
-    else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh2a) && (y<borderh2b) ){
-      nC+=weight;
-      nC_e +=weight*weight;
-    }
-    else {
-      cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
-      //assert(0);
-    }
-    
-    //Fill histogram A, B, C, D
-    hist1->Fill(x,y, weight);
-    histA->Fill(x,y, weight);
-    histB->Fill(x,y, weight);
-    histC->Fill(x,y, weight);
-    histD->Fill(x,y, weight);
-    
+    bcontinue = true;
+    if(bcontinue){
+      //get weight
+      int bin = Hweight.FindBin(pthat);
+      double weight=Hweight.GetBinContent(bin);
+      // weight = 1;
+      histPtHat->Fill(pthat,weight);
+      histPtHat_noW->Fill(pthat);
+      
+      //COUNT nA, nB, nC, nD
+      if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
+	nA+=weight;
+	nA_e+=weight*weight;
+      }
+      else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
+	nD+=weight;
+	nD_e+=weight*weight;
+      }
+      else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
+	nB+=weight;
+	nB_e+=weight*weight;
+      }
+      else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh2a) && (y<borderh2b) ){
+	nC+=weight;
+	nC_e +=weight*weight;
+      }
+      else {
+	cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
+	nOutside++;
+	//assert(0);
+      }
+      
+      //Fill histogram A, B, C, D
+      hist1->Fill(x,y, weight);
+      histA->Fill(x,y, weight);
+      histB->Fill(x,y, weight);
+      histC->Fill(x,y, weight);
+      histD->Fill(x,y, weight);
+   
+    }//end bcontinue
   }//end loop tree
   
   ////////////////////////////////////
-  /////////ANALYZE AND DRAW///////////
+  ///////////FIT AND DRAW/////////////
   ////////////////////////////////////
 
   //weight histograms
@@ -350,7 +359,7 @@ void analyzeFillABCD(){
   TAxis* xaxG0 = gr0->GetXaxis();
   TAxis* yaxG0 = gr0->GetYaxis();
   xaxG0->SetTitle(xTitle);
-  yaxG0->SetTitle(yTitle);
+  yaxG0->SetTitle(yTitle_ratio);
   gr0->SetMarkerStyle(4);  
   gr0->Draw("AP");
   
@@ -375,7 +384,7 @@ void analyzeFillABCD(){
   float fitmax = borderv1b;
   for(int i =0; i<fitNum; i++){
     if( (histB->GetBinContent(i+1,1)/histA->GetBinContent(i+1,1) == 0) ){
-      fitmax =  xaxA->GetBinCenter(i+1);
+      fitmax =  xaxA->GetBinCenter(i+1); // should it be i-1? should make sure not to include point with zero
     }
     gr1x[i] = xaxA->GetBinCenter(i+1);
     gr1x_error[i] = 0;
@@ -391,7 +400,7 @@ void analyzeFillABCD(){
   TAxis* xaxG = gr1->GetXaxis();
   TAxis* yaxG = gr1->GetYaxis();
   xaxG->SetTitle(xTitle);
-  yaxG->SetTitle(yTitle);
+  yaxG->SetTitle(yTitle_ratio);
   gr1->SetMarkerStyle(4);
   gr1->Draw("AP");
   
@@ -502,22 +511,42 @@ void analyzeFillABCD(){
   float nD_error = sqrt(nD_e);
   float classicalEstimate_error =  classicalEstimate * sqrt( (nA_error/nA)*(nA_error/nA)+(nB_error/nB)*(nB_error/nB)+(nD_error/nD)*(nD_error/nD) );
   /////////////////////////////
-  
+ 
+  cout << endl;
+  cout << endl;
+  cout << "borderv1a: " << borderv1a << endl;
+  cout << "borderv1b: " << borderv1b << endl;
+  cout << "borderv2a: " << borderv2a<< endl;
+  cout << "borderv2b: " << borderv2b << endl;
+  cout << "borderh1a: " << borderh1a << endl;
+  cout << "borderh1b: " << borderh1b<< endl;
+  cout << "borderh2a: " << borderh2a << endl;
+  cout << "borderh2b: " << borderh2b << endl;
+  cout << "nOutside: " << nOutside << endl;
+  cout << endl;
   cout << "fitNum: " << fitNum << endl;;
   cout << "extendedNum: " << extendedNum << endl;
-  cout << "nA: " << nA << " +- " << nA_error << endl;
-  cout << "nB: " << nB << " +- " << nB_error << endl;
-  cout << "nD: " << nD << " +- " << nD_error << endl;
+  cout << "fitMax: " << fitmax << endl;
+  //cout << "nA: " << nA << " +- " << nA_error << endl;
+  //cout << "nB: " << nB << " +- " << nB_error << endl;
+  //cout << "nD: " << nD << " +- " << nD_error << endl;
   cout << "nC: " << nC << " +- " << nC_error << endl;
-  cout << "Classical estimate for nC: " << classicalEstimate << " +- " << classicalEstimate_error << endl;
   cout << "Exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
+  cout << "Classical estimate for nC: " << classicalEstimate << " +- " << classicalEstimate_error << endl; 
   cout << "Linear extended estimate for nC: " << extendedEstimate << " +- " << ext_error << endl;
+  
   
   C_ABCD->Write();
   C_hist1->Write();
   C_fit->Write();
   C_ratio->Write();
   C_weight->Write();
+  C_ABCD->Close();
+  C_hist1->Close();
+  C_fit->Close();
+  C_ratio->Close();
+  C_weight->Close();
+  
   fout.Close();
 
 }//end analyzeFillABCD()
