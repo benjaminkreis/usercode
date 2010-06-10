@@ -347,16 +347,13 @@ RA2Filter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	nEvPass3_++;
 	if(pass4){
 	  nEvPass4_++;
-	  //if(pass5){ // MHT cut
-	  if(true){
+	  if(pass5){ // MHT cut
 	    nEvPass5_++;
 	    if(pass6){
 	      nEvPass6_++;
-	      return true;
-	      //if(pass7){ // angular cuts
-	      if(true){
+	      if(pass7){ // angular cuts
 		nEvPass7_++;
-		//return true;
+		return true;
 	      }//end pass7
 	    }//end pass6
 	  }//end pass5
