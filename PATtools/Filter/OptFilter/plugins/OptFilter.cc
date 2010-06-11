@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Thu Jun 10 13:24:41 CEST 2010
-// $Id$
+// $Id: OptFilter.cc,v 1.1 2010/06/10 17:12:48 kreis Exp $
 //
 //
 
@@ -152,19 +152,31 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   //Trigger Cut/////////////////////////////////////////////
   //////////////////////////////////////////////////////////
   bool pass0 = false;
+  bool passTrig = false;
   edm::TriggerNames triggerNames;
   
   if(triggerResults.isValid() ){
     
+    //BEN
     triggerNames.init(*triggerResults);
-    
     hltnames_=triggerNames.triggerNames();
     for( int itrig=0; itrig<(int)hltnames_.size(); ++itrig){
-      //std::cout << "Trigger bit:" << itrig <<", Name:" << hltnames_[itrig] << ", Fired:" << triggerResults->accept(itrig) << std::endl;
+      std::cout << "Trigger bit:" << itrig <<", Name:" << hltnames_[itrig] << ", Fired:" << triggerResults->accept(itrig) << std::endl;
       if ( !triggerResults->wasrun(itrig)) std::cout<<"WARNING -- a trigger path was not run for this event!"<<std::endl;
       if ( triggerResults->error(itrig)) std::cout<<"WARNING -- a trigger path had an error for this event!"<<std::endl;
       if(hltnames_[itrig]=="HLT_HT200" && triggerResults->accept(itrig)) pass0=true;
     }
+
+    //DON
+    const edm::TriggerNames & triggerNames2 = iEvent.triggerNames(*triggerResults);
+    unsigned int trigger_size = triggerResults->size();
+    unsigned int trigger_position = triggerNames2.triggerIndex("HLT_HT200");
+    
+    if (trigger_position < trigger_size){
+      passTrig = triggerResults->accept(trigger_position);
+    }
+    cout << "Don: " << passTrig<< endl;
+
   }
   else {
     std::cout<<"ERROR -- triggerResults is invalid!"<<std::endl;
@@ -228,7 +240,8 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   bool pass3 = false;
   bool pass4 = false;
   if(nLooseJets>2) pass2 = true;
-  if(jetpt1>100.0 && jetpt2>75.0 && jetpt3>50.0) pass3 = true;
+  //if(jetpt1>100.0 && jetpt2>75.0 && jetpt3>50.0) pass3 = true;
+  if(jetpt1>100.0) pass3 = true;
   if(myHT>400.0) pass4 = true;
 
 
@@ -341,7 +354,7 @@ OptFilter::beginJob()
 void 
 OptFilter::endJob() {
 
-  std::cout << "\n2010 RA2CUT FLOW:" << std::endl;
+  std::cout << "\nCU SUSY b-tag Optmized Cutflow:" << std::endl;
   std::cout << "nEvents: " << nEvents_ << " +- " << sqrt(nEvents_) <<std::endl;
   std::cout << "nPass0: " << nPass0_ << " +- " << sqrt(nPass0_) << ", " << (float) nPass0_/nEvents_*100.0 << " %" << std::endl;
   std::cout << "nPass1: " << nPass1_ << " +- " << sqrt(nPass1_) << ", " << (float) nPass1_/nPass0_*100.0 << " %" << std::endl;
