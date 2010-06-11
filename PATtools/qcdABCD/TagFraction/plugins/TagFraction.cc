@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Mon Jun  7 13:29:42 CEST 2010
-// $Id$
+// $Id: TagFraction.cc,v 1.1 2010/06/09 09:46:04 kreis Exp $
 //
 //
 
@@ -65,12 +65,24 @@ class TagFraction : public edm::EDAnalyzer {
   edm::InputTag jetSrc_;
   unsigned int nEvents_;
   unsigned int nPassCuts_;
+  float P2Tot_;
+  float dP2Tott_;
+  float Pge2Tot_;
+  float dPge2Tott_;
+  float Pge3Tot_;
+  float dPge3Tott_;
+
   TTree *tree1_;
   float tree1_P0_;
+  float tree1_dP0_;
   float tree1_P1_;
+  float tree1_dP1_;
   float tree1_P2_;
+  float tree1_dP2_;
   float tree1_Pge2_;
+  float tree1_dPge2_;
   float tree1_Pge3_;
+  float tree1_dPge3_;
   float tree1_btag_;
   float tree1_bjet_;
   float tree1_qScale_;
@@ -121,6 +133,7 @@ TagFraction::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
    using namespace std;
+    
    nEvents_++;
 
    // get jet collection
@@ -137,7 +150,6 @@ TagFraction::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      qScale = genEvtInfo->qScale();
    }
   
-
    //Jet Stuff///////////////////////////////////////////////
    //////////////////////////////////////////////////////////
    vector<float> jetEff;
@@ -179,18 +191,17 @@ TagFraction::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        }
 
        //jet b tagging efficiency
-     
        if( jet->pt()>30.0 && fabs(jet->eta())<2.4 ){
-	 float thisJetEff=0.0;
+	 float thisJetEff = 0.0;
 	 float thisJetEffe = 0.0;
 	 int globalBinEff = hTagEff_->FindBin( jet->pt(), jet->eta() );
 	 thisJetEff = hTagEff_->GetBinContent(globalBinEff);
 	 thisJetEffe =  hTagEffe_->GetBinContent(globalBinEff);
-	 cout << jet->pt() << " " << jet->eta() << " " << thisJetEff << endl;
+	 //cout << jet->pt() << " " << jet->eta() << " " << thisJetEff << endl;
 	 jetEff.push_back(thisJetEff);
 	 jetEffe.push_back(thisJetEffe);
        }
-
+       
        //loose pT and eta cut
        if( jet->pt()>30.0 && fabs(jet->eta())<5.0){
 	 
@@ -275,56 +286,83 @@ TagFraction::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //if in signal region (running on skim, so only have to apply MHT and minDPhi cut)
    if(myMHT>150.0 && dPhiMin>0.3){
      nPassCuts_++;
-     
+    
      // calculate probability for 0 tags
      float P0=1;
+     float dP0t=0;
      for(int i = 0; i<jetEff.size(); i++){
-       P0=P0*(1-jetEff[i]);
+       if(jetEff[i]>0.0 && jetEffe[i]>0.0){
+	 P0=P0*(1-jetEff[i]);
+	 dP0t += (jetEffe[i]/jetEff[i])*(jetEffe[i]/jetEff[i]);
+       }
      }
-     
+     float dP0 = sqrt(dP0t)*P0;
+    
      // calculate probability for exactly 1 tag
-     float P1=0;
+     float P1 = 0;
+     float dP1t = 0;
      for(int i = 0; i<jetEff.size(); i++){
        
        //second part
        float P1a = 1;
+       float dP1at = 0;
        for(int j = 0; j<jetEff.size(); j++){
 	 if(j!=i){
-	   P1a=P1a*(1-jetEff[j]);
-	 }
-       }
-       
+	   if(jetEff[i]>0.0 && jetEffe[i]>0.0){
+	     P1a=P1a*(1-jetEff[j]);
+	     dP1at += (jetEffe[i]/jetEff[i])*(jetEffe[i]/jetEff[i]);
+	   }// end if eff stuff is not zero
+	 }//end if j!=i
+       }//end loop over j
+       float dP1a = sqrt(dP1at)*P1a;
+
        P1+=jetEff[i]*P1a;
-     }
-     
+       dP1t += (jetEff[i]*P1a*sqrt( (jetEffe[i]/jetEff[i])*(jetEffe[i]/jetEff[i]) + (dP1a/P1a)*(dP1a/P1a)  ))*(jetEff[i]*P1a*sqrt( (jetEffe[i]/jetEff[i])*(jetEffe[i]/jetEff[i]) + (dP1a/P1a)*(dP1a/P1a) ));
+     }//end loop over i
+     float dP1 = sqrt(dP1t);
+
+
      // calculate probability for exactly 2 tags
-     float P2=0;
+     float P2 = 0;
+     float dP2t = 0;
      for(int i=0; i<jetEff.size(); i++){
        for(int j=i+1; j<jetEff.size(); j++){
 	 
-	 float P2a=1;
+	 float P2a = 1;
+	 float dP2at = 0;
 	 for(int k=0; k<jetEff.size(); k++){
 	   if(k!=i && k!=j){
-	     P2a=P2a*(1-jetEff[k]);
-	   }//if
-	 }//k loop
+	     if(jetEff[i]>0.0 && jetEffe[i]>0.0){
+	       P2a=P2a*(1-jetEff[k]);
+	       dP2at += (jetEffe[i]/jetEff[i])*(jetEffe[i]/jetEff[i]);
+	     }//end iff eff stuff is not zero
+	   }//end if k is not i or j
+	 }//end loop over k
+	 float dP2a = sqrt(dP2at)*P2a;
 	 
 	 P2+=jetEff[i]*jetEff[j]*P2a;
-	 
+	 dP2t += (jetEff[i]*jetEff[j]*P2a*sqrt((jetEffe[i]/jetEff[i])*(jetEffe[i]/jetEff[i]) + (jetEffe[j]/jetEff[j])*(jetEffe[j]/jetEff[j]) + (dP2a/P2a)*(dP2a/P2a) )) * (jetEff[i]*jetEff[j]*P2a*sqrt((jetEffe[i]/jetEff[i])*(jetEffe[i]/jetEff[i]) + (jetEffe[j]/jetEff[j])*(jetEffe[j]/jetEff[j]) + (dP2a/P2a)*(dP2a/P2a) ));
        }//j loop
      }// i loop
-     
+     float dP2 = sqrt(dP2t);
      
      // calculate probability for >= 2 tags and >=3 tags
-     float Pge2, Pge3;
+     float Pge2, dPge2, Pge3, dPge3;
      Pge2 = 1 - P1 - P0;
+     dPge2 = sqrt(dP1*dP1 + dP0*dP0);
      Pge3 = 1 - P2 - P1 - P0;
+     dPge3 = sqrt(dP2*dP2 + dP1*dP1 + dP0*dP0);
      
      tree1_P0_=P0;
+     tree1_dP0_=dP0;
      tree1_P1_=P1;
+     tree1_dP1_=dP1;
      tree1_P2_=P2;
+     tree1_dP2_=dP2;
      tree1_Pge2_ = Pge2;
+     tree1_dPge2_ = dPge2;
      tree1_Pge3_ = Pge3;
+     tree1_dPge3_ = dPge3;
      tree1_btag_ = nbtag;
      tree1_bjet_ = nbjet;
      tree1_qScale_ = qScale;
@@ -332,11 +370,15 @@ TagFraction::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      
      tree1_->Fill();
      
-     //P2Tot+=P2;
-     //Pge2Tot+=Pge2;
-     //Pge3Tot+=Pge3;
-   }
-}
+     P2Tot_ += P2;
+     dP2Tott_ += dP2*dP2;
+     Pge2Tot_ += Pge2;
+     dPge2Tott_ += dPge2*dPge2;
+     Pge3Tot_ += Pge3;
+     dPge3Tott_ += dPge3*dPge3;
+     
+   }// end signal region cut
+} 
 
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -345,28 +387,52 @@ TagFraction::beginJob()
 {
   nEvents_ = 0;
   nPassCuts_ = 0;
+  P2Tot_ = 0;
+  dP2Tott_ = 0;
+  Pge2Tot_ = 0;
+  dPge2Tott_ = 0;
+  Pge3Tot_ = 0;
+  dPge3Tott_ = 0;
 
   edm::Service<TFileService> fs;
   tree1_ = fs->make<TTree>("T_TagFraction", "Tagging Probability Tree");
   tree1_->Branch("P0", &tree1_P0_, "tree1_P0_/F");
+  tree1_->Branch("dP0", &tree1_dP0_, "tree1_dP0_/F");
   tree1_->Branch("P1", &tree1_P1_, "tree1_P1_/F");
+  tree1_->Branch("dP1", &tree1_dP1_, "tree1_dP1_/F");
   tree1_->Branch("P2", &tree1_P2_, "tree1_P2_/F");
+  tree1_->Branch("dP2", &tree1_dP2_, "tree1_dP2_/F");
   tree1_->Branch("Pge2", &tree1_Pge2_, "tree1_Pge2_/F");
+  tree1_->Branch("dPge2", &tree1_dPge2_, "tree1_dPge2_/F");
   tree1_->Branch("Pge3", &tree1_Pge3_, "tree1_Pge3_/F");
+  tree1_->Branch("dPge3", &tree1_dPge3_, "tree1_dPge3_/F");
   tree1_->Branch("btag", &tree1_btag_, "tree1_btag_/F");
   tree1_->Branch("bjet", &tree1_bjet_, "tree1_bjet_/F"); 
   tree1_->Branch("qScale", &tree1_qScale_, "tree1_qScale_/F");
   tree1_->Branch("PtHat", &tree1_PtHat_, "tree1_PtHat_/F");
 
   TFile f("tagjeteff_QCD.root");
-  hTagEff_ = (TH2F*)f.Get("Heff_t");
-  hTagEffe_ = (TH2F*)f.Get("Heff_te");
+  if(!f.IsZombie()){
+    hTagEff_ = (TH2F*)f.Get("Heff_t");
+    hTagEffe_ = (TH2F*)f.Get("Heff_te");
+    std::cout << "hTagEff_ integral: " << hTagEff_->Integral()<<std::endl;
+    std::cout << "hTagEffe_ integral: " << hTagEffe_->Integral()<<std::endl;
+    
+  }
+  else{
+    std::cout << "ERROR loading efficiency file." << std::endl;
+  }
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 TagFraction::endJob() {
-  //std::cout << "nPassCuts: " << nPassCuts_++ << std::endl;
+  std::cout << "nEvents: " << nEvents_ << std::endl;
+  std::cout << "nPassCuts: " << nPassCuts_<< std::endl;
+  std::cout << "P2Tot: " << P2Tot_ << " +- " << sqrt(dP2Tott_) << std::endl;
+  std::cout << "Pge2Tot: " << Pge2Tot_ << " +- " << sqrt(dPge2Tott_) << std::endl;
+  std::cout << "Pge3Tot: " << Pge3Tot_ << " +- " << sqrt(dPge3Tott_) << std::endl;
 }
 
 //define this as a plug-in
