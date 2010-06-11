@@ -28,17 +28,18 @@
 using namespace std;
 
 void analyzeFillABCD(){
+  cout << endl;
   cout << "Begin analyzeFillABCD" << endl;
   gROOT->SetStyle("Plain");
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
   
   int fitNum = 4; //number of bins in xL region, used to fit ratio
-  int extendedNum = 2; //number of bins in xR region, used in extrapolation
+  int extendedNum = 20; //number of bins in xR region, used in extrapolation
   
  
   //LOAD WEIGHTS
-  TFile finweight("weight_QCD.root","READ");
+  TFile finweight("weight_QCD170.root","READ");
   TH1D* HweightP = 0;
   if(!finweight.IsZombie()){
     HweightP = (TH1D*)finweight.Get("Hweight");
@@ -326,7 +327,8 @@ void analyzeFillABCD(){
   /////////////////////////////////
   //EXTENDED NORMALIZATION METHOD//
   /////////////////////////////////
-  
+  cout << endl;
+  cout << "All points:" << endl;
   //RATIO for all x
   C_ratio->cd();
   float gr0x[fitNum+extendedNum];
@@ -341,7 +343,7 @@ void analyzeFillABCD(){
       gr0y[i]= histB->GetBinContent(i+1,1)/histA->GetBinContent(i+1,1);
       gr0y_error[i] =  gr0y[i]*sqrt((histB->GetBinError(i+1,1)/histB->GetBinContent(i+1,1))*(histB->GetBinError(i+1,1)/histB->GetBinContent(i+1,1))+
 				    (histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1))*(histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1)));
-      cout << "gr0y["<< i << "]: " << gr0y[i] << endl;
+         cout << "ratio: (" << gr0x[i] << " +- " << gr0x_error[i] << ", " << gr0y[i] << " +- " << gr0y_error[i] << ")" << endl;
     }
     else if(i>=fitNum && i<(fitNum+extendedNum) ){
       gr0x[i]= xaxD->GetBinCenter(i-fitNum+1);
@@ -350,7 +352,7 @@ void analyzeFillABCD(){
       gr0y[i]= histC->GetBinContent(i-fitNum+1,1)/histD->GetBinContent(i-fitNum+1,1);
       gr0y_error[i] =  gr0y[i]*sqrt((histC->GetBinError(i-fitNum+1,1)/histC->GetBinContent(i-fitNum+1,1))*(histC->GetBinError(i-fitNum+1,1)/histC->GetBinContent(i-fitNum+1,1))+
 				    (histD->GetBinError(i-fitNum+1,1)/histD->GetBinContent(i-fitNum+1,1))*(histD->GetBinError(i-fitNum+1,1)/histD->GetBinContent(i-fitNum+1,1))); 
-      cout << "gr0y["<< i << "]: " << gr0y[i] << endl;
+      cout << "ratio: (" << gr0x[i] << " +- " << gr0x_error[i] << ", " << gr0y[i] << " +- " << gr0y_error[i] << ")" << endl;
     }
     else{ assert(0); }
   }
@@ -376,6 +378,9 @@ void analyzeFillABCD(){
   ////////////////////////
   //GRAPH FOR FIT REGION//
   ////////////////////////
+  
+  cout << endl;
+  cout << "Points for fit region:" << endl;
   C_fit->cd();
   float gr1x[fitNum];
   float gr1y[fitNum];
@@ -384,7 +389,7 @@ void analyzeFillABCD(){
   float fitmax = borderv1b;
   for(int i =0; i<fitNum; i++){
     if( (histB->GetBinContent(i+1,1)/histA->GetBinContent(i+1,1) == 0) ){
-      fitmax =  xaxA->GetBinCenter(i+1); // should it be i-1? should make sure not to include point with zero
+      fitmax =  xaxA->GetBinCenter(i+1); // should it be i? should make sure not to include point with zero
     }
     gr1x[i] = xaxA->GetBinCenter(i+1);
     gr1x_error[i] = 0;
@@ -395,6 +400,8 @@ void analyzeFillABCD(){
     
     cout << "ratio: (" << gr1x[i] << " +- " << gr1x_error[i] <<", " << gr1y[i] << " +- " << gr1y_error[i] << ")" << endl;
   }
+  cout << endl;
+  cout << endl;
   TGraphErrors * gr1 = new TGraphErrors(fitNum, gr1x, gr1y, gr1x_error, gr1y_error);
   gr1->SetTitle("Fit of N_B(x)/N_A(x)");
   TAxis* xaxG = gr1->GetXaxis();
@@ -468,6 +475,9 @@ void analyzeFillABCD(){
   ////////////////////////////////////////////////
   ///Calculate linear estimate with uncertainty///
   ////////////////////////////////////////////////
+  cout << endl;
+  cout << endl;
+  cout << "Running exponential estimate:" << endl;
   float extendedEstimate=0;
   float ext_serror=0;
   
@@ -497,6 +507,8 @@ void analyzeFillABCD(){
     ext_serror_exp += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1)) * par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1));
     ext_serror_exp += par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*xError *  par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*xError;
     ext_serror_exp += par_exp[0]*exp(par_exp[1]*xvalue)*(histD->GetBinError(i,1)) *  par_exp[0]*exp(par_exp[1]*xvalue)*(histD->GetBinError(i,1));
+  
+    cout << extendedEstimate_exp << " +- " << sqrt(ext_serror_exp) << endl;
   }
   float ext_error = sqrt(ext_serror);
   float ext_error_exp = sqrt(ext_serror_exp);
@@ -512,7 +524,6 @@ void analyzeFillABCD(){
   float classicalEstimate_error =  classicalEstimate * sqrt( (nA_error/nA)*(nA_error/nA)+(nB_error/nB)*(nB_error/nB)+(nD_error/nD)*(nD_error/nD) );
   /////////////////////////////
  
-  cout << endl;
   cout << endl;
   cout << "borderv1a: " << borderv1a << endl;
   cout << "borderv1b: " << borderv1b << endl;
@@ -534,7 +545,7 @@ void analyzeFillABCD(){
   cout << "Exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
   cout << "Classical estimate for nC: " << classicalEstimate << " +- " << classicalEstimate_error << endl; 
   cout << "Linear extended estimate for nC: " << extendedEstimate << " +- " << ext_error << endl;
-  
+  cout << endl;
   
   C_ABCD->Write();
   C_hist1->Write();
