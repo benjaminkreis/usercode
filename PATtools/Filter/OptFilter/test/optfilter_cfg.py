@@ -6,7 +6,7 @@ process = cms.Process("Test")
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 
 process.maxEvents = cms.untracked.PSet(
-        input = cms.untracked.int32(10000)
+        input = cms.untracked.int32(-1)
         )
 
 
@@ -42,7 +42,7 @@ process.p = cms.Path(process.myFilter)
 
 #Output events that pass filters
 process.out = cms.OutputModule("PoolOutputModule",
-                                                              fileName = cms.untracked.string('LM3_Optselection.root'),
+                                                              fileName = cms.untracked.string('LM9_OptSelection.root'),
                                                               SelectEvents = cms.untracked.PSet (SelectEvents = cms.vstring('p'))
                                )
 

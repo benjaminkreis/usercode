@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Thu Jun 10 13:24:41 CEST 2010
-// $Id: OptFilter.cc,v 1.2 2010/06/11 12:32:48 kreis Exp $
+// $Id: OptFilter.cc,v 1.3 2010/06/12 12:43:51 kreis Exp $
 //
 //
 
@@ -168,10 +168,11 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       //std::cout << "Trigger bit:" << itrig <<", Name:" << hltnames_[itrig] << ", Fired:" << triggerResults->accept(itrig) << std::endl;
       if ( !triggerResults->wasrun(itrig)) std::cout<<"WARNING -- a trigger path was not run for this event!"<<std::endl;
       if ( triggerResults->error(itrig)) std::cout<<"WARNING -- a trigger path had an error for this event!"<<std::endl;
-      // if(hltnames_[itrig]=="HLT_HT200" && triggerResults->accept(itrig)) pass0=true;
+      if(hltnames_[itrig]=="HLT_HT200" && triggerResults->accept(itrig)) pass0=true;
     }
 
     //DON
+    /*
     const edm::TriggerNames & triggerNames2 = iEvent.triggerNames(*triggerResults);
     unsigned int trigger_size = triggerResults->size();
     unsigned int trigger_position = triggerNames2.triggerIndex("HLT_HT200");
@@ -180,7 +181,7 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       pass0= triggerResults->accept(trigger_position);
       if(pass0) cout << iEvent.id() << " passes Don's trigger cut" << endl;
     }
-
+    */
   }
   else {
     std::cout<<"ERROR -- triggerResults is invalid!"<<std::endl;
