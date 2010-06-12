@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Thu Jun 10 13:24:41 CEST 2010
-// $Id: OptFilter.cc,v 1.1 2010/06/10 17:12:48 kreis Exp $
+// $Id: OptFilter.cc,v 1.2 2010/06/11 12:32:48 kreis Exp $
 //
 //
 
@@ -38,7 +38,7 @@
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
 #include "DataFormats/PatCandidates/interface/Jet.h"
-
+#include "DataFormats/VertexReco/interface/Vertex.h" 
 //
 // class declaration
 //
@@ -59,6 +59,7 @@ class OptFilter : public edm::EDFilter {
   edm::InputTag jetSrc_;
   edm::InputTag metSrc_;
   edm::InputTag triggerResultsTag_;
+  edm::InputTag pvSrc_;
 
   std::vector<std::string> hltnames_;
 
@@ -93,7 +94,8 @@ OptFilter::OptFilter(const edm::ParameterSet& iConfig):
   muonSrc_(iConfig.getUntrackedParameter<edm::InputTag>("muonSrc")),
   jetSrc_(iConfig.getUntrackedParameter<edm::InputTag>("jetSrc" )),
   metSrc_(iConfig.getUntrackedParameter<edm::InputTag>("metSrc" )),
-  triggerResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("triggerResults"))
+  triggerResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("triggerResults")),
+  pvSrc_(iConfig.getParameter<edm::InputTag>("pvSrc"))
 {
    //now do what ever initialization is needed
 
@@ -142,7 +144,10 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<edm::TriggerResults> triggerResults;
   iEvent.getByLabel(triggerResultsTag_,triggerResults);
 
-
+  // get primary vertex collection
+  edm::Handle<std::vector<reco::Vertex> > pvHandle;
+  iEvent.getByLabel(pvSrc_, pvHandle);
+  
   /////////////////////////////////////
 
   ////////////////////////////////////
@@ -152,7 +157,6 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   //Trigger Cut/////////////////////////////////////////////
   //////////////////////////////////////////////////////////
   bool pass0 = false;
-  bool passTrig = false;
   edm::TriggerNames triggerNames;
   
   if(triggerResults.isValid() ){
@@ -161,10 +165,10 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     triggerNames.init(*triggerResults);
     hltnames_=triggerNames.triggerNames();
     for( int itrig=0; itrig<(int)hltnames_.size(); ++itrig){
-      std::cout << "Trigger bit:" << itrig <<", Name:" << hltnames_[itrig] << ", Fired:" << triggerResults->accept(itrig) << std::endl;
+      //std::cout << "Trigger bit:" << itrig <<", Name:" << hltnames_[itrig] << ", Fired:" << triggerResults->accept(itrig) << std::endl;
       if ( !triggerResults->wasrun(itrig)) std::cout<<"WARNING -- a trigger path was not run for this event!"<<std::endl;
       if ( triggerResults->error(itrig)) std::cout<<"WARNING -- a trigger path had an error for this event!"<<std::endl;
-      if(hltnames_[itrig]=="HLT_HT200" && triggerResults->accept(itrig)) pass0=true;
+      // if(hltnames_[itrig]=="HLT_HT200" && triggerResults->accept(itrig)) pass0=true;
     }
 
     //DON
@@ -173,9 +177,9 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     unsigned int trigger_position = triggerNames2.triggerIndex("HLT_HT200");
     
     if (trigger_position < trigger_size){
-      passTrig = triggerResults->accept(trigger_position);
+      pass0= triggerResults->accept(trigger_position);
+      if(pass0) cout << iEvent.id() << " passes Don's trigger cut" << endl;
     }
-    cout << "Don: " << passTrig<< endl;
 
   }
   else {
@@ -184,6 +188,30 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   //end Trigger Cut////////////////////////////////////////  
   
   
+  //Primary Vertex Cut//////////////////////////////////////
+  //////////////////////////////////////////////////////////
+  bool pass1 = false;
+  if(pvHandle.isValid()){
+    
+    for(std::vector<reco::Vertex>::const_iterator pv=pvHandle->begin(); pv!=pvHandle->end(); ++pv){
+      double pv_ndof = pv->ndof();
+      double pv_z = pv->z();
+      double pv_rho = pv->position().Rho();
+      
+      if(pv_ndof>4.0 && pv_z<15.0 && pv_rho<2.0){
+	pass1=true;
+	break;
+      }
+      
+    }// end loop over primary vertices
+  }// end isValid check
+  else {
+    std::cout<<"ERROR -- pvHandle is invalid!"<<std::endl;
+  }
+  //end Primary Vertex Cut//////////////////////////////////
+  
+
+
   // jets //////////////////////////////////////////////
   //////////////////////////////////////////////////////
   int nLooseJets = 0;  
@@ -282,7 +310,7 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   if(!isolatedElectron) pass7 = true;
   // end isolated electron stuff /////////////////////////
 
-  bool pass1 = true; // this will eventually be the requirement of a primary vertex
+ 
 
   bool saveEvent = false;
 

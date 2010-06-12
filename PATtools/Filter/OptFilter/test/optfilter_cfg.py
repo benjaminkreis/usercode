@@ -13,11 +13,11 @@ process.maxEvents = cms.untracked.PSet(
 process.source = cms.Source("PoolSource",
                              fileNames = cms.untracked.vstring(
 'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_1.root',
-'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_2.root',
-'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_3.root',
-'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_4.root',
-'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_5.root',
-'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_6.root',
+#'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_2.root',
+#'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_3.root',
+#'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_4.root',
+#'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_5.root',
+#'rfio:/castor/cern.ch/user/c/chadwick/TopAna/CMSSW_3_3_1/LM9-7TeV/LM9-7TeV_6.root',
                           )
                                  )
 
