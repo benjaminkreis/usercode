@@ -182,7 +182,7 @@ DonRA2::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       double pv_z = pv->z();
       double pv_rho = pv->position().Rho();
       
-      if(pv_ndof>4.0 && pv_z<15.0 && pv_rho<2.0 && !pv->isFake()){
+      if(pv_ndof>=5.0 && fabs(pv_z)<=15.0 && pv_rho<=2.0 && !pv->isFake()){
 	pass1=true;
 	break;
       }
