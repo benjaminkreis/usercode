@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Thu Jun 10 13:24:41 CEST 2010
-// $Id: OptFilter.cc,v 1.4 2010/06/12 12:50:40 kreis Exp $
+// $Id: OptFilter.cc,v 1.5 2010/06/13 08:21:12 kreis Exp $
 //
 //
 
@@ -199,7 +199,7 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       double pv_z = pv->z();
       double pv_rho = pv->position().Rho();
       
-      if(pv_ndof>4.0 && pv_z<15.0 && pv_rho<2.0 && !pv->isFake()){
+      if(pv_ndof>=5.0 && fabs(pv_z)<=15.0 && pv_rho<=2.0 && !pv->isFake()){
 	pass1=true;
 	break;
       }
