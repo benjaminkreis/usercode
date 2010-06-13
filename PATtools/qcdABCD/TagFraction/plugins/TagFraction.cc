@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Mon Jun  7 13:29:42 CEST 2010
-// $Id: TagFraction.cc,v 1.1 2010/06/09 09:46:04 kreis Exp $
+// $Id: TagFraction.cc,v 1.2 2010/06/11 18:13:05 kreis Exp $
 //
 //
 
@@ -370,12 +370,13 @@ TagFraction::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      
      tree1_->Fill();
      
-     P2Tot_ += P2;
-     dP2Tott_ += dP2*dP2;
-     Pge2Tot_ += Pge2;
-     dPge2Tott_ += dPge2*dPge2;
-     Pge3Tot_ += Pge3;
-     dPge3Tott_ += dPge3*dPge3;
+     //this part only works if events have the same weight
+     // P2Tot_ += P2;
+     // dP2Tott_ += dP2*dP2;
+     // Pge2Tot_ += Pge2;
+     // dPge2Tott_ += dPge2*dPge2;
+     // Pge3Tot_ += Pge3;
+     // dPge3Tott_ += dPge3*dPge3;
      
    }// end signal region cut
 } 
@@ -411,7 +412,7 @@ TagFraction::beginJob()
   tree1_->Branch("qScale", &tree1_qScale_, "tree1_qScale_/F");
   tree1_->Branch("PtHat", &tree1_PtHat_, "tree1_PtHat_/F");
 
-  TFile f("tagjeteff_QCD.root");
+  TFile f("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/TagFraction/test/tagjeteff_QCD.root");
   if(!f.IsZombie()){
     hTagEff_ = (TH2F*)f.Get("Heff_t");
     hTagEffe_ = (TH2F*)f.Get("Heff_te");
@@ -430,9 +431,9 @@ void
 TagFraction::endJob() {
   std::cout << "nEvents: " << nEvents_ << std::endl;
   std::cout << "nPassCuts: " << nPassCuts_<< std::endl;
-  std::cout << "P2Tot: " << P2Tot_ << " +- " << sqrt(dP2Tott_) << std::endl;
-  std::cout << "Pge2Tot: " << Pge2Tot_ << " +- " << sqrt(dPge2Tott_) << std::endl;
-  std::cout << "Pge3Tot: " << Pge3Tot_ << " +- " << sqrt(dPge3Tott_) << std::endl;
+  //  std::cout << "P2Tot: " << P2Tot_ << " +- " << sqrt(dP2Tott_) << std::endl;
+  // std::cout << "Pge2Tot: " << Pge2Tot_ << " +- " << sqrt(dPge2Tott_) << std::endl;
+  // std::cout << "Pge3Tot: " << Pge3Tot_ << " +- " << sqrt(dPge3Tott_) << std::endl;
 }
 
 //define this as a plug-in
