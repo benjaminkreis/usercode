@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Thu Jun 10 13:24:41 CEST 2010
-// $Id: OptFilter.cc,v 1.5 2010/06/13 08:21:12 kreis Exp $
+// $Id: OptFilter.cc,v 1.6 2010/06/13 11:39:58 kreis Exp $
 //
 //
 
@@ -39,6 +39,8 @@
 #include "DataFormats/PatCandidates/interface/MET.h"
 #include "DataFormats/PatCandidates/interface/Jet.h"
 #include "DataFormats/VertexReco/interface/Vertex.h" 
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+
 //
 // class declaration
 //
@@ -63,18 +65,19 @@ class OptFilter : public edm::EDFilter {
 
   std::vector<std::string> hltnames_;
 
-  int nEvents_;
-  int nPass0_;
-  int nPass1_;
-  int nPass2_;
-  int nPass3_;
-  int nPass4_;
-  int nPass5_;
-  int nPass6_;
-  int nPass7_;
-  int nPass8a_;
-  int nPass8b_;
-  int nPass8c_;
+  int nEventsUnweighted_;
+  double nEvents_;
+  double nPass0_;
+  double nPass1_;
+  double nPass2_;
+  double nPass3_;
+  double nPass4_;
+  double nPass5_;
+  double nPass6_;
+  double nPass7_;
+  double nPass8a_;
+  double nPass8b_;
+  double nPass8c_;
 
 };
 
@@ -119,8 +122,9 @@ OptFilter::~OptFilter()
 bool
 OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  nEvents_++;
 
+  nEventsUnweighted_++;
+ 
   using namespace edm;
   using namespace std;
   
@@ -148,10 +152,75 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<std::vector<reco::Vertex> > pvHandle;
   iEvent.getByLabel(pvSrc_, pvHandle);
   
+  // get gen event info
+  edm::Handle<GenEventInfoProduct> genEvtInfo;
+  bool hasGenEventInfo = iEvent.getByLabel("generator", genEvtInfo);
+
+
+
   /////////////////////////////////////
 
   ////////////////////////////////////
 
+
+  // WEIGHT ///////////////////////////////////////////////
+  ////////////////////////////////////////////////////////
+  float pthat = -1.0;
+  float qScale = -1.0;
+  if(hasGenEventInfo){ 
+    pthat = ( genEvtInfo->hasBinningValues() ? (genEvtInfo->binningValues())[0] : 0.0);
+    qScale = genEvtInfo->qScale();
+  }
+    
+  double weight0_15 = 0.0;
+  double weight15_30 = 14298.997620292488136328756809234619140625;
+  double weight30_80 = 1091.53851475096462309011258184909820556640625;
+  double weight80_170 =  28.207406584048921871499260305427014827728271484375;
+  double weight170_300 = 0.79018790063592792005664477983373217284679412841796875;
+  double weight300_470 =  0.036904883563299566151538755320871132425963878631591796875;
+  double weight470_800 =  0.0036947781444590052125909185321006589219905436038970947265625;
+  double weight800_1400 =  9.9209949383626135598068795928838881081901490688323974609375e-05;
+  double weight1400_inf = 9.428943722732783707174484925939150770091146114282310009002685546875e-07;
+  
+  double weight = 1.0;
+  bool isQCD = false;
+  
+  if(isQCD){
+    if(pthat<15.0){
+      weight = weight0_15;
+    }
+    else if(pthat>=15.0 && pthat <30.0){
+      weight =  weight15_30;
+    }
+    else if(pthat>=30.0 && pthat <80.0){
+      weight =  weight30_80;
+    }
+    else if(pthat>=80.0 && pthat < 170.0){
+      weight =  weight80_170;
+    }
+    else if(pthat>=170.0 && pthat < 300.0){
+      weight =  weight170_300;
+    }
+    else if(pthat>=300.0 && pthat < 470.0){
+      weight =  weight300_470;
+    }
+    else if(pthat>=470.0 && pthat < 800.0){
+      weight =  weight470_800;
+    }
+    else if(pthat>=800.0 && pthat < 1400.0){
+      weight =  weight800_1400;
+    }
+    else if(pthat>=1400){
+      weight =  weight1400_inf;
+    }
+    else{
+      std::cout << "NO WEIGHT ERROR" << std::endl;
+      weight = 0.0;
+    }
+  }
+  nEvents_+=weight;
+  //////////////////////////////////////////////////////////
+  
 
 
   //Trigger Cut/////////////////////////////////////////////
@@ -305,8 +374,8 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   bool pass7 = false;
   bool isolatedElectron = false;
   for(edm::View<pat::Electron>::const_iterator electron=electrons->begin(); electron!=electrons->end(); ++electron){
-    float e_iso =  (electron->trackIso()+electron->ecalIso()+electron->hcalIso())/electron->pt();
-    if( (electron->pt()>15) && (fabs(electron->eta())<2.4) && (fabs(electron->dB())<0.2) && (e_iso<0.1) && (electron->electronID("eidLoose")) ) isolatedElectron = true;
+    float e_iso =  (electron->trackIso()+electron->ecalIso()+electron->hcalIso())/electron->et();
+    if( (electron->et()>15) && (fabs(electron->eta())<2.4) && (fabs(electron->dB())<0.2) && (e_iso<0.1) && (electron->electronID("eidLoose")) ) isolatedElectron = true;
   }//end electron loop
   if(!isolatedElectron) pass7 = true;
   // end isolated electron stuff /////////////////////////
@@ -316,27 +385,27 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   bool saveEvent = false;
 
   if(pass0){
-    nPass0_++;
+    nPass0_+=weight;
     if(pass1){
-      nPass1_++;
+      nPass1_+=weight;
       if(pass2){
-	nPass2_++;
+	nPass2_+=weight;
 	if(pass3){
-	  nPass3_++;
+	  nPass3_+=weight;
 	  if(pass4){
-	    nPass4_++;
+	    nPass4_+=weight;
 	    if(pass5){
-	      nPass5_++;
+	      nPass5_+=weight;
 	      if(pass6){
-		nPass6_++;
+		nPass6_+=weight;
 		if(pass7){
-		  nPass7_++;
+		  nPass7_+=weight;
 		  if(pass8a){
-		    nPass8a_++;
+		    nPass8a_+=weight;
 		    if(pass8b){
-		      nPass8b_++;
+		      nPass8b_+=weight;
 		      if(pass8c){
-			nPass8c_++;
+			nPass8c_+=weight;
 		      }
 		    }
 		  }
@@ -364,18 +433,19 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 OptFilter::beginJob()
 {
-  nEvents_ = 0;
-  nPass0_ = 0;
-  nPass1_ = 0;
-  nPass2_ = 0;
-  nPass3_ = 0;
-  nPass4_ = 0;
-  nPass5_ = 0;
-  nPass6_ = 0;
-  nPass7_ = 0;
-  nPass8a_ = 0;
-  nPass8b_ = 0;
-  nPass8c_ = 0;
+  nEventsUnweighted_ = 0;
+  nEvents_ = 0.0;
+  nPass0_ = 0.0;
+  nPass1_ = 0.0;
+  nPass2_ = 0.0;
+  nPass3_ = 0.0;
+  nPass4_ = 0.0;
+  nPass5_ = 0.0;
+  nPass6_ = 0.0;
+  nPass7_ = 0.0;
+  nPass8a_ = 0.0;
+  nPass8b_ = 0.0;
+  nPass8c_ = 0.0;
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -383,7 +453,8 @@ void
 OptFilter::endJob() {
 
   std::cout << "\nCU SUSY b-tag Optmized Cutflow:" << std::endl;
-  std::cout << "nEvents: " << nEvents_ << " +- " << sqrt(nEvents_) <<std::endl;
+  std::cout << "nEvents (unweighted): " << nEventsUnweighted_ << std::endl;
+  std::cout << "nEvents: " << nEvents_ << std::endl;
   std::cout << "nPass0: " << nPass0_ << " +- " << sqrt(nPass0_) << ", " << (float) nPass0_/nEvents_*100.0 << " %" << std::endl;
   std::cout << "nPass1: " << nPass1_ << " +- " << sqrt(nPass1_) << ", " << (float) nPass1_/nPass0_*100.0 << " %" << std::endl;
   std::cout << "nPass2: " << nPass2_ << " +- " << sqrt(nPass2_) << ", " << (float) nPass2_/nPass1_*100.0 << " %" << std::endl;
