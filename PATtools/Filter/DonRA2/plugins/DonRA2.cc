@@ -6,6 +6,9 @@
 #include <cmath>
 #include "assert.h"
 
+//root
+#include "TH1D.h"
+
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDFilter.h"
@@ -18,7 +21,8 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "FWCore/Framework/interface/TriggerNames.h"
+#include "FWCore/Common/interface/TriggerNames.h"
+//#include "FWCore/Framework/interface/TriggerNames.h"
 #include "DataFormats/Common/interface/TriggerResults.h"
 
 #include "DataFormats/PatCandidates/interface/Electron.h"
@@ -43,6 +47,8 @@ private:
       
   // ----------member data ---------------------------
   
+  TH1D* hist1_;
+
   int nEventsUnweighted_;
   double nEvents_;
   double nEvPass0_;
@@ -68,6 +74,7 @@ private:
   edm::InputTag triggerResultsTag_;
   edm::InputTag pvSrc_;
   edm::InputTag bsSrc_;
+  double useWeight_;
 
 };
 
@@ -86,7 +93,9 @@ DonRA2::DonRA2(const edm::ParameterSet& iConfig):
   metSrc_(iConfig.getUntrackedParameter<edm::InputTag>("metSrc" )),
   triggerResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("triggerResults")),
   pvSrc_(iConfig.getParameter<edm::InputTag>("pvSrc")),
-  bsSrc_(iConfig.getParameter<edm::InputTag>("bsSrc"))
+  bsSrc_(iConfig.getParameter<edm::InputTag>("bsSrc")),
+  useWeight_(iConfig.getUntrackedParameter<double>("useWeight"))
+  
 
 {
    //now do what ever initialization is needed
@@ -169,10 +178,10 @@ DonRA2::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   double weight1400_inf = 9.428943722732783707174484925939150770091146114282310009002685546875e-07;
   
   double weight = 1.0;
-  // bool isQCD = false;
-  bool isQCD = true;
+  //bool isQCD = false;
+  //bool isQCD = true;
   
-  if(isQCD){
+  if(useWeight_>0.0){
     if(pthat<15.0){
       weight = weight0_15;
     }
@@ -207,29 +216,38 @@ DonRA2::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   }
   nEvents_+=weight;
   //////////////////////////////////////////////////////////
-  
+
   //Trigger Cut/////////////////////////////////////////////
   //////////////////////////////////////////////////////////
   bool pass0 = false;
-  edm::TriggerNames triggerNames;
+  // edm::TriggerNames triggerNames;
   
   if(triggerResults.isValid() ){
     
-    triggerNames.init(*triggerResults);
-    
+    //BEN
+    /* triggerNames.init(*triggerResults);
     hltnames_=triggerNames.triggerNames();
     for( int itrig=0; itrig<(int)hltnames_.size(); ++itrig){
       //std::cout << "Trigger bit:" << itrig <<", Name:" << hltnames_[itrig] << ", Fired:" << triggerResults->accept(itrig) << std::endl;
       if ( !triggerResults->wasrun(itrig)) std::cout<<"WARNING -- a trigger path was not run for this event!"<<std::endl;
       if ( triggerResults->error(itrig)) std::cout<<"WARNING -- a trigger path had an error for this event!"<<std::endl;
       if(hltnames_[itrig]=="HLT_HT200" && triggerResults->accept(itrig)) pass0=true;
+      }*/
+
+    //DON
+    const edm::TriggerNames & triggerNames = iEvent.triggerNames(*triggerResults);
+    unsigned int trigger_size = triggerResults->size();
+    unsigned int trigger_position = triggerNames.triggerIndex("HLT_HT200");
+    
+    if (trigger_position < trigger_size){
+      pass0= triggerResults->accept(trigger_position);
+      //  if(pass0) cout << iEvent.id() << " passes Don's trigger cut" << endl;
     }
   }
   else {
     std::cout<<"ERROR -- triggerResults is invalid!"<<std::endl;
   }
   //end Trigger Cut////////////////////////////////////////  
-  
   
   //Primary Vertex Cut//////////////////////////////////////
   //////////////////////////////////////////////////////////
@@ -410,30 +428,44 @@ DonRA2::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   // C    T        L    W  //
   //   U         F   O     //  
   ///////////////////////////
+  
+  hist1_->Fill(0.0,weight);
   if(pass0){
-    nEvPass0_++;
+    nEvPass0_+=weight;
+    hist1_->Fill(1., weight);
     if(pass1){
-      nEvPass1_++;
+      nEvPass1_+=weight;
+      hist1_->Fill(2., weight);
       if(pass2){
-	nEvPass2_++;
+	nEvPass2_+=weight;
+	hist1_->Fill(3., weight);
 	if(pass3){
-	  nEvPass3_++;
+	  nEvPass3_+=weight;
+	  hist1_->Fill(4., weight);
 	  if(pass4){
-	    nEvPass4_++;
+	    nEvPass4_+=weight;
+	    hist1_->Fill(5., weight);
 	    if(pass5){ // MHT cut
-	      nEvPass5_++;
+	      nEvPass5_+=weight;
+	      hist1_->Fill(6., weight);
 	      if(pass6){
-		nEvPass6_++;
+		nEvPass6_+=weight;
+		hist1_->Fill(7., weight);
 		if(pass7){ // angular cuts
-		  nEvPass7_++;
+		  nEvPass7_+=weight;
+		  hist1_->Fill(8., weight);
 		  if(pass7p5){
-		    nEvPass7p5_++;
+		    nEvPass7p5_+=weight;
+		    hist1_->Fill(9., weight);
 		    if(pass8a){
-		      nEvPass8a_++;
+		      nEvPass8a_+=weight;
+		      hist1_->Fill(10., weight);
 		      if(pass8b){
-			nEvPass8b_++;
+			nEvPass8b_+=weight;
+			hist1_->Fill(11., weight);
 			if(pass8c){
-			  nEvPass8c_++;
+			  nEvPass8c_+=weight;
+			  hist1_->Fill(12., weight);
 			}//end pass8c
 		      }//end pass8b
 		    }//end pass8a
@@ -468,29 +500,48 @@ DonRA2::beginJob()
   nEvPass8a_ = 0;
   nEvPass8b_ = 0;
   nEvPass8c_ = 0;
+
+  edm::Service<TFileService> fs;
+  hist1_ = fs->make<TH1D>("hist1", "cutflow hist",13,-0.5,12.5);
+  hist1_->Sumw2();
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 DonRA2::endJob() {
-  std::cout << "\n2010 DonRA2CUT FLOW:" << std::endl;
+  
+  std::cout << "\n2010 DonRA2CUT FLOW (from counters):" << std::endl;
   std::cout << "nEvents (unweighted): " << nEventsUnweighted_ << std::endl;
   std::cout << "nEvents: " << nEvents_ << std::endl;
-  std::cout << "nEvPass0: " << nEvPass0_ << " +- " << sqrt(nEvPass0_) << ", " << (float) nEvPass0_/nEventsUnweighted_*100.0 << " %" << std::endl;
-  std::cout << "nEvPass1: " << nEvPass1_ << " +- " << sqrt(nEvPass1_) << ", " << (float) nEvPass1_/nEvPass0_*100.0 << " %" << std::endl;
-  std::cout << "nEvPass2: " << nEvPass2_ << " +- " << sqrt(nEvPass2_) << ", " << (float) nEvPass2_/nEvPass1_*100.0 << " %" << std::endl;
-  std::cout << "nEvPass3: " << nEvPass3_ << " +- " << sqrt(nEvPass3_) << ", " << (float) nEvPass3_/nEvPass2_*100.0 << " %" << std::endl;
-  std::cout << "nEvPass4: " << nEvPass4_ << " +- " << sqrt(nEvPass4_) << ", " << (float) nEvPass4_/nEvPass3_*100.0 << " %" << std::endl;
-  std::cout << "nEvPass5: " << nEvPass5_ << " +- " << sqrt(nEvPass5_) << ", " << (float) nEvPass5_/nEvPass4_*100.0 << " %" << std::endl;
-  std::cout << "nEvPass6: " << nEvPass6_ << " +- " << sqrt(nEvPass6_) << ", " << (float) nEvPass6_/nEvPass5_*100.0 << " %" << std::endl;
-  std::cout << "nEvPass7: " << nEvPass7_ << " +- " << sqrt(nEvPass7_) << ", " << (float) nEvPass7_/nEvPass6_*100.0 << " %" << std::endl;
-  std::cout << "nEvPass7p5: " << nEvPass7p5_ << " +- " << sqrt(nEvPass7p5_) << ", " << (float) nEvPass7p5_/nEvPass7_*100.0 << " %" << std::endl;
- 
+  std::cout << "nEvPass0: " << nEvPass0_ << " +- " << sqrt(nEvPass0_) << ", " << (double) nEvPass0_/nEventsUnweighted_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass1: " << nEvPass1_ << " +- " << sqrt(nEvPass1_) << ", " << (double) nEvPass1_/nEvPass0_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass2: " << nEvPass2_ << " +- " << sqrt(nEvPass2_) << ", " << (double) nEvPass2_/nEvPass1_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass3: " << nEvPass3_ << " +- " << sqrt(nEvPass3_) << ", " << (double) nEvPass3_/nEvPass2_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass4: " << nEvPass4_ << " +- " << sqrt(nEvPass4_) << ", " << (double) nEvPass4_/nEvPass3_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass5: " << nEvPass5_ << " +- " << sqrt(nEvPass5_) << ", " << (double) nEvPass5_/nEvPass4_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass6: " << nEvPass6_ << " +- " << sqrt(nEvPass6_) << ", " << (double) nEvPass6_/nEvPass5_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass7: " << nEvPass7_ << " +- " << sqrt(nEvPass7_) << ", " << (double) nEvPass7_/nEvPass6_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass7p5: " << nEvPass7p5_ << " +- " << sqrt(nEvPass7p5_) << ", " << (double) nEvPass7p5_/nEvPass7_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass8a: " << nEvPass8a_ << " +- " << sqrt(nEvPass8a_) << ", " << (double) nEvPass8a_/nEvPass7p5_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass8b: " << nEvPass8b_ << " +- " << sqrt(nEvPass8b_) << ", " << (double) nEvPass8b_/nEvPass8a_*100.0 << " %" << std::endl;
+  std::cout << "nEvPass8c: " << nEvPass8c_ << " +- " << sqrt(nEvPass8c_) << ", " << (double) nEvPass8c_/nEvPass8b_*100.0 << " %" << std::endl;
   std::cout << std::endl;
-  std::cout << "And B-tagging in additoin to RA2" << std::endl;
-  std::cout << "nEvPass8a: " << nEvPass8a_ << " +- " << sqrt(nEvPass8a_) << ", " << (float) nEvPass8a_/nEvPass7p5_*100.0 << " %" << std::endl;
-  std::cout << "nEvPass8b: " << nEvPass8b_ << " +- " << sqrt(nEvPass8b_) << ", " << (float) nEvPass8b_/nEvPass8a_*100.0 << " %" << std::endl;
-  std::cout << "nEvPass8c: " << nEvPass8c_ << " +- " << sqrt(nEvPass8c_) << ", " << (float) nEvPass8c_/nEvPass8b_*100.0 << " %" << std::endl;
+  std::cout << std::endl;
+  std::cout << "\n2010 DonRA2CUT FLOW (from histogram):" << std::endl;
+  std::cout << "nEvents: " << hist1_->GetBinContent(1) << " +- "<< hist1_->GetBinError(1) << std::endl;
+  std::cout << "nPass0_: " << hist1_->GetBinContent(2) << " +- "<< hist1_->GetBinError(2) << std::endl;
+  std::cout << "nPass1_: " << hist1_->GetBinContent(3) << " +- "<< hist1_->GetBinError(3) << std::endl;
+  std::cout << "nPass2_: " << hist1_->GetBinContent(4) << " +- "<< hist1_->GetBinError(4) << std::endl;
+  std::cout << "nPass3_: " << hist1_->GetBinContent(5) << " +- "<< hist1_->GetBinError(5) << std::endl;
+  std::cout << "nPass4_: " << hist1_->GetBinContent(6) << " +- "<< hist1_->GetBinError(6) << std::endl;
+  std::cout << "nPass5_: " << hist1_->GetBinContent(7) << " +- "<< hist1_->GetBinError(7) << std::endl;
+  std::cout << "nPass6_: " << hist1_->GetBinContent(8) << " +- "<< hist1_->GetBinError(8) << std::endl;
+  std::cout << "nPass7_: " << hist1_->GetBinContent(9) << " +- "<< hist1_->GetBinError(9) << std::endl;
+  std::cout << "nPass7p5_: " << hist1_->GetBinContent(10) << " +- "<< hist1_->GetBinError(10) << std::endl;
+  std::cout << "nPass8a_: " << hist1_->GetBinContent(11) << " +- "<< hist1_->GetBinError(11) << std::endl;
+  std::cout << "nPass8b_: " << hist1_->GetBinContent(12) << " +- "<< hist1_->GetBinError(12) << std::endl;
+  std::cout << "nPass8c_: " << hist1_->GetBinContent(13) << " +- "<< hist1_->GetBinError(13) << std::endl;
+
 }
 
 //define this as a plug-in
