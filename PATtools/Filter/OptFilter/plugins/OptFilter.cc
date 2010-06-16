@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Thu Jun 10 13:24:41 CEST 2010
-// $Id: OptFilter.cc,v 1.6 2010/06/13 11:39:58 kreis Exp $
+// $Id: OptFilter.cc,v 1.7 2010/06/14 10:20:06 kreis Exp $
 //
 //
 
@@ -30,7 +30,8 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "FWCore/Framework/interface/TriggerNames.h"
+#include "FWCore/Common/interface/TriggerNames.h"
+//#include "FWCore/Framework/interface/TriggerNames.h"
 #include "DataFormats/Common/interface/TriggerResults.h"
 
 #include "DataFormats/PatCandidates/interface/TriggerEvent.h"
@@ -226,31 +227,29 @@ OptFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   //Trigger Cut/////////////////////////////////////////////
   //////////////////////////////////////////////////////////
   bool pass0 = false;
-  edm::TriggerNames triggerNames;
+  // edm::TriggerNames triggerNames;
   
   if(triggerResults.isValid() ){
     
     //BEN
-    triggerNames.init(*triggerResults);
+    /* triggerNames.init(*triggerResults);
     hltnames_=triggerNames.triggerNames();
     for( int itrig=0; itrig<(int)hltnames_.size(); ++itrig){
       //std::cout << "Trigger bit:" << itrig <<", Name:" << hltnames_[itrig] << ", Fired:" << triggerResults->accept(itrig) << std::endl;
       if ( !triggerResults->wasrun(itrig)) std::cout<<"WARNING -- a trigger path was not run for this event!"<<std::endl;
       if ( triggerResults->error(itrig)) std::cout<<"WARNING -- a trigger path had an error for this event!"<<std::endl;
       if(hltnames_[itrig]=="HLT_HT200" && triggerResults->accept(itrig)) pass0=true;
-    }
+      }*/
 
     //DON
-    /*
-    const edm::TriggerNames & triggerNames2 = iEvent.triggerNames(*triggerResults);
+    const edm::TriggerNames & triggerNames = iEvent.triggerNames(*triggerResults);
     unsigned int trigger_size = triggerResults->size();
-    unsigned int trigger_position = triggerNames2.triggerIndex("HLT_HT200");
+    unsigned int trigger_position = triggerNames.triggerIndex("HLT_HT200");
     
     if (trigger_position < trigger_size){
       pass0= triggerResults->accept(trigger_position);
-      if(pass0) cout << iEvent.id() << " passes Don's trigger cut" << endl;
+      //  if(pass0) cout << iEvent.id() << " passes Don's trigger cut" << endl;
     }
-    */
   }
   else {
     std::cout<<"ERROR -- triggerResults is invalid!"<<std::endl;
