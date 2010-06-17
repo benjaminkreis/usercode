@@ -34,7 +34,7 @@ void analyzeFillABCD(){
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
   
-  int fitNum = 6; //number of bins in xL region, used to fit ratio
+  int fitNum = 4; //number of bins in xL region, used to fit ratio
   int extendedNum = 20; //number of bins in xR region, used in extrapolation
   
  
@@ -58,7 +58,7 @@ void analyzeFillABCD(){
   
   float pi=4*atan(1.0);
   
-  float borderv1a=0.0;
+  float borderv1a=50.0;
   float borderv1b=150.0;
   float borderv2a=150.0;
   float borderv2b=1000.0;
@@ -73,9 +73,12 @@ void analyzeFillABCD(){
   ///////////////////
   //    CANVAS     //
   ///////////////////
-  TCanvas * C_weight = new TCanvas("C_weight", "Canvas weight", 640, 960);
-  C_weight->Divide(1,2);
-  C_weight->cd(1);
+  TCanvas * C_reweight = new TCanvas("C_reweight", "Canvas reweight", 640, 2*480);
+  C_reweight->Divide(1,2);
+  C_reweight->cd(1);
+  TCanvas * C_contribute = new TCanvas("C_contribute", "Canvas contributions", 2*640, 2*480);
+  C_contribute->Divide(2,2);
+  C_contribute->cd(1);
   TCanvas * C_extrap = new TCanvas("C_extrap", "Canvas ratio", 800, 700);
   C_extrap->Divide(1,1);
   C_extrap->cd(1);
@@ -85,6 +88,9 @@ void analyzeFillABCD(){
   TCanvas * C_ABCD = new TCanvas("C_ABCD", "Canvas ABCD", 1000, 1000);
   C_ABCD->Divide(2,2);
   C_ABCD->cd(1);
+  TCanvas * C_ABCDweights = new TCanvas("C_ABCDweights", "Canvas ABCD weights", 1000, 1000);
+  C_ABCDweights->Divide(2,2);
+  C_ABCDweights->cd(1);
   TCanvas * C_hist1 = new TCanvas ("C_hist1", "Canvas hist1", 800, 700);
   C_hist1->Divide(1,1);
   C_hist1->cd(1);
@@ -125,22 +131,34 @@ void analyzeFillABCD(){
   TH2F* histB = new TH2F("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
   TH2F* histC = new TH2F("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2F* histD = new TH2F("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
+  TH1F* histCx = new TH1F("H_Cx", "Region C - MHT", extendedNum, borderv2a, borderv2b);
+  //  TH1F* histCx = new TH1F("H_Cx", "Region C - MHT", 50, borderv2a, borderv2b);
+  TH1F* histDx = new TH1F("H_Dx", "Region D - MHT", extendedNum, borderv2a, borderv2b);
+  //  TH1F* histDx = new TH1F("H_Dx", "Region D - MHT", 50, borderv2a, borderv2b);
   histA->Sumw2();
   histB->Sumw2();
   histC->Sumw2();
   histD->Sumw2();
+  histCx->Sumw2();
+  histDx->Sumw2();
   TAxis *xaxA = histA->GetXaxis();
   TAxis *xaxB = histB->GetXaxis();
   TAxis *xaxC = histC->GetXaxis();
   TAxis *xaxD = histD->GetXaxis();
+  TAxis *xaxCx = histCx->GetXaxis();
+  TAxis *xaxDx = histDx->GetXaxis();
   TAxis *yaxA = histA->GetYaxis();
   TAxis *yaxB = histB->GetYaxis();
   TAxis *yaxC = histC->GetYaxis();
   TAxis *yaxD = histD->GetYaxis();
+  TAxis *yaxCx = histCx->GetYaxis();
+  TAxis *yaxDx = histDx->GetYaxis();
   xaxA->SetTitle(xTitle);
   xaxB->SetTitle(xTitle);
   xaxC->SetTitle(xTitle);
   xaxD->SetTitle(xTitle);
+  xaxCx->SetTitle(xTitle);
+  xaxDx->SetTitle(xTitle);
   yaxA->SetTitleOffset(1.4);
   yaxB->SetTitleOffset(1.15);
   yaxC->SetTitleOffset(1.15);
@@ -149,10 +167,12 @@ void analyzeFillABCD(){
   yaxB->SetTitle(yTitle);
   yaxC->SetTitle(yTitle);
   yaxD->SetTitle(yTitle);
-  
-  //////////////////
-  //LOOP over TREE//
-  //////////////////
+  yaxCx->SetTitle("N");
+  yaxDx->SetTitle("N");
+
+  //////////////////////////
+  //LOOP over TREE to FILL//
+  //////////////////////////
   
   TChain* InputChain = FormChain();
   int numEntries = InputChain->GetEntries();
@@ -173,6 +193,8 @@ void analyzeFillABCD(){
     bcontinue = true;
     
     if(bcontinue){
+      int Anow=0, Bnow=0, Cnow=0, Dnow=0;
+      
       //get weight
       int bin = Hweight.FindBin(pthat);
       double weight=Hweight.GetBinContent(bin);
@@ -181,23 +203,27 @@ void analyzeFillABCD(){
       
       //COUNT nA, nB, nC, nD
       if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
+	Anow=1;
 	nA+=weight;
 	nA_e+=weight*weight;
       }
       else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
+	Dnow=1;
 	nD+=weight;
 	nD_e+=weight*weight;
       }
       else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
+	Bnow=1;
 	nB+=weight;
 	nB_e+=weight*weight;
       }
       else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh2a) && (y<borderh2b) ){
+	Cnow=1;
 	nC+=weight;
 	nC_e +=weight*weight;
       }
       else {
-	cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
+	//cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
 	nOutside++;
 	//assert(0);
       }
@@ -208,19 +234,21 @@ void analyzeFillABCD(){
       histB->Fill(x,y, weight);
       histC->Fill(x,y, weight);
       histD->Fill(x,y, weight);
+      if(Cnow) histCx->Fill(x,weight);
+      if(Dnow) histDx->Fill(x,weight);
    
     }//end bcontinue
   }//end loop tree
   
-  ////////////////////////////////////
-  ///////////FIT AND DRAW/////////////
-  ////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+  ////////////////////////// Analysis ////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
 
   //weight histograms
-  C_weight->cd(1);
+  C_reweight->cd(1);
   gPad->SetLogy(1);
   histPtHat_noW->Draw();
-  C_weight->cd(2);
+  C_reweight->cd(2);
   gPad->SetLogy(1);
   histPtHat->Draw();
 
@@ -315,10 +343,15 @@ void analyzeFillABCD(){
   gPad->SetLeftMargin(.14);
   gPad->Modified();
   histD->Draw("COLZ");
-  
-  //////////////////////////////////
-  //// Ratio graph for all MHT  ////
-  //////////////////////////////////
+
+  C_contribute->cd(1);
+  histCx->Draw();
+  C_contribute->cd(2);
+  histDx->Draw();
+   
+  ///////////////////////////////
+  //// ratio graph for all x ////
+  ///////////////////////////////
   cout << endl;
   cout << "All points:" << endl;
   
@@ -435,35 +468,55 @@ void analyzeFillABCD(){
   fexp1b->Draw("SAME");
   
   ////////////////////////////////////////////////
-  ///Calculate estimate with uncertainty///
+  ///   Calculate estimate with uncertainty   ////
   ////////////////////////////////////////////////
   cout << endl;
   cout << endl;
   cout << "Running exponential estimate:" << endl;
   
+  float gr_contx[extendedNum];
+  float gr_conty[extendedNum];
+  float gr_contxe[extendedNum];
+  float gr_contye[extendedNum];
+ 
   float extendedEstimate_exp =0;
   float ext_serror_exp = 0;
   for(int i =1; i<=extendedNum; i++){
     
     float xError = 0;
     float xvalue = xaxD->GetBinCenter(i);  
+    gr_contx[i-1] = xvalue;
+    gr_contxe[i-1] = xError;
     
     //EXPONENTIAL
     float ratiox_exp = par_exp[0]*exp(par_exp[1]*xvalue);
-    extendedEstimate_exp += ratiox_exp*(histD->GetBinContent(i,1));
+    float exp_contribution = ratiox_exp*(histD->GetBinContent(i,1));
     
     //calculate error squared for exponential
-    ext_serror_exp += exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0)) * exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0));
-    ext_serror_exp += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1)) * par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1));
-    ext_serror_exp += par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*xError *  par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*xError;
-    ext_serror_exp += par_exp[0]*exp(par_exp[1]*xvalue)*(histD->GetBinError(i,1)) *  par_exp[0]*exp(par_exp[1]*xvalue)*(histD->GetBinError(i,1));
-  
+    float ext_serror_exp_t = 0;
+    ext_serror_exp_t += exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0)) * exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0));
+    ext_serror_exp_t += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1)) * par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1));
+    ext_serror_exp_t += par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*xError *  par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*xError;
+    ext_serror_exp_t += par_exp[0]*exp(par_exp[1]*xvalue)*(histD->GetBinError(i,1)) *  par_exp[0]*exp(par_exp[1]*xvalue)*(histD->GetBinError(i,1));
+    ext_serror_exp += ext_serror_exp_t;
+    
+    extendedEstimate_exp += exp_contribution;
+    gr_conty[i-1] = exp_contribution;
+    gr_contye[i-1] = sqrt(ext_serror_exp_t);
     cout << extendedEstimate_exp << " +- " << sqrt(ext_serror_exp) << endl;
   }
   
   float ext_error_exp = sqrt(ext_serror_exp);
   float nC_error = sqrt(nC_e);
-   
+  
+  TGraphErrors * grc = new TGraphErrors(extendedNum, gr_contx, gr_conty, gr_contxe, gr_contye); 
+  C_contribute->cd(3);
+  grc->SetTitle("Contribution");
+  grc->GetXaxis()->SetTitle(xTitle);
+  grc->GetYaxis()->SetTitle("N");
+  grc->SetMarkerStyle(4);
+  grc->Draw("AP");
+  
   cout << endl;
   cout << "borderv1a: " << borderv1a << endl;
   cout << "borderv1b: " << borderv1b << endl;
@@ -483,15 +536,20 @@ void analyzeFillABCD(){
   cout << endl;
   
   C_ABCD->Write();
+  C_ABCDweights->Write();
   C_hist1->Write();
   C_fit->Write();
   C_extrap->Write();
-  C_weight->Write();
+  C_reweight->Write();
+  C_contribute->Write();
+
   C_ABCD->Close();
+  C_ABCDweights->Close();
   C_hist1->Close();
   C_fit->Close();
   C_extrap->Close();
-  C_weight->Close();
+  C_reweight->Close();
+  C_contribute->Close();
   
   fout.Close();
 
