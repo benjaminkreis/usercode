@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Mon Jun  7 13:29:42 CEST 2010
-// $Id: TagFraction.cc,v 1.3 2010/06/13 12:29:23 kreis Exp $
+// $Id: TagFraction.cc,v 1.4 2010/06/22 11:38:35 kreis Exp $
 //
 //
 
@@ -27,7 +27,7 @@
 
 // root include files
 #include "TTree.h"
-#include "TH2F.h"
+#include "TH2D.h"
 #include "TFile.h"
 
 // user include files
@@ -88,8 +88,8 @@ class TagFraction : public edm::EDAnalyzer {
   double tree1_qScale_;
   double tree1_PtHat_;
 
-  TH2F* hTagEff_;
-  TH2F* hTagEffe_;
+  TH2D* hTagEff_;
+  TH2D* hTagEffe_;
 
   
 };
@@ -358,6 +358,8 @@ TagFraction::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      Pge3 = 1 - P2 - P1 - P0;
      dPge3 = sqrt(dP2*dP2 + dP1*dP1 + dP0*dP0);
      
+     cout << P0 << " " << P1 << " " << P2  << " " << Pge2 << " " << Pge3 << endl;
+
      tree1_P0_=P0;
      tree1_dP0_=dP0;
      tree1_P1_=P1;
@@ -417,10 +419,10 @@ TagFraction::beginJob()
   tree1_->Branch("qScale", &tree1_qScale_, "tree1_qScale_/D");
   tree1_->Branch("PtHat", &tree1_PtHat_, "tree1_PtHat_/D");
 
-  TFile f("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/TagFraction/test/tagjeteff_QCD.root");
+  TFile f("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/tagjeteff_QCD_double.root");
   if(!f.IsZombie()){
-    hTagEff_ = (TH2F*)f.Get("Heff_t");
-    hTagEffe_ = (TH2F*)f.Get("Heff_te");
+    hTagEff_ = (TH2D*)f.Get("Heff_t");
+    hTagEffe_ = (TH2D*)f.Get("Heff_te");
     std::cout << "hTagEff_ GetEntries(): " << hTagEff_->GetEntries()<<std::endl;
     std::cout << "hTagEffe_ GetEntries(): " << hTagEffe_->GetEntries()<<std::endl;
   }
