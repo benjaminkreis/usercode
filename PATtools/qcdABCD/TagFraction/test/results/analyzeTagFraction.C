@@ -10,6 +10,7 @@
 #include "TH1F.h"
 #include "TFile.h"
 #include "TCanvas.h"
+#include "TLegend.h"
 
 #include "analyzeTagFractionInput.h"
 
@@ -32,16 +33,17 @@ void analyzeTagFraction(){
     
 
   TFile fout("TagFraction_plots.root", "RECREATE");
-  TCanvas *C_P0 = new TCanvas("C_P0", "P0", 640, 480);
-  TCanvas *C_P1 = new TCanvas("C_P1", "P1", 640, 480);
-  TCanvas *C_P2 = new TCanvas("C_P2", "P2", 640, 480);
-  TCanvas *C_Pge2 = new TCanvas("C_Pge2", "Pge2", 640, 480);
-  TCanvas *C_Pge3 = new TCanvas("C_Pge3", "Pge3", 640, 480);
-  TCanvas *C_dP0 = new TCanvas("C_dP0", "dP0", 640, 480);
-  TCanvas *C_dP1 = new TCanvas("C_dP1", "dP1", 640, 480);
-  TCanvas *C_dP2 = new TCanvas("C_dP2", "dP2", 640, 480);
-  TCanvas *C_dPge2 = new TCanvas("C_dPge2", "dPge2", 640, 480);
-  TCanvas *C_dPge3 = new TCanvas("C_dPge3", "dPge3", 640, 480);
+  TCanvas *C_2D = new TCanvas("C_2D", "2D", 640, 480);
+  C_2D->cd();
+  TCanvas *C_P = new TCanvas("C_P", "P", 640, 480);
+  C_P->cd();
+  TH1F *hP0 = new TH1F("hP0", "hP0", 220, 0, 1);
+  TH1F *hP1 = new TH1F("hP1", "hP1", 220, 0, 1);
+  TH1F *hP2 = new TH1F("hP2", "hP2", 220, 0, 1);
+  TH1F *hPge2 = new TH1F("hPge2", "hPge2", 220, 0, 1);
+  TH1F *hPge3 = new TH1F("hPge3", "hPge3", 220, 0, .2);
+  TH2F *hPvT = new TH2F("hPvT", "hPvT",  6, -.5, 5.5, 100, 0, 1);
+  
 
   TChain* InputChain = FormChain(); 
   int fillNum = 0;
@@ -50,7 +52,7 @@ void analyzeTagFraction(){
   
   float P2Tot = 0, dP2Tott = 0, Pge2Tot = 0,dPge2Tott = 0, Pge3Tot=0, dPge3Tott = 0;
 
-  float pthat, P0, P1, P2, dP2, Pge2, dPge2, Pge3, dPge3;
+  double pthat, P0, P1, P2, dP2, Pge2, dPge2, Pge3, dPge3, btag;
   InputChain->SetBranchAddress("PtHat", &pthat);
   InputChain->SetBranchAddress("P0", &P0);
   InputChain->SetBranchAddress("P1", &P1);
@@ -60,38 +62,30 @@ void analyzeTagFraction(){
   InputChain->SetBranchAddress("dPge2", &dPge2);
   InputChain->SetBranchAddress("Pge3", &Pge3);
   InputChain->SetBranchAddress("dPge3", &dPge3);
-  
-  C_P0->cd();
-  InputChain->Draw("P0");
-  C_P1->cd();
-  InputChain->Draw("P1");
-  C_P2->cd();
-  InputChain->Draw("P2");
-  C_Pge2->cd();
-  InputChain->Draw("Pge2");
-  C_Pge3->cd();
-  InputChain->Draw("Pge3");
-  C_dP0->cd();
-  InputChain->Draw("dP0");
-  C_dP1->cd();
-  InputChain->Draw("dP1");
-  C_dP2->cd();
-  InputChain->Draw("dP2");
-  C_dPge2->cd();
-  InputChain->Draw("dPge2");
-  C_dPge3->cd();
-  InputChain->Draw("dPge3");
+  InputChain->SetBranchAddress("btag", &btag);
+  // InputChain->SetBranchStatus("*",1);
 
-  for(int i = 1; i<=numEntries; i++){
+  cout << "    P0       P1        P2        Pge2       Pge3" << endl;
+  for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
     
-    if(P0<0 || P1<0 || P2<0 || Pge2<0 || Pge3<0){
-      cout << P0 << " " << P1 << " " << P2  << " " << Pge2 << " " << Pge3 << endl;
+    if(P0<0 || P1<0 || P2<0 || Pge2<0 || Pge3<0 || P0>1 || P1>1 || P2>1 || Pge2>1 || Pge3>1){
+      cout << P0 << " " << P1 << " " << P2  << " " << Pge2 << " " << Pge3 << endl;  
     }
+      
+      if(Pge3<10E-10) Pge3 = 0.0;
+      
 
     //get weight
     int bin = Hweight->FindBin(pthat);
     double eventweight=Hweight->GetBinContent(bin);
+
+    hP0->Fill(P0,eventweight);
+    hP1->Fill(P1,eventweight);
+    hP2->Fill(P2,eventweight);
+    hPge2->Fill(Pge2,eventweight);
+    hPge3->Fill(Pge3,eventweight);
+    hPvT->Fill(btag,Pge2, eventweight);
 
     P2Tot += P2*eventweight;
     dP2Tott += dP2*dP2*eventweight*eventweight;
@@ -106,25 +100,34 @@ void analyzeTagFraction(){
   std::cout << "Pge2Tot: " << Pge2Tot << " +- " << sqrt(dPge2Tott) << std::endl;
   std::cout << "Pge3Tot: " << Pge3Tot << " +- " << sqrt(dPge3Tott) << std::endl;  
 
-  C_P0->Write();
-  C_P1->Write();
-  C_P2->Write();
-  C_Pge2->Write();
-  C_Pge3->Write();
-  C_dP0->Write();
-  C_dP1->Write();
-  C_dP2->Write();
-  C_dPge2->Write();
-  C_dPge3->Write();
-  C_P0->Close();
-  C_P1->Close();
-  C_P2->Close();
-  C_Pge2->Close();
-  C_Pge3->Close();
-  C_dP0->Close();
-  C_dP1->Close();
-  C_dP2->Close();
-  C_dPge2->Close();
-  C_dPge3->Close();
+
+  hP0->SetLineColor(2);
+  hP1->SetLineColor(3);
+  hP2->SetLineColor(4);
+  hP0->SetLineWidth(2);
+  hP1->SetLineWidth(2);
+  hP2->SetLineWidth(2);
+  TLegend* leg = new TLegend(0.82, 0.70, 0.89, 0.85);
+  leg->AddEntry(hP0, "P0", "l");
+  leg->AddEntry(hP1, "P1", "l");
+  leg->AddEntry(hP2, "P2", "l");
+  leg->SetFillColor(0);
+  leg->SetLineColor(0);
+  C_P->cd();
+  hP2->Draw(); 
+  leg->Draw();
+  hP1->Draw("SAME");
+  hP0->Draw("SAME"); 
+  
+  C_2D->cd();
+  hPvT->GetYaxis()->SetTitle("Probability of 2 or more tags");
+  hPvT->GetXaxis()->SetTitle("Number of tags");
+  hPvT->GetYaxis()->SetTitleOffset(1.15);
+  hPvT->GetYaxis()->SetRangeUser(0,.2);
+  hPvT->Draw("COLZ");
+
+
+  C_P->Write();
+  C_2D->Write();
   fout.Write();
 }
