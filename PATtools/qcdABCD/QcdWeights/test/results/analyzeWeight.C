@@ -6,8 +6,8 @@
 #include "TStyle.h"
 #include "TString.h"
 #include "TChain.h"
-#include "TH2F.h"
-#include "TH1F.h"
+#include "TH2D.h"
+#include "TH1D.h"
 #include "TFile.h"
 #include "TCanvas.h"
 
@@ -174,7 +174,7 @@ void checkWeights(){
   InputChain->SetBranchAddress("qScale", &qScale);
   
   
-  for(int i = 1; i<=numEntries; i++){
+  for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
     
     //get weight
