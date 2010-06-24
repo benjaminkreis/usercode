@@ -6,8 +6,8 @@
 #include "TStyle.h"
 #include "TString.h"
 #include "TChain.h"
-#include "TH2F.h"
-#include "TH1F.h"
+#include "TH2D.h"
+#include "TH1D.h"
 #include "TFile.h"
 #include "TCanvas.h"
 
@@ -21,7 +21,7 @@ void analyzeTagJet(){
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
 
-  TFile fout("tagjeteff_QCD.root", "RECREATE");
+  TFile fout("tagjeteff_QCD_double.root", "RECREATE");
 
   TString xtitle = "jet p_T [GeV]";
   TString ytitle = "jet eta";
@@ -45,15 +45,14 @@ void analyzeTagJet(){
   int nptBins = 21; 
   double ptBinArray[21] = {0.,30.,50.,100.,200.,300.,400.,500.,600.,700.,800.,900.,1000., 1200.,1400.,1600.,1800.,2000.,2300.,2600.,2900.};
   
-  TH2F* Htag = new TH2F("Htag", "H tag", nptBins-1, ptBinArray, 10, -5.0, 5.0);
-  TH2F* Hjet = new TH2F("Hjet", "H jet", nptBins-1, ptBinArray, 10, -5.0, 5.0);
-  TH2F* Hall = new TH2F("Hall", "H all", nptBins-1, ptBinArray, 10, -5.0, 5.0);
-  TH2F* Heff_t = new TH2F("Heff_t", "H eff_t", nptBins-1, ptBinArray, 10, -5.0, 5.0);
-  TH2F* Heff_j = new TH2F("Heff_j", "H eff_j", nptBins-1, ptBinArray, 10, -5.0, 5.0);
-  TH2F* Heff_te = new TH2F("Heff_te", "H eff_te", nptBins-1, ptBinArray, 10, -5.0, 5.0);  
-  TH2F* Heff_je = new TH2F("Heff_je", "H eff_je", nptBins-1, ptBinArray, 10, -5.0, 5.0);  
+  TH2D* Htag = new TH2D("Htag", "H tag", nptBins-1, ptBinArray, 10, -5.0, 5.0);
+  TH2D* Hjet = new TH2D("Hjet", "H jet", nptBins-1, ptBinArray, 10, -5.0, 5.0);
+  TH2D* Hall = new TH2D("Hall", "H all", nptBins-1, ptBinArray, 10, -5.0, 5.0);
+  TH2D* Heff_t = new TH2D("Heff_t", "H eff_t", nptBins-1, ptBinArray, 10, -5.0, 5.0);
+  TH2D* Heff_j = new TH2D("Heff_j", "H eff_j", nptBins-1, ptBinArray, 10, -5.0, 5.0);
+  TH2D* Heff_te = new TH2D("Heff_te", "H eff_te", nptBins-1, ptBinArray, 10, -5.0, 5.0);  
+  TH2D* Heff_je = new TH2D("Heff_je", "H eff_je", nptBins-1, ptBinArray, 10, -5.0, 5.0);  
   
-
   Heff_t->SetMinimum(0.0);
   Heff_t->SetMaximum(.4);
   Heff_j->SetMinimum(0.0);
@@ -78,8 +77,8 @@ void analyzeTagJet(){
   TCanvas* C_all = new TCanvas("C_all", "Canvas all", 2560, 960);
   C_all->Divide(4,2);
 
-  float ptmax = 0.0;
-  for(int i = 1; i<=numEntries; i++){
+  double ptmax = 0.0;
+  for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
 
     bool fillCheck = false;
@@ -109,15 +108,15 @@ void analyzeTagJet(){
     for(int j = 1; j <= etaBins; j++){
       
       int globalBin = Hall->GetBin(i,j);
-      float x = Hall->GetXaxis()->GetBinCenter(i); 
-      float y = Hall->GetYaxis()->GetBinCenter(j);
+      double x = Hall->GetXaxis()->GetBinCenter(i); 
+      double y = Hall->GetYaxis()->GetBinCenter(j);
     
       //eff_t
-      float eff_t = -.01;
-      float eff_te = -.01;
+      double eff_t = -.01;
+      double eff_te = -.01;
       if(Hall->GetBinContent(globalBin) > 0){
-	float tag = Htag->GetBinContent(globalBin); 
-	float all = Hall->GetBinContent(globalBin);
+	double tag = Htag->GetBinContent(globalBin); 
+	double all = Hall->GetBinContent(globalBin);
 	eff_t = tag/all;
 	eff_te = sqrt( (sqrt(tag)/tag)*(sqrt(tag)/tag)+(sqrt(all)/all)*(sqrt(all)/all) )*eff_t;
       }
@@ -125,11 +124,11 @@ void analyzeTagJet(){
       Heff_te->Fill(x,y,eff_te);
 
       //eff_j
-      float eff_j = -.01;
-      float eff_je = -.01;
+      double eff_j = -.01;
+      double eff_je = -.01;
       if(Hall->GetBinContent(globalBin) > 0){
-	float jet =  Hjet->GetBinContent(globalBin);
-	float all = Hall->GetBinContent(globalBin);
+	double jet =  Hjet->GetBinContent(globalBin);
+	double all = Hall->GetBinContent(globalBin);
 	eff_j = jet/all;
 	eff_je =  sqrt( (sqrt(jet)/jet)*(sqrt(jet)/jet)+(sqrt(all)/all)*(sqrt(all)/all) )*eff_j;
       }
@@ -140,9 +139,6 @@ void analyzeTagJet(){
     }
   }
   
-
-
-
   C_all->cd(1);
   gPad->SetRightMargin(.18);
   Htag->Draw("COLZ");
