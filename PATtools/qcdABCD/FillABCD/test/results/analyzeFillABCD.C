@@ -27,6 +27,16 @@
 
 using namespace std;
 
+bool bcontinue(float nbtags){
+  return true;
+  if(nbtags==2){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
 void analyzeFillABCD(){
   cout << endl;
   cout << "Begin analyzeFillABCD" << endl;
@@ -34,12 +44,12 @@ void analyzeFillABCD(){
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
   
-  int fitNum = 4; //number of bins in xL region, used to fit ratio
-  int extendedNum = 20; //number of bins in xR region, used in extrapolation
+  int fitNum = 10; //number of bins in xL region, used to fit ratio
+  int extendedNum = 25; //number of bins in xR region, used in extrapolation
   
  
   //LOAD WEIGHTS
-  TFile finweight("weight_QCD.root","READ");
+  TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD.root","READ");
   TH1D* HweightP = 0;
   if(!finweight.IsZombie()){
     HweightP = (TH1D*)finweight.Get("Hweight");
@@ -67,9 +77,9 @@ void analyzeFillABCD(){
   float borderh2a=0.3;
   float borderh2b=pi;
   
-  float nA=0, nB=0, nC=0, nD=0;
-  float nA_e=0, nB_e=0, nC_e=0, nD_e=0; 
-  int nOutside=0;
+  double nA=0, nB=0, nC=0, nD=0, nCextra=0;
+  double nA_e=0, nB_e=0, nC_e=0, nD_e=0, nCextra_e=0; 
+  double nOutside=0;
   ///////////////////
   //    CANVAS     //
   ///////////////////
@@ -88,9 +98,6 @@ void analyzeFillABCD(){
   TCanvas * C_ABCD = new TCanvas("C_ABCD", "Canvas ABCD", 1000, 1000);
   C_ABCD->Divide(2,2);
   C_ABCD->cd(1);
-  TCanvas * C_ABCDweights = new TCanvas("C_ABCDweights", "Canvas ABCD weights", 1000, 1000);
-  C_ABCDweights->Divide(2,2);
-  C_ABCDweights->cd(1);
   TCanvas * C_hist1 = new TCanvas ("C_hist1", "Canvas hist1", 800, 700);
   C_hist1->Divide(1,1);
   C_hist1->cd(1);
@@ -132,9 +139,7 @@ void analyzeFillABCD(){
   TH2F* histC = new TH2F("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2F* histD = new TH2F("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
   TH1F* histCx = new TH1F("H_Cx", "Region C - MHT", extendedNum, borderv2a, borderv2b);
-  //  TH1F* histCx = new TH1F("H_Cx", "Region C - MHT", 50, borderv2a, borderv2b);
   TH1F* histDx = new TH1F("H_Dx", "Region D - MHT", extendedNum, borderv2a, borderv2b);
-  //  TH1F* histDx = new TH1F("H_Dx", "Region D - MHT", 50, borderv2a, borderv2b);
   histA->Sumw2();
   histB->Sumw2();
   histC->Sumw2();
@@ -177,23 +182,22 @@ void analyzeFillABCD(){
   TChain* InputChain = FormChain();
   int numEntries = InputChain->GetEntries();
   cout <<"numEntries: " << numEntries << endl;
-  
+  cout << endl;
+
   float x, y, nbtags, pthat;
   InputChain->SetBranchAddress("MHT",&x);
   InputChain->SetBranchAddress("minDPhi",&y);
   InputChain->SetBranchAddress("PtHat", &pthat);
   InputChain->SetBranchAddress("btag", &nbtags);
   
-  for(int i = 1; i<=numEntries; i++){
+  for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
    
     //btag requirement
-    bool bcontinue=false;
-    if(nbtags==2) bcontinue=true;
-    bcontinue = true;
-    
-    if(bcontinue){
-      int Anow=0, Bnow=0, Cnow=0, Dnow=0;
+    bool bcontinueNow = bcontinue(nbtags);
+
+    if(bcontinueNow){
+      bool Anow=0, Bnow=0, Cnow=0, Dnow=0;
       
       //get weight
       int bin = Hweight.FindBin(pthat);
@@ -224,8 +228,15 @@ void analyzeFillABCD(){
       }
       else {
 	//cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
-	nOutside++;
+	nOutside+=weight;
 	//assert(0);
+      }
+
+
+      if( (x>=borderv2a) && (y>=borderh2a) && !Cnow ){
+	nCextra+=weight;
+	nCextra_e += weight*weight;
+	if(!Cnow) cout << "nCextra with weight = " << weight << endl;
       }
       
       //Fill histogram A, B, C, D
@@ -494,10 +505,10 @@ void analyzeFillABCD(){
     
     //calculate error squared for exponential
     float ext_serror_exp_t = 0;
-    ext_serror_exp_t += exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0)) * exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0));
-    ext_serror_exp_t += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1)) * par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1));
-    ext_serror_exp_t += par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*xError *  par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*xError;
-    ext_serror_exp_t += par_exp[0]*exp(par_exp[1]*xvalue)*(histD->GetBinError(i,1)) *  par_exp[0]*exp(par_exp[1]*xvalue)*(histD->GetBinError(i,1));
+    ext_serror_exp_t += exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0))   *   exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0));
+    ext_serror_exp_t += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1))   *   par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1));
+    ext_serror_exp_t += par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*xError   *   par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*xError;
+    ext_serror_exp_t += par_exp[0]*exp(par_exp[1]*xvalue)*(histD->GetBinError(i,1))   *   par_exp[0]*exp(par_exp[1]*xvalue)*(histD->GetBinError(i,1));
     ext_serror_exp += ext_serror_exp_t;
     
     extendedEstimate_exp += exp_contribution;
@@ -505,9 +516,9 @@ void analyzeFillABCD(){
     gr_contye[i-1] = sqrt(ext_serror_exp_t);
     cout << extendedEstimate_exp << " +- " << sqrt(ext_serror_exp) << endl;
   }
-  
   float ext_error_exp = sqrt(ext_serror_exp);
   float nC_error = sqrt(nC_e);
+  float nCextra_error = sqrt(nCextra_e);
   
   TGraphErrors * grc = new TGraphErrors(extendedNum, gr_contx, gr_conty, gr_contxe, gr_contye); 
   C_contribute->cd(3);
@@ -517,6 +528,52 @@ void analyzeFillABCD(){
   grc->SetMarkerStyle(4);
   grc->Draw("AP");
   
+  //////////////////////////////////////////////////////
+  ///////////////// u n b i n n e d ////////////////////
+  //////////////////////////////////////////////////////
+
+  double unbinnedEstimate = 0;
+  float ext_serror_unBinexp = 0;
+  
+  for(int i = 1; i<=numEntries; i++){
+    InputChain->GetEvent(i);
+       
+    //btag requirement
+    bool bcontinueNow = bcontinue(nbtags);
+    
+    if(bcontinueNow){
+ 
+      //get weight
+      int bin = Hweight.FindBin(pthat);
+      double weight=Hweight.GetBinContent(bin);
+      
+      //if in Region D
+      if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
+
+	float xvalue = x;
+	float xError=0;
+	float eventError = weight;
+	
+	unbinnedEstimate+=weight*(par_exp[0]*exp(par_exp[1]*xvalue));
+	
+	float ext_serror_exp_t = 0;
+	ext_serror_exp_t += exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(0)) * exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(0));
+	ext_serror_exp_t += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(1)) * par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(1));
+	ext_serror_exp_t += par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(weight)*xError *  par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(weight)*xError;
+	ext_serror_exp_t += par_exp[0]*exp(par_exp[1]*xvalue)*(eventError) *  par_exp[0]*exp(par_exp[1]*xvalue)*(eventError);
+	ext_serror_unBinexp += ext_serror_exp_t;
+	
+      }
+
+
+    }//end bcontinueNow
+  }//end loop
+  float ext_error_unBinexp = sqrt(ext_serror_unBinexp);
+    
+  
+  //////////////////////////////////////////////
+  //////// e     /// n      /// d       ////////
+  //////////////////////////////////////////////
   cout << endl;
   cout << "borderv1a: " << borderv1a << endl;
   cout << "borderv1b: " << borderv1b << endl;
@@ -526,17 +583,20 @@ void analyzeFillABCD(){
   cout << "borderh1b: " << borderh1b<< endl;
   cout << "borderh2a: " << borderh2a << endl;
   cout << "borderh2b: " << borderh2b << endl;
-  cout << "nOutside: " << nOutside << endl;
+  cout << "nOutside (normalized): " << nOutside << endl;
+  cout << "nCextra (normalized): " << nCextra << " +- " << nCextra_error << endl;
   cout << endl;
+
   cout << "fitNum: " << fitNum << endl;;
   cout << "extendedNum: " << extendedNum << endl;
   if(fitmax != borderv1b) {cout << "WARNING: Zero in fit region at " << fitmax << endl;}
+  cout << "hC integral: " << histC->Integral() << endl; 
   cout << "nC: " << nC << " +- " << nC_error << endl;
   cout << "Exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
+  cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl;
   cout << endl;
   
   C_ABCD->Write();
-  C_ABCDweights->Write();
   C_hist1->Write();
   C_fit->Write();
   C_extrap->Write();
@@ -544,7 +604,6 @@ void analyzeFillABCD(){
   C_contribute->Write();
 
   C_ABCD->Close();
-  C_ABCDweights->Close();
   C_hist1->Close();
   C_fit->Close();
   C_extrap->Close();
