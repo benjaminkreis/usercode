@@ -1,7 +1,8 @@
 #include "TFile.h"
 #include "TChain.h"
 #include "TH1.h"
-#include "TH2F.h"
+#include "TH1D.h"
+#include "TH2D.h"
 #include "TF1.h"
 #include "TFormula.h"
 #include "TProfile.h"
@@ -44,7 +45,7 @@ void analyzeFillABCD(){
   gStyle->SetPalette(1);
   gStyle->SetOptStat("e");
   
-  int fitNum = 10; //number of bins in xL region, used to fit ratio
+  int fitNum = 4; //number of bins in xL region, used to fit ratio
   int extendedNum = 25; //number of bins in xR region, used in extrapolation
   
  
@@ -61,7 +62,6 @@ void analyzeFillABCD(){
   TH1D Hweight = *HweightP;
   finweight.Close();
    
- 
   TString yTitle = "minDeltaPhi(MHT, jet 1 2 3)";
   TString yTitle_ratio = "minDeltaPhi ratio";
   TString xTitle = "MHT (GeV)";
@@ -133,13 +133,13 @@ void analyzeFillABCD(){
   cout << endl;
   
   // histogram for A, B, C, D
-  TH2F* hist1 = new TH2F("H_ABCD", "ABCD", 100,0,1000,160,0,pi);
-  TH2F* histA = new TH2F("H_A", "Region A", fitNum, xBinsL, 1, yBinsL);
-  TH2F* histB = new TH2F("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
-  TH2F* histC = new TH2F("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
-  TH2F* histD = new TH2F("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
-  TH1F* histCx = new TH1F("H_Cx", "Region C - MHT", extendedNum, borderv2a, borderv2b);
-  TH1F* histDx = new TH1F("H_Dx", "Region D - MHT", extendedNum, borderv2a, borderv2b);
+  TH2D* hist1 = new TH2D("H_ABCD", "ABCD", 100,0,1000,160,0,pi);
+  TH2D* histA = new TH2D("H_A", "Region A", fitNum, xBinsL, 1, yBinsL);
+  TH2D* histB = new TH2D("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
+  TH2D* histC = new TH2D("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
+  TH2D* histD = new TH2D("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
+  TH1D* histCx = new TH1D("H_Cx", "Region C - MHT", extendedNum, borderv2a, borderv2b);
+  TH1D* histDx = new TH1D("H_Dx", "Region D - MHT", extendedNum, borderv2a, borderv2b);
   histA->Sumw2();
   histB->Sumw2();
   histC->Sumw2();
@@ -174,6 +174,15 @@ void analyzeFillABCD(){
   yaxD->SetTitle(yTitle);
   yaxCx->SetTitle("N");
   yaxDx->SetTitle("N");
+  
+  int nhWdist = Hweight.GetNbinsX(); 
+  TH1D* hWdist[nhWdist];
+  for(int i =0; i<nhWdist; i++){
+    TString nameCount = "";
+    nameCount += i;
+    hWdist[i] = new TH1D("hpt"+nameCount, "hpt"+nameCount, 100, 0, 1000);
+  }
+  
 
   //////////////////////////
   //LOOP over TREE to FILL//
@@ -190,21 +199,24 @@ void analyzeFillABCD(){
   InputChain->SetBranchAddress("PtHat", &pthat);
   InputChain->SetBranchAddress("btag", &nbtags);
   
+
+  double bInt = 0;
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
-   
+    bool Anow=0, Bnow=0, Cnow=0, Dnow=0;
+
     //btag requirement
     bool bcontinueNow = bcontinue(nbtags);
 
     if(bcontinueNow){
-      bool Anow=0, Bnow=0, Cnow=0, Dnow=0;
       
       //get weight
       int bin = Hweight.FindBin(pthat);
       double weight=Hweight.GetBinContent(bin);
       histPtHat->Fill(pthat,weight);
       histPtHat_noW->Fill(pthat);
-      
+      hWdist[bin-1]->Fill(x); 
+
       //COUNT nA, nB, nC, nD
       if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
 	Anow=1;
@@ -239,6 +251,7 @@ void analyzeFillABCD(){
 	if(!Cnow) cout << "nCextra with weight = " << weight << endl;
       }
       
+
       //Fill histogram A, B, C, D
       hist1->Fill(x,y, weight);
       histA->Fill(x,y, weight);
@@ -247,7 +260,7 @@ void analyzeFillABCD(){
       histD->Fill(x,y, weight);
       if(Cnow) histCx->Fill(x,weight);
       if(Dnow) histDx->Fill(x,weight);
-   
+     
     }//end bcontinue
   }//end loop tree
   
@@ -595,6 +608,12 @@ void analyzeFillABCD(){
   cout << "Exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
   cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl;
   cout << endl;
+
+
+
+  for(int i =0; i<nhWdist; i++){
+    hWdist[i]->Write();
+  }
   
   C_ABCD->Write();
   C_hist1->Write();
