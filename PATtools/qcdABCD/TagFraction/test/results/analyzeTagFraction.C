@@ -22,7 +22,7 @@ void analyzeTagFraction(){
   gStyle->SetOptStat("euo");
     
   //INPUT
-  TFile finweight("weight_QCD.root");
+  TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD.root","READ");
   TH1D* Hweight = 0;
   if(!finweight.IsZombie()){
     Hweight = (TH1D*)finweight.Get("Hweight");
