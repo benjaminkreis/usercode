@@ -13,7 +13,7 @@
 //
 // Original Author:  Ben Kreis
 //         Created:  Thu May 13 06:03:28 CEST 2010
-// $Id: FillABCD.cc,v 1.1 2010/05/13 04:35:19 kreis Exp $
+// $Id: FillABCD.cc,v 1.2 2010/05/13 04:47:10 kreis Exp $
 //
 //
 
@@ -62,7 +62,10 @@ class FillABCD : public edm::EDAnalyzer {
   float tree1_MHT_;
   float tree1_qScale_;
   float tree1_PtHat_;
-
+  float tree1_btag_;
+  float tree1_bjet_;
+  float tree1_nTightJets_;
+  float tree1_nLooseJets_;
 
 };
 
@@ -129,6 +132,7 @@ FillABCD::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    int nTightJets = 0;
    int nLooseJets = 0;
+   int nbtag =0, nbjet =0;
   
    float myHT = 0; //scalar sum 
    float myMHTx=0, myMHTy=0;
@@ -150,7 +154,15 @@ FillABCD::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     
      //good jet check
      if( jet_n90Hits >1.0 && jet_fHPD<0.98 && etaEMFcheck){
-      
+       
+       //check b
+       float jetid = 0;
+       jetid = jet->partonFlavour();
+       if(fabs(jet->eta())<2.4 && jet->pt()>30.0){
+	 if(jet->bDiscriminator("simpleSecondaryVertexBJetTags")>=1.74) nbtag++;
+	 if(fabs(jetid)==5.0) nbjet++;
+       }
+
        //loose pT and eta cut
        if( jet->pt()>30.0 && fabs(jet->eta())<5.0){
 	 
@@ -235,12 +247,13 @@ FillABCD::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    tree1_MHT_= myMHT;
    tree1_qScale_ = qScale;
    tree1_PtHat_ = pthat;
+   tree1_btag_ = nbtag;
+   tree1_bjet_ = nbjet;
+   tree1_nTightJets_ = nTightJets;
+   tree1_nLooseJets_ = nLooseJets;
    tree1_->Fill();
   
    //end Jet Stuff//////////////////////////////////////////  
-
-
-
 }
 
 
@@ -255,6 +268,11 @@ FillABCD::beginJob()
   tree1_->Branch("MHT", &tree1_MHT_, "tree1_MHT_/F");
   tree1_->Branch("qScale", &tree1_qScale_, "tree1_qScale_/F");
   tree1_->Branch("PtHat", &tree1_PtHat_, "tree1_PtHat_/F");
+  tree1_->Branch("btag", &tree1_btag_, "tree1_btag_/F");
+  tree1_->Branch("bjet", &tree1_bjet_, "tree1_bjet_/F");
+  tree1_->Branch("nTightJets", &tree1_nTightJets_, "tree1_nTightJets_/F");
+  tree1_->Branch("nLooseJets", &tree1_nLooseJets_, "tree1_nLooseJets_/F");
+
 
   nEvents_ = 0;
 
