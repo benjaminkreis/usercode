@@ -29,8 +29,7 @@
 using namespace std;
 
 bool bcontinue(float nbtags){
-  return true;
-  if(nbtags==2){
+  if(nbtags>-1.1){
     return true;
   }
   else{
@@ -43,14 +42,15 @@ void analyzeFillABCD(){
   cout << "Begin analyzeFillABCD" << endl;
   gROOT->SetStyle("Plain");
   gStyle->SetPalette(1);
-  gStyle->SetOptStat("e");
+  gStyle->SetOptStat("");
   
-  int fitNum = 4; //number of bins in xL region, used to fit ratio
+  int fitNum = 5; //number of bins in xL region, used to fit ratio
   int extendedNum = 25; //number of bins in xR region, used in extrapolation
   
  
   //LOAD WEIGHTS
   TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD.root","READ");
+  //TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD170.root","READ");
   TH1D* HweightP = 0;
   if(!finweight.IsZombie()){
     HweightP = (TH1D*)finweight.Get("Hweight");
@@ -175,20 +175,17 @@ void analyzeFillABCD(){
   yaxCx->SetTitle("N");
   yaxDx->SetTitle("N");
   
-  int nhWdist = Hweight.GetNbinsX(); 
-  TH1D* hWdist[nhWdist];
-  for(int i =0; i<nhWdist; i++){
-    TString nameCount = "";
-    nameCount += i;
-    hWdist[i] = new TH1D("hpt"+nameCount, "hpt"+nameCount, 100, 0, 1000);
-  }
-  
+  TH1D* histWD = new TH1D("histWD", "histWD", 9, 0.5, 9.5);
+  TH1D* histWC = new TH1D("histWC", "histWC", 9, 0.5, 9.5);
+  TH1D* histWA = new TH1D("histWA", "histWA", 9, 0.5, 9.5);
+  TH1D* histWB = new TH1D("histWB", "histWB", 9, 0.5, 9.5);
 
   //////////////////////////
   //LOOP over TREE to FILL//
   //////////////////////////
   
-  TChain* InputChain = FormChain();
+    TChain* InputChain = FormChain();
+  //TChain* InputChain = FormChain170();
   int numEntries = InputChain->GetEntries();
   cout <<"numEntries: " << numEntries << endl;
   cout << endl;
@@ -199,8 +196,6 @@ void analyzeFillABCD(){
   InputChain->SetBranchAddress("PtHat", &pthat);
   InputChain->SetBranchAddress("btag", &nbtags);
   
-
-  double bInt = 0;
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
     bool Anow=0, Bnow=0, Cnow=0, Dnow=0;
@@ -215,28 +210,31 @@ void analyzeFillABCD(){
       double weight=Hweight.GetBinContent(bin);
       histPtHat->Fill(pthat,weight);
       histPtHat_noW->Fill(pthat);
-      hWdist[bin-1]->Fill(x); 
-
+     
       //COUNT nA, nB, nC, nD
       if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
 	Anow=1;
 	nA+=weight;
 	nA_e+=weight*weight;
+	histWA->Fill(bin);
       }
       else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
 	Dnow=1;
 	nD+=weight;
 	nD_e+=weight*weight;
+	histWD->Fill(bin);
       }
       else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
 	Bnow=1;
 	nB+=weight;
 	nB_e+=weight*weight;
+	histWB->Fill(bin);
       }
       else if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh2a) && (y<borderh2b) ){
 	Cnow=1;
 	nC+=weight;
 	nC_e +=weight*weight;
+	histWC->Fill(bin);
       }
       else {
 	//cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
@@ -605,16 +603,15 @@ void analyzeFillABCD(){
   if(fitmax != borderv1b) {cout << "WARNING: Zero in fit region at " << fitmax << endl;}
   cout << "hC integral: " << histC->Integral() << endl; 
   cout << "nC: " << nC << " +- " << nC_error << endl;
-  cout << "Exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
-  cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl;
+  cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl; 
+  cout <<   "Binned exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
   cout << endl;
 
+  histWD->Write();
+  histWC->Write();
+  histWA->Write();
+  histWB->Write();
 
-
-  for(int i =0; i<nhWdist; i++){
-    hWdist[i]->Write();
-  }
-  
   C_ABCD->Write();
   C_hist1->Write();
   C_fit->Write();
