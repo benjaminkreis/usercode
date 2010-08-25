@@ -28,8 +28,9 @@
 
 using namespace std;
 
-bool bcontinue(float nbtags){
-  if(nbtags>-1.1){
+bool bcontinue(int nbtags){
+  //return true;
+  if(nbtags>=2){
     return true;
   }
   else{
@@ -44,13 +45,15 @@ void analyzeFillABCD(){
   gStyle->SetPalette(1);
   gStyle->SetOptStat("");
   
-  int fitNum = 5; //number of bins in xL region, used to fit ratio
-  int extendedNum = 25; //number of bins in xR region, used in extrapolation
-  
+
+  int fitNum = 10; //number of bins in xL region, used to fit ratio
+  int extendedNum = 5; //number of bins in xR region, used in extrapolation
  
   //LOAD WEIGHTS
-  TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD.root","READ");
+  TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/CMSSW_3_6_3/src/Filter/RA2Filter/test/results/weight_MG.root","READ");
+  //TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD.root","READ");
   //TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD170.root","READ");
+
   TH1D* HweightP = 0;
   if(!finweight.IsZombie()){
     HweightP = (TH1D*)finweight.Get("Hweight");
@@ -190,10 +193,12 @@ void analyzeFillABCD(){
   cout <<"numEntries: " << numEntries << endl;
   cout << endl;
 
-  float x, y, nbtags, pthat;
+  double x,y, MG;
+  int nbtags;
   InputChain->SetBranchAddress("MHT",&x);
   InputChain->SetBranchAddress("minDPhi",&y);
-  InputChain->SetBranchAddress("PtHat", &pthat);
+  //InputChain->SetBranchAddress("PtHat", &pthat);
+  InputChain->SetBranchAddress("MG",&MG);
   InputChain->SetBranchAddress("btag", &nbtags);
   
   for(int i = 0; i<numEntries; i++){
@@ -206,11 +211,13 @@ void analyzeFillABCD(){
     if(bcontinueNow){
       
       //get weight
-      int bin = Hweight.FindBin(pthat);
+      //int bin = Hweight.FindBin(pthat);
+      int bin = Hweight.FindBin(MG);
       double weight=Hweight.GetBinContent(bin);
-      histPtHat->Fill(pthat,weight);
-      histPtHat_noW->Fill(pthat);
-     
+      //histPtHat->Fill(pthat,weight);
+      histPtHat->Fill(MG,weight);
+      histPtHat_noW->Fill(MG);
+    
       //COUNT nA, nB, nC, nD
       if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
 	Anow=1;
@@ -555,7 +562,8 @@ void analyzeFillABCD(){
     if(bcontinueNow){
  
       //get weight
-      int bin = Hweight.FindBin(pthat);
+      //int bin = Hweight.FindBin(pthat);
+      int bin = Hweight.FindBin(MG);
       double weight=Hweight.GetBinContent(bin);
       
       //if in Region D
@@ -605,6 +613,7 @@ void analyzeFillABCD(){
   cout << "nC: " << nC << " +- " << nC_error << endl;
   cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl; 
   cout <<   "Binned exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
+
   cout << endl;
 
   histWD->Write();
