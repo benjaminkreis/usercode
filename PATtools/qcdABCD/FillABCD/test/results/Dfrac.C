@@ -17,7 +17,7 @@
 
 using namespace std;
 
-void Dfrac(){
+void Dfrac(int nbcut){
   gROOT->SetStyle("Plain");
   gStyle->SetPalette(1);
   //gStyle->SetOptStat("");
@@ -42,7 +42,7 @@ void Dfrac(){
   cout << endl;
   
   double pi=4*atan(1.0);
-  int nbin_wide = 5;
+  int nbin_wide = 10;
   Double_t wideBinArray[11]={0., 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.4, 2.7, pi};
   //TH2D* h2D = new TH2D("h2D_minDPhi", "h2D_minDPhi", nbin_wide, 0.0, pi, 2, -.5, 1.5);
   TH2D* h2D = new TH2D("h2D_minDPhi", "h2D_minDPhi", 10, wideBinArray, 2, -.5, 1.5);
@@ -87,7 +87,7 @@ void Dfrac(){
     double weight=Hweight.GetBinContent(bin);
     
     int pass = 0;
-    if(nbtags>=2)pass =1;
+    if(nbtags>=nbcut)pass =1;
   
     if(x>=150.0){
       //if(weight>1) cout << "pass: " << pass <<  ", weight: " << weight <<", minDPhi: " << y << endl;
@@ -134,6 +134,19 @@ void Dfrac(){
   line1->SetLineColor(2);
   line1->Draw();
     
+ 
+
+
+
+
+  cout << "nD: " << hDall->GetBinContent(1) << " +- " << hDall->GetBinError(1) << endl;
+  cout << "Dfrac: " << Dfrac <<" +- " << Dfrac_e <<  endl;
+  cout << "nC: " << hCall->GetBinContent(1) << " +- " << hCall->GetBinError(1) << endl;
+  cout << "Cfrac: " << Cfrac <<" +- " << Cfrac_e <<  endl;
+
+  TString printName = "Dfrac_";
+  printName+=nbcut;
+  myC->Print(printName+".pdf");
   myC->Write();
   h2D->Write();
   hDpass->Write();
@@ -147,8 +160,4 @@ void Dfrac(){
   h1eff_wide->Write();
   p1_minDPhi->Write();
   fout.Close();
-  cout << "Dfrac: " << Dfrac <<" +- " << Dfrac_e <<  endl;
-  cout << "Cfrac: " << Cfrac <<" +- " << Cfrac_e <<  endl;
-
-
 }
