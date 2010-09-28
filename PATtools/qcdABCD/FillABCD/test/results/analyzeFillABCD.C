@@ -29,12 +29,21 @@
 using namespace std;
 
 bool bcontinue(int nbtags){
-  //return true;
+  return true;
   if(nbtags>=2){
     return true;
   }
   else{
     return false;
+  }
+}
+
+int passbtagcut(int nbtags){
+  if(nbtags>=2){
+    return 1;
+  }
+  else{
+    return 0;
   }
 }
 
@@ -47,7 +56,7 @@ void analyzeFillABCD(){
   
 
   int fitNum = 10; //number of bins in xL region, used to fit ratio
-  int extendedNum = 5; //number of bins in xR region, used in extrapolation
+  int extendedNum = 50; //number of bins in xR region, used in extrapolation
  
   //LOAD WEIGHTS
   TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/CMSSW_3_6_3/src/Filter/RA2Filter/test/results/weight_MG.root","READ");
@@ -193,6 +202,7 @@ void analyzeFillABCD(){
   cout <<"numEntries: " << numEntries << endl;
   cout << endl;
 
+  double Dfrac;
   double x,y, MG;
   int nbtags;
   InputChain->SetBranchAddress("MHT",&x);
@@ -201,6 +211,7 @@ void analyzeFillABCD(){
   InputChain->SetBranchAddress("MG",&MG);
   InputChain->SetBranchAddress("btag", &nbtags);
   
+  double beforeAngular = 0;
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
     bool Anow=0, Bnow=0, Cnow=0, Dnow=0;
@@ -214,10 +225,14 @@ void analyzeFillABCD(){
       //int bin = Hweight.FindBin(pthat);
       int bin = Hweight.FindBin(MG);
       double weight=Hweight.GetBinContent(bin);
+      assert(weight>0.);
       //histPtHat->Fill(pthat,weight);
       histPtHat->Fill(MG,weight);
       histPtHat_noW->Fill(MG);
-    
+      
+
+      if(x>=borderv2a)beforeAngular+=weight;
+
       //COUNT nA, nB, nC, nD
       if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
 	Anow=1;
@@ -230,6 +245,7 @@ void analyzeFillABCD(){
 	nD+=weight;
 	nD_e+=weight*weight;
 	histWD->Fill(bin);
+	Dfrac += passbtagcut(nbtags)*weight;
       }
       else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
 	Bnow=1;
@@ -437,6 +453,7 @@ void analyzeFillABCD(){
   cout << endl;
   cout << "Points for fit region:" << endl;
   C_fit->cd();
+  C_fit->SetLogy();
   float gr1x[fitNum];
   float gr1y[fitNum];
   float gr1x_error[fitNum];
@@ -596,25 +613,29 @@ void analyzeFillABCD(){
   cout << endl;
   cout << "borderv1a: " << borderv1a << endl;
   cout << "borderv1b: " << borderv1b << endl;
-  cout << "borderv2a: " << borderv2a<< endl;
+  cout << "borderv2a: " << borderv2a << endl;
   cout << "borderv2b: " << borderv2b << endl;
   cout << "borderh1a: " << borderh1a << endl;
-  cout << "borderh1b: " << borderh1b<< endl;
+  cout << "borderh1b: " << borderh1b << endl;
   cout << "borderh2a: " << borderh2a << endl;
   cout << "borderh2b: " << borderh2b << endl;
-  cout << "nOutside (normalized): " << nOutside << endl;
-  cout << "nCextra (normalized): " << nCextra << " +- " << nCextra_error << endl;
+  cout << "nOutside (normalized): "  << nOutside << endl;
+  cout << "nCextra (normalized): "   << nCextra  << " +- " << nCextra_error << endl;
   cout << endl;
 
   cout << "fitNum: " << fitNum << endl;;
   cout << "extendedNum: " << extendedNum << endl;
   if(fitmax != borderv1b) {cout << "WARNING: Zero in fit region at " << fitmax << endl;}
   cout << "hC integral: " << histC->Integral() << endl; 
+  cout << "hD integral: " << histD->Integral() << endl; 
+  cout << "nD: " << nD << endl;
   cout << "nC: " << nC << " +- " << nC_error << endl;
   cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl; 
   cout <<   "Binned exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
-
+  //cout << "beforeAngular: " << beforeAngular;
+  cout << "Dfrac: " << Dfrac/nD << endl;
   cout << endl;
+
 
   histWD->Write();
   histWC->Write();
