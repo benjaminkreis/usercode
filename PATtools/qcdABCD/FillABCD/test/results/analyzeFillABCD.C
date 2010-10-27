@@ -55,8 +55,8 @@ void analyzeFillABCD(){
   gStyle->SetOptStat("nemruo");
   
   bool josh=true;
-  int fitNum = 6; //number of bins in xL region, used to fit ratio
-  int extendedNum = 10; //number of bins in xR region, used in extrapolation
+  int fitNum = 8; //number of bins in xL region, used to fit ratio
+  int extendedNum = 20; //number of bins in xR region, used in extrapolation
   TString xLabel = "MET";
 
   //LOAD WEIGHTS
@@ -81,8 +81,8 @@ void analyzeFillABCD(){
   
   float pi=4*atan(1.0);
   
-  float borderv1a=80.0;
-  float borderv1b=140.0;
+  float borderv1a=50.0;
+  float borderv1b=150.0;
   float borderv2a=150.0;
   float borderv2b=1000000.;
   float borderv2b_plot=350.;
@@ -469,7 +469,7 @@ void analyzeFillABCD(){
   yaxG0->SetTitle(yTitle_ratio);
   yaxG0->SetTitleOffset(1.15);
   xaxG0->SetRangeUser(0,borderv2b_plot);
-  yaxG0->SetRangeUser(1e-3,1);
+  // yaxG0->SetRangeUser(1e-3,1);
   gr0->SetMarkerStyle(4);  
   gr0->Draw("AP");
   C_extrap->SetLogy(1);
@@ -527,30 +527,69 @@ void analyzeFillABCD(){
   ////////////////////////////////////////////
   TF1 *fexp1 = new TF1("fexp1", "[0]*exp([1]*x)", borderv1a, borderv1b);
   fexp1->SetParameters(4.0, -1.0/20.0);
+
+  TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
+  fexp2->SetParameters(4.0, -1.0/20.0, 0.001);  
+
+  TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv1b);
+  fexp3->SetParameters(4.0, -1.0/20.0, 4.0, -1/200.0);  
   
-  gr1->Fit("fexp1", "R");
-  fexp1->Draw("SAME");
+  fexp1->SetLineColor(kBlue);
+  fexp2->SetLineColor(kViolet+1);
+  fexp3->SetLineColor(kRed);
+
+  gr1->Fit("fexp1", "R0");
+  fexp1->Draw("SAME");   
+  gr1->Fit("fexp2", "R0");
+  fexp2->Draw("SAME");
+  gr1->Fit("fexp3", "R0");
+  fexp3->Draw("SAME"); 
+  
+
+
   Double_t par_exp[2];
   fexp1->GetParameters(par_exp);
-  
-  TF1 *fexp1b = new TF1("fexp1", "[0]*exp([1]*x)", borderv1a, borderv2b);
+  Double_t par_exp2[3];  
+  fexp2->GetParameters(par_exp2);
+  Double_t par_exp3[4];  
+  fexp3->GetParameters(par_exp3);
+
+  TF1 *fexp1b = new TF1("fexp1b", "[0]*exp([1]*x)", borderv1a, borderv2b);
   fexp1b->SetParameters(par_exp[0], par_exp[1]);
+  TF1 *fexp2b = new TF1("fexp2b", "[0]*exp([1]*x)+[2]", borderv1a, borderv2b);
+  fexp2b->SetParameters(par_exp2[0], par_exp2[1],par_exp2[2]);
+  TF1 *fexp3b = new TF1("fexp3b", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv2b);
+  fexp3b->SetParameters(par_exp3[0], par_exp3[1], par_exp3[2], par_exp3[3]);
+  fexp1b->SetLineColor(kBlue);
+  fexp2b->SetLineColor(kViolet+1);
+  fexp3b->SetLineColor(kRed);
+
   
   TPaveText *pt_exp = new TPaveText(.25, .8, .88, .88, "NDC");
   TString par_exp0 = "";
   par_exp0+=par_exp[0];
   TString par_exp1 = "";
   par_exp1+=par_exp[1];
+  TString par_exp2_0 = "";
+  TString par_exp2_1 = "";
+  TString par_exp2_2 = "";
+  par_exp2_0+=par_exp2[0];
+  par_exp2_1+=par_exp2[1];
+  par_exp2_2+=par_exp2[2];
+
   pt_exp->SetFillColor(0);
-  pt_exp->SetTextSize(0.03);
+  pt_exp->SetTextSize(0.02);
   pt_exp->SetTextAlign(12);
-  pt_exp->AddText( "Fit result: ratio = "+par_exp0+" *exp( "+par_exp1+"*x)");
+  pt_exp->AddText( "Fit (blue) = "+par_exp0+" *exp( "+par_exp1+"*x)");
+  pt_exp->AddText( "Fit (purple) = "+par_exp2_0+" *exp( "+par_exp2_1+"*x)+"+par_exp2_2);
   pt_exp->Draw();
   
   //add fit to C_extrap
   C_extrap->cd();
   fexp1b->Draw("SAME");
-  
+  fexp2b->Draw("SAME");
+  fexp3b->Draw("SAME");
+   
   ////////////////////////////////////////////////
   ///   Calculate estimate with uncertainty   ////
   ////////////////////////////////////////////////
@@ -565,6 +604,7 @@ void analyzeFillABCD(){
  
   float extendedEstimate_exp =0;
   float ext_serror_exp = 0;
+
   for(int i =1; i<=extendedNum; i++){
     
     float xError = 0;
@@ -575,7 +615,7 @@ void analyzeFillABCD(){
     //EXPONENTIAL
     float ratiox_exp = par_exp[0]*exp(par_exp[1]*xvalue);
     float exp_contribution = ratiox_exp*(histD->GetBinContent(i,1));
-    
+ 
     //calculate error squared for exponential
     float ext_serror_exp_t = 0;
     ext_serror_exp_t += exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0))   *   exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0));
@@ -585,7 +625,7 @@ void analyzeFillABCD(){
     ext_serror_exp += ext_serror_exp_t;
     
     extendedEstimate_exp += exp_contribution;
-    gr_conty[i-1] = exp_contribution;
+      gr_conty[i-1] = exp_contribution;
     gr_contye[i-1] = sqrt(ext_serror_exp_t);
     cout << extendedEstimate_exp << " +- " << sqrt(ext_serror_exp) << endl;
   }
@@ -607,7 +647,10 @@ void analyzeFillABCD(){
 
   double unbinnedEstimate = 0;
   float ext_serror_unBinexp = 0;
-  
+
+  double unbinnedEstimate2 = 0;
+  float ext_serror_unBinexp2 = 0;
+
   for(int i = 1; i<=numEntries; i++){
     InputChain->GetEvent(i);
        
@@ -632,6 +675,7 @@ void analyzeFillABCD(){
 	float eventError = weight;
 	
 	unbinnedEstimate+=weight*(par_exp[0]*exp(par_exp[1]*xvalue));
+	unbinnedEstimate2+=weight*(par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2]);
 	
 	float ext_serror_exp_t = 0;
 	ext_serror_exp_t += exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(0)) * exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(0));
@@ -640,12 +684,21 @@ void analyzeFillABCD(){
 	ext_serror_exp_t += par_exp[0]*exp(par_exp[1]*xvalue)*(eventError) *  par_exp[0]*exp(par_exp[1]*xvalue)*(eventError);
 	ext_serror_unBinexp += ext_serror_exp_t;
 	
+	float ext_serror_exp2_t = 0;
+	ext_serror_exp2_t += exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(0)) * exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(0));
+	ext_serror_exp2_t += par_exp2[0]*xvalue*exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(1)) * par_exp2[0]*xvalue*exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(1));
+	ext_serror_exp2_t += weight*(fexp2->GetParError(2)) *  weight*(fexp2->GetParError(2));
+	ext_serror_exp2_t += par_exp2[0]*par_exp2[1]*exp(par_exp2[1]*xvalue)*(weight)*xError *  par_exp2[0]*par_exp2[1]*exp(par_exp2[1]*xvalue)*(weight)*xError;
+	ext_serror_exp2_t += (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError) *  (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError);
+	ext_serror_unBinexp2 += ext_serror_exp2_t;
+	
       }
 
 
     }//end bcontinueNow
   }//end loop
   float ext_error_unBinexp = sqrt(ext_serror_unBinexp);
+  float ext_error_unBinexp2 = sqrt(ext_serror_unBinexp2);
     
   
   //////////////////////////////////////////////
@@ -672,6 +725,7 @@ void analyzeFillABCD(){
   cout << "nD: " << nD << endl;
   cout << "nC: " << nC << " +- " << nC_error << endl;
   cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl; 
+  cout << "Unbinned exponential+constant extended estimate for nC: " << unbinnedEstimate2 << " +- " << ext_error_unBinexp2 << endl; 
   //cout <<   "Binned exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
   //cout << "beforeAngular: " << beforeAngular;
   cout << "Dfrac: " << Dfrac/nD << endl;
@@ -700,6 +754,8 @@ void analyzeFillABCD(){
   C_extrap->Close();
   C_reweight->Close();
   C_contribute->Close();
+  C_x->Close();
+  C_dp->Close();
   
   fout.Close();
 
