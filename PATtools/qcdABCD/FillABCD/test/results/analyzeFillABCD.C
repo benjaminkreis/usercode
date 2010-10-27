@@ -52,17 +52,18 @@ void analyzeFillABCD(){
   cout << "Begin analyzeFillABCD" << endl;
   gROOT->SetStyle("Plain");
   gStyle->SetPalette(1);
-  gStyle->SetOptStat("");
+  gStyle->SetOptStat("nemruo");
   
+  bool josh=true;
+  int fitNum = 6; //number of bins in xL region, used to fit ratio
+  int extendedNum = 10; //number of bins in xR region, used in extrapolation
+  TString xLabel = "MET";
 
-  int fitNum = 10; //number of bins in xL region, used to fit ratio
-  int extendedNum = 50; //number of bins in xR region, used in extrapolation
- 
   //LOAD WEIGHTS
   TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/CMSSW_3_6_3/src/Filter/RA2Filter/test/results/weight_MG.root","READ");
   //TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD.root","READ");
   //TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD170.root","READ");
-
+  
   TH1D* HweightP = 0;
   if(!finweight.IsZombie()){
     HweightP = (TH1D*)finweight.Get("Hweight");
@@ -73,17 +74,18 @@ void analyzeFillABCD(){
   TFile fout("plots.root", "RECREATE");
   TH1D Hweight = *HweightP;
   finweight.Close();
-   
-  TString yTitle = "minDeltaPhi(MHT, jet 1 2 3)";
+
+  TString yTitle = "minDeltaPhi("+xLabel+", jet 1 2 3)";
   TString yTitle_ratio = "minDeltaPhi ratio";
-  TString xTitle = "MHT (GeV)";
+  TString xTitle = xLabel+" (GeV)";
   
   float pi=4*atan(1.0);
   
-  float borderv1a=50.0;
-  float borderv1b=150.0;
+  float borderv1a=80.0;
+  float borderv1b=140.0;
   float borderv2a=150.0;
-  float borderv2b=1000.0;
+  float borderv2b=1000000.;
+  float borderv2b_plot=350.;
   float borderh1a=0.0;
   float borderh1b=0.3;
   float borderh2a=0.3;
@@ -110,10 +112,14 @@ void analyzeFillABCD(){
   TCanvas * C_ABCD = new TCanvas("C_ABCD", "Canvas ABCD", 1000, 1000);
   C_ABCD->Divide(2,2);
   C_ABCD->cd(1);
-  TCanvas * C_hist1 = new TCanvas ("C_hist1", "Canvas hist1", 800, 700);
+  TCanvas * C_hist1 = new TCanvas("C_hist1", "Canvas hist1", 800, 700);
   C_hist1->Divide(1,1);
   C_hist1->cd(1);
-  
+  TCanvas * C_dp = new TCanvas("C_dp", "Canvas dp", 640, 480);
+  C_dp->cd();
+  TCanvas * C_x = new TCanvas("C_x", "Canvas x", 640, 480);
+  C_x->cd();
+
   /////////////////////////////
   //        HISTOGRAMS       //
   /////////////////////////////
@@ -135,7 +141,7 @@ void analyzeFillABCD(){
   }
   cout << endl;
   
-  float xWidthU = (borderv2b-borderv2a)/extendedNum;
+  float xWidthU = (borderv2b_plot-borderv2a)/extendedNum;
   Double_t xBinsU[extendedNum+1]; 
   cout << "xBinsU: ";
   for(int i = 0; i<=extendedNum; i++){
@@ -150,14 +156,18 @@ void analyzeFillABCD(){
   TH2D* histB = new TH2D("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
   TH2D* histC = new TH2D("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2D* histD = new TH2D("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
-  TH1D* histCx = new TH1D("H_Cx", "Region C - MHT", extendedNum, borderv2a, borderv2b);
-  TH1D* histDx = new TH1D("H_Dx", "Region D - MHT", extendedNum, borderv2a, borderv2b);
+  TH1D* histCx = new TH1D("H_Cx", "Region C - "+xLabel, extendedNum, borderv2a, borderv2b_plot);
+  TH1D* histDx = new TH1D("H_Dx", "Region D - "+xLabel, extendedNum, borderv2a, borderv2b_plot);
+  TH1D* histdp = new TH1D("H_dp", "dp", 50, borderh1a, borderh2b);
+  TH1D* histx = new TH1D("H_x", "x", 200, 0, borderv2b_plot);
   histA->Sumw2();
   histB->Sumw2();
   histC->Sumw2();
   histD->Sumw2();
   histCx->Sumw2();
   histDx->Sumw2();
+  histdp->Sumw2();
+  histx->Sumw2();
   TAxis *xaxA = histA->GetXaxis();
   TAxis *xaxB = histB->GetXaxis();
   TAxis *xaxC = histC->GetXaxis();
@@ -196,21 +206,36 @@ void analyzeFillABCD(){
   //LOOP over TREE to FILL//
   //////////////////////////
   
-    TChain* InputChain = FormChain();
+  TChain* InputChain = 0;
   //TChain* InputChain = FormChain170();
+  if(josh){
+    InputChain = FormChainJosh("pf");
+  }
+  else{
+    InputChain = FormChain();
+  }
+  
   int numEntries = InputChain->GetEntries();
   cout <<"numEntries: " << numEntries << endl;
   cout << endl;
 
   double Dfrac;
-  double x,y, MG;
-  int nbtags;
-  InputChain->SetBranchAddress("MHT",&x);
-  InputChain->SetBranchAddress("minDPhi",&y);
-  //InputChain->SetBranchAddress("PtHat", &pthat);
-  InputChain->SetBranchAddress("MG",&MG);
-  InputChain->SetBranchAddress("btag", &nbtags);
-  
+  double x,y, MG=1, weightJosh;
+  int nbtags=0;
+  if(josh){
+    InputChain->SetBranchAddress("MET",&x);
+    InputChain->SetBranchAddress("minDeltaPhiMET",&y);
+    InputChain->SetBranchAddress("weight",&weightJosh);
+  }
+  else{
+    InputChain->SetBranchAddress("MHT",&x);
+    InputChain->SetBranchAddress("minDPhi",&y);
+    //InputChain->SetBranchAddress("PtHat", &pthat);
+    InputChain->SetBranchAddress("MG",&MG);
+    InputChain->SetBranchAddress("btag", &nbtags);
+  }
+
+
   double beforeAngular = 0;
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
@@ -225,13 +250,16 @@ void analyzeFillABCD(){
       //int bin = Hweight.FindBin(pthat);
       int bin = Hweight.FindBin(MG);
       double weight=Hweight.GetBinContent(bin);
+      if(josh) weight=weightJosh;
       assert(weight>0.);
       //histPtHat->Fill(pthat,weight);
       histPtHat->Fill(MG,weight);
       histPtHat_noW->Fill(MG);
       
-
       if(x>=borderv2a)beforeAngular+=weight;
+
+      histx->Fill(x, weight);
+      histdp->Fill(y, weight);
 
       //COUNT nA, nB, nC, nD
       if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh1a) && (y<borderh1b) ){
@@ -288,6 +316,11 @@ void analyzeFillABCD(){
   ////////////////////////////////////////////////////////////////////
   ////////////////////////// Analysis ////////////////////////////////
   ////////////////////////////////////////////////////////////////////
+
+  C_x->cd();
+  histx->Draw();
+  C_dp->cd();
+  histdp->Draw();
 
   //weight histograms
   C_reweight->cd(1);
@@ -434,11 +467,16 @@ void analyzeFillABCD(){
   TAxis* yaxG0 = gr0->GetYaxis();
   xaxG0->SetTitle(xTitle);
   yaxG0->SetTitle(yTitle_ratio);
+  yaxG0->SetTitleOffset(1.15);
+  xaxG0->SetRangeUser(0,borderv2b_plot);
+  yaxG0->SetRangeUser(1e-3,1);
   gr0->SetMarkerStyle(4);  
   gr0->Draw("AP");
+  C_extrap->SetLogy(1);
+  C_extrap->Modified();
   
-  TLine* line_gr0a = new TLine(borderv1a,yaxG0->GetXmin(),borderv1a, yaxG0->GetXmax());
-  TLine* line_gr0b = new TLine(borderv1b,yaxG0->GetXmin(),borderv1b, yaxG0->GetXmax());
+  TLine* line_gr0a = new TLine(borderv1a,yaxG0->GetXmin(),borderv1a, 1); // can replace 1 with yaxG0->GetXmax()
+  TLine* line_gr0b = new TLine(borderv1b,yaxG0->GetXmin(),borderv1b, 1);
   line_gr0a->SetLineColor(kBlack);
   line_gr0b->SetLineColor(kBlack);
   line_gr0a->SetLineWidth(3);
@@ -518,7 +556,7 @@ void analyzeFillABCD(){
   ////////////////////////////////////////////////
   cout << endl;
   cout << endl;
-  cout << "Running exponential estimate:" << endl;
+  cout << "Running binned exponential estimate:" << endl;
   
   float gr_contx[extendedNum];
   float gr_conty[extendedNum];
@@ -582,11 +620,14 @@ void analyzeFillABCD(){
       //int bin = Hweight.FindBin(pthat);
       int bin = Hweight.FindBin(MG);
       double weight=Hweight.GetBinContent(bin);
-      
+      if(josh) weight=weightJosh;
+
+
       //if in Region D
       if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
 
 	float xvalue = x;
+	//float xvalue = 150;
 	float xError=0;
 	float eventError = weight;
 	
@@ -626,12 +667,12 @@ void analyzeFillABCD(){
   cout << "fitNum: " << fitNum << endl;;
   cout << "extendedNum: " << extendedNum << endl;
   if(fitmax != borderv1b) {cout << "WARNING: Zero in fit region at " << fitmax << endl;}
-  cout << "hC integral: " << histC->Integral() << endl; 
+  cout << "hC integral: " << histC->Integral() << endl; //misses stuff between borderv2b_plot and borderv2b
   cout << "hD integral: " << histD->Integral() << endl; 
   cout << "nD: " << nD << endl;
   cout << "nC: " << nC << " +- " << nC_error << endl;
   cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl; 
-  cout <<   "Binned exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
+  //cout <<   "Binned exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
   //cout << "beforeAngular: " << beforeAngular;
   cout << "Dfrac: " << Dfrac/nD << endl;
   cout << endl;
@@ -641,6 +682,8 @@ void analyzeFillABCD(){
   histWC->Write();
   histWA->Write();
   histWB->Write();
+  histx->Write();
+  histdp->Write();
 
   C_ABCD->Write();
   C_hist1->Write();
@@ -648,6 +691,8 @@ void analyzeFillABCD(){
   C_extrap->Write();
   C_reweight->Write();
   C_contribute->Write();
+  C_x->Write();
+  C_dp->Write();
 
   C_ABCD->Close();
   C_hist1->Close();
