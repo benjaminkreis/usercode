@@ -29,7 +29,7 @@
 using namespace std;
 
 bool bcontinue(int nbtags){
-  return true;
+   return true;
   if(nbtags>=2){
     return true;
   }
@@ -55,8 +55,8 @@ void analyzeFillABCD(){
   gStyle->SetOptStat("nemruo");
   
   bool josh=true;
-  int fitNum = 8; //number of bins in xL region, used to fit ratio
-  int extendedNum = 20; //number of bins in xR region, used in extrapolation
+  int fitNum = 10; //number of bins in xL region, used to fit ratio
+  int extendedNum = 10; //number of bins in xR region, used in extrapolation
   TString xLabel = "MET";
 
   //LOAD WEIGHTS
@@ -81,8 +81,8 @@ void analyzeFillABCD(){
   
   float pi=4*atan(1.0);
   
-  float borderv1a=50.0;
-  float borderv1b=150.0;
+  float borderv1a=80.0;
+  float borderv1b=140.0;
   float borderv2a=150.0;
   float borderv2b=1000000.;
   float borderv2b_plot=350.;
@@ -119,6 +119,8 @@ void analyzeFillABCD(){
   C_dp->cd();
   TCanvas * C_x = new TCanvas("C_x", "Canvas x", 640, 480);
   C_x->cd();
+  TCanvas *C_temp = new TCanvas("C_temp", "C_temp", 640, 480);
+  C_temp->cd();
 
   /////////////////////////////
   //        HISTOGRAMS       //
@@ -209,7 +211,7 @@ void analyzeFillABCD(){
   TChain* InputChain = 0;
   //TChain* InputChain = FormChain170();
   if(josh){
-    InputChain = FormChainJosh("pf");
+    InputChain = FormChainJosh("tc");
   }
   else{
     InputChain = FormChain();
@@ -226,6 +228,7 @@ void analyzeFillABCD(){
     InputChain->SetBranchAddress("MET",&x);
     InputChain->SetBranchAddress("minDeltaPhiMET",&y);
     InputChain->SetBranchAddress("weight",&weightJosh);
+    InputChain->SetBranchAddress("nbSSVM",&nbtags);
   }
   else{
     InputChain->SetBranchAddress("MHT",&x);
@@ -469,14 +472,14 @@ void analyzeFillABCD(){
   yaxG0->SetTitle(yTitle_ratio);
   yaxG0->SetTitleOffset(1.15);
   xaxG0->SetRangeUser(0,borderv2b_plot);
-  // yaxG0->SetRangeUser(1e-3,1);
+  yaxG0->SetRangeUser(1.e-3,2);
   gr0->SetMarkerStyle(4);  
   gr0->Draw("AP");
   C_extrap->SetLogy(1);
   C_extrap->Modified();
   
-  TLine* line_gr0a = new TLine(borderv1a,yaxG0->GetXmin(),borderv1a, 1); // can replace 1 with yaxG0->GetXmax()
-  TLine* line_gr0b = new TLine(borderv1b,yaxG0->GetXmin(),borderv1b, 1);
+  TLine* line_gr0a = new TLine(borderv1a,yaxG0->GetXmin(),borderv1a, 2); // can replace 1 with yaxG0->GetXmax()
+  TLine* line_gr0b = new TLine(borderv1b,yaxG0->GetXmin(),borderv1b, 2);
   line_gr0a->SetLineColor(kBlack);
   line_gr0b->SetLineColor(kBlack);
   line_gr0a->SetLineWidth(3);
@@ -532,20 +535,29 @@ void analyzeFillABCD(){
   fexp2->SetParameters(4.0, -1.0/20.0, 0.001);  
 
   TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv1b);
-  fexp3->SetParameters(4.0, -1.0/20.0, 4.0, -1/200.0);  
-  
+  fexp3->SetParameters(4.0, -1.0/20.0, 4.0, -1.0/200.0);  
+  fexp3->SetParLimits(1,-1000,0);
+  fexp3->SetParLimits(3,-1000,0);
+
   fexp1->SetLineColor(kBlue);
   fexp2->SetLineColor(kViolet+1);
   fexp3->SetLineColor(kRed);
 
   gr1->Fit("fexp1", "R0");
+  cout << endl;
+  cout << endl;
   fexp1->Draw("SAME");   
   gr1->Fit("fexp2", "R0");
+  cout << endl;
+  cout << endl;
   fexp2->Draw("SAME");
   gr1->Fit("fexp3", "R0");
   fexp3->Draw("SAME"); 
   
-
+  C_temp->cd();
+  fexp1->Draw();
+  fexp2->Draw("SAME");
+  fexp3->Draw("SAME");
 
   Double_t par_exp[2];
   fexp1->GetParameters(par_exp);
@@ -565,7 +577,7 @@ void analyzeFillABCD(){
   fexp3b->SetLineColor(kRed);
 
   
-  TPaveText *pt_exp = new TPaveText(.25, .8, .88, .88, "NDC");
+  TPaveText *pt_exp = new TPaveText(.25, .7, .88, .88, "NDC");
   TString par_exp0 = "";
   par_exp0+=par_exp[0];
   TString par_exp1 = "";
@@ -576,19 +588,28 @@ void analyzeFillABCD(){
   par_exp2_0+=par_exp2[0];
   par_exp2_1+=par_exp2[1];
   par_exp2_2+=par_exp2[2];
+  TString par_exp3_0 = "";
+  TString par_exp3_1 = "";
+  TString par_exp3_2 = "";
+  TString par_exp3_3 = "";
+  par_exp3_0+=par_exp3[0];
+  par_exp3_1+=par_exp3[1];
+  par_exp3_2+=par_exp3[2];
+  par_exp3_3+=par_exp3[3];
 
   pt_exp->SetFillColor(0);
   pt_exp->SetTextSize(0.02);
   pt_exp->SetTextAlign(12);
   pt_exp->AddText( "Fit (blue) = "+par_exp0+" *exp( "+par_exp1+"*x)");
   pt_exp->AddText( "Fit (purple) = "+par_exp2_0+" *exp( "+par_exp2_1+"*x)+"+par_exp2_2);
+  pt_exp->AddText( "Fit (red) = "+par_exp3_0+" *exp( "+par_exp3_1+"*x)+"+par_exp3_2+" *exp( "+par_exp3_3+"*x)");
   pt_exp->Draw();
   
   //add fit to C_extrap
   C_extrap->cd();
   fexp1b->Draw("SAME");
   fexp2b->Draw("SAME");
-  fexp3b->Draw("SAME");
+  //  fexp3b->Draw("SAME");
    
   ////////////////////////////////////////////////
   ///   Calculate estimate with uncertainty   ////
@@ -747,6 +768,7 @@ void analyzeFillABCD(){
   C_contribute->Write();
   C_x->Write();
   C_dp->Write();
+  C_temp->Write();
 
   C_ABCD->Close();
   C_hist1->Close();
@@ -756,6 +778,7 @@ void analyzeFillABCD(){
   C_contribute->Close();
   C_x->Close();
   C_dp->Close();
+  C_temp->Close();
   
   fout.Close();
 
