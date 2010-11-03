@@ -47,15 +47,15 @@ int passbtagcut(int nbtags){
   }
 }
 
-void analyzeFillABCD(){
+void analyzeFillABCD(TString joshType = "calo", float borderv1a = 50, float borderv1b = 150, int fitNum = 6, bool verbose = false){
   cout << endl;
-  cout << "Begin analyzeFillABCD" << endl;
+  if(verbose)cout << "Begin analyzeFillABCD" << endl;
   gROOT->SetStyle("Plain");
   gStyle->SetPalette(1);
   gStyle->SetOptStat("nemruo");
   
   bool josh=true;
-  int fitNum = 10; //number of bins in xL region, used to fit ratio
+  // int fitNum = 10; //number of bins in xL region, used to fit ratio
   int extendedNum = 10; //number of bins in xR region, used in extrapolation
   TString xLabel = "MET";
 
@@ -81,8 +81,8 @@ void analyzeFillABCD(){
   
   float pi=4*atan(1.0);
   
-  float borderv1a=80.0;
-  float borderv1b=140.0;
+  // float borderv1a=80.0;
+  // float borderv1b=140.0;
   float borderv2a=150.0;
   float borderv2b=1000000.;
   float borderv2b_plot=350.;
@@ -136,19 +136,19 @@ void analyzeFillABCD(){
   
   float xWidthL = (borderv1b-borderv1a)/fitNum;
   Double_t xBinsL[fitNum+1];
-  cout << "xBinsL: ";
+  if(verbose) cout << "xBinsL: ";
   for(int i = 0; i<=fitNum; i++){
     xBinsL[i]=borderv1a+i*xWidthL;
-    cout << xBinsL[i] << " ";
+    if(verbose)cout << xBinsL[i] << " ";
   }
   cout << endl;
   
   float xWidthU = (borderv2b_plot-borderv2a)/extendedNum;
   Double_t xBinsU[extendedNum+1]; 
-  cout << "xBinsU: ";
+  if(verbose)cout << "xBinsU: ";
   for(int i = 0; i<=extendedNum; i++){
     xBinsU[i]=borderv2a+i*xWidthU;
-    cout << xBinsU[i] << " ";
+    if(verbose)cout << xBinsU[i] << " ";
   }
   cout << endl;
   
@@ -211,17 +211,17 @@ void analyzeFillABCD(){
   TChain* InputChain = 0;
   //TChain* InputChain = FormChain170();
   if(josh){
-    InputChain = FormChainJosh("tc");
+    InputChain = FormChainJosh(joshType);
   }
   else{
     InputChain = FormChain();
   }
   
   int numEntries = InputChain->GetEntries();
-  cout <<"numEntries: " << numEntries << endl;
+  if(verbose)cout <<"numEntries: " << numEntries << endl;
   cout << endl;
 
-  double Dfrac;
+  double Dfrac=0;
   double x,y, MG=1, weightJosh;
   int nbtags=0;
   if(josh){
@@ -300,7 +300,7 @@ void analyzeFillABCD(){
       if( (x>=borderv2a) && (y>=borderh2a) && !Cnow ){
 	nCextra+=weight;
 	nCextra_e += weight*weight;
-	if(!Cnow) cout << "nCextra with weight = " << weight << endl;
+	if(!Cnow && verbose) cout << "nCextra with weight = " << weight << endl;
       }
       
 
@@ -434,7 +434,7 @@ void analyzeFillABCD(){
   //// ratio graph for all x ////
   ///////////////////////////////
   cout << endl;
-  cout << "All points:" << endl;
+  if(verbose)cout << "All points:" << endl;
   
   //RATIO for all x
   C_extrap->cd();
@@ -450,7 +450,7 @@ void analyzeFillABCD(){
       gr0y[i]= histB->GetBinContent(i+1,1)/histA->GetBinContent(i+1,1);
       gr0y_error[i] =  gr0y[i]*sqrt((histB->GetBinError(i+1,1)/histB->GetBinContent(i+1,1))*(histB->GetBinError(i+1,1)/histB->GetBinContent(i+1,1))+
 				    (histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1))*(histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1)));
-      cout << "ratio: (" << gr0x[i] << " +- " << gr0x_error[i] << ", " << gr0y[i] << " +- " << gr0y_error[i] << ")" << endl;
+      if(verbose)cout << "ratio: (" << gr0x[i] << " +- " << gr0x_error[i] << ", " << gr0y[i] << " +- " << gr0y_error[i] << ")" << endl;
     }
     else if(i>=fitNum && i<(fitNum+extendedNum) ){
       gr0x[i]= xaxD->GetBinCenter(i-fitNum+1);
@@ -459,7 +459,7 @@ void analyzeFillABCD(){
       gr0y[i]= histC->GetBinContent(i-fitNum+1,1)/histD->GetBinContent(i-fitNum+1,1);
       gr0y_error[i] =  gr0y[i]*sqrt((histC->GetBinError(i-fitNum+1,1)/histC->GetBinContent(i-fitNum+1,1))*(histC->GetBinError(i-fitNum+1,1)/histC->GetBinContent(i-fitNum+1,1))+
 				    (histD->GetBinError(i-fitNum+1,1)/histD->GetBinContent(i-fitNum+1,1))*(histD->GetBinError(i-fitNum+1,1)/histD->GetBinContent(i-fitNum+1,1))); 
-      cout << "ratio: (" << gr0x[i] << " +- " << gr0x_error[i] << ", " << gr0y[i] << " +- " << gr0y_error[i] << ")" << endl;
+      if(verbose)cout << "ratio: (" << gr0x[i] << " +- " << gr0x_error[i] << ", " << gr0y[i] << " +- " << gr0y_error[i] << ")" << endl;
     }
     else{ assert(0); }
   }
@@ -492,7 +492,7 @@ void analyzeFillABCD(){
   //GRAPH FOR FIT REGION//
   ////////////////////////
   cout << endl;
-  cout << "Points for fit region:" << endl;
+  if(verbose)cout << "Points for fit region:" << endl;
   C_fit->cd();
   C_fit->SetLogy();
   float gr1x[fitNum];
@@ -512,7 +512,7 @@ void analyzeFillABCD(){
     gr1y_error[i] = gr1y[i]*sqrt((histB->GetBinError(i+1,1)/histB->GetBinContent(i+1,1))*(histB->GetBinError(i+1,1)/histB->GetBinContent(i+1,1))+
 				 (histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1))*(histA->GetBinError(i+1,1)/histA->GetBinContent(i+1,1)));
     
-    cout << "ratio: (" << gr1x[i] << " +- " << gr1x_error[i] <<", " << gr1y[i] << " +- " << gr1y_error[i] << ")" << endl;
+    if(verbose)cout << "ratio: (" << gr1x[i] << " +- " << gr1x_error[i] <<", " << gr1y[i] << " +- " << gr1y_error[i] << ")" << endl;
   }
   cout << endl;
   cout << endl;
@@ -616,7 +616,7 @@ void analyzeFillABCD(){
   ////////////////////////////////////////////////
   cout << endl;
   cout << endl;
-  cout << "Running binned exponential estimate:" << endl;
+  if(verbose)cout << "Running binned exponential estimate:" << endl;
   
   float gr_contx[extendedNum];
   float gr_conty[extendedNum];
@@ -648,7 +648,7 @@ void analyzeFillABCD(){
     extendedEstimate_exp += exp_contribution;
       gr_conty[i-1] = exp_contribution;
     gr_contye[i-1] = sqrt(ext_serror_exp_t);
-    cout << extendedEstimate_exp << " +- " << sqrt(ext_serror_exp) << endl;
+    if(verbose)cout << extendedEstimate_exp << " +- " << sqrt(ext_serror_exp) << endl;
   }
   float ext_error_exp = sqrt(ext_serror_exp);
   float nC_error = sqrt(nC_e);
