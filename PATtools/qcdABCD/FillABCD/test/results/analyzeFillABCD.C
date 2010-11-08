@@ -25,12 +25,13 @@
 #include <assert.h>
 
 #include "analyzeFillABCDInput.h"
+#include "Dfrac.C"
 
 using namespace std;
 
-bool bcontinue(int nbtags){
-   return true;
-  if(nbtags>=2){
+bool bcontinue(int nbtags, int min){
+  
+  if(nbtags>=min){
     return true;
   }
   else{
@@ -47,7 +48,7 @@ int passbtagcut(int nbtags){
   }
 }
 
-void analyzeFillABCD(TString joshType = "calo", float borderv1a = 50, float borderv1b = 150, int fitNum = 6, bool verbose = false){
+double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, float borderv1a = 50, float borderv1b = 150, int fitNum = 6, bool verbose = false){
   cout << endl;
   if(verbose)cout << "Begin analyzeFillABCD" << endl;
   gROOT->SetStyle("Plain");
@@ -245,7 +246,7 @@ void analyzeFillABCD(TString joshType = "calo", float borderv1a = 50, float bord
     bool Anow=0, Bnow=0, Cnow=0, Dnow=0;
 
     //btag requirement
-    bool bcontinueNow = bcontinue(nbtags);
+    bool bcontinueNow = bcontinue(nbtags, bcont);
 
     if(bcontinueNow){
       
@@ -529,10 +530,10 @@ void analyzeFillABCD(TString joshType = "calo", float borderv1a = 50, float bord
   /////////////EXPONENTIAL FIT////////////////
   ////////////////////////////////////////////
   TF1 *fexp1 = new TF1("fexp1", "[0]*exp([1]*x)", borderv1a, borderv1b);
-  fexp1->SetParameters(4.0, -1.0/20.0);
+  fexp1->SetParameters(3.0, -1.0/30.0);
 
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
-  fexp2->SetParameters(4.0, -1.0/20.0, 0.001);  
+  fexp2->SetParameters(4.0, -1.0/30.0, 0.001);  
 
   TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv1b);
   fexp3->SetParameters(4.0, -1.0/20.0, 4.0, -1.0/200.0);  
@@ -543,11 +544,11 @@ void analyzeFillABCD(TString joshType = "calo", float borderv1a = 50, float bord
   fexp2->SetLineColor(kViolet+1);
   fexp3->SetLineColor(kRed);
 
-  gr1->Fit("fexp1", "R0");
+  assert(!gr1->Fit("fexp1", "R0"));
   cout << endl;
   cout << endl;
   fexp1->Draw("SAME");   
-  gr1->Fit("fexp2", "R0");
+  assert(!gr1->Fit("fexp2", "R0"));
   cout << endl;
   cout << endl;
   fexp2->Draw("SAME");
@@ -676,7 +677,7 @@ void analyzeFillABCD(TString joshType = "calo", float borderv1a = 50, float bord
     InputChain->GetEvent(i);
        
     //btag requirement
-    bool bcontinueNow = bcontinue(nbtags);
+    bool bcontinueNow = bcontinue(nbtags, bcont);
     
     if(bcontinueNow){
  
@@ -753,6 +754,13 @@ void analyzeFillABCD(TString joshType = "calo", float borderv1a = 50, float bord
   cout << endl;
 
 
+  double *result = new double[4];
+  result[0] = unbinnedEstimate;
+  result[1] = ext_error_unBinexp;
+  result[2] = unbinnedEstimate2;
+  result[3] = ext_error_unBinexp2;
+
+
   histWD->Write();
   histWC->Write();
   histWA->Write();
@@ -782,4 +790,42 @@ void analyzeFillABCD(TString joshType = "calo", float borderv1a = 50, float bord
   
   fout.Close();
 
+  return result;
 }//end analyzeFillABCD()
+
+
+void analyzeFillABCD(){
+
+  TString type = "calo";
+
+  double *array0 = doAnalyzeFillABCD(type, 0, 30, 150, 8, false);
+  double *array1 = doAnalyzeFillABCD(type, 0, 50, 150, 8, false);  
+  double *array2 = doAnalyzeFillABCD(type, 0, 70, 150, 8, false);
+  double *array3 = doAnalyzeFillABCD(type, 0, 90, 150, 8, false);
+  double *array4 = doAnalyzeFillABCD(type, 0, 50, 140, 8, false); 
+  double *array5 = doAnalyzeFillABCD(type, 0, 50, 130, 8, false);
+  double *array6 = doAnalyzeFillABCD(type, 0, 50, 150, 5, false);
+  double *array7 = doAnalyzeFillABCD(type, 0, 50, 150, 12, false);
+  double *array8 = doAnalyzeFillABCD(type, 2, 50, 150, 6, false);
+ 
+  double *array0f = Dfrac(type,2);
+
+  cout << endl;
+  cout << array0[0]*array0f[0] << " +/- " << sqrt(array0[0]*array0f[1]*array0[0]*array0f[1]+array0[1]*array0f[0]*array0[1]*array0f[0]) << " , " << array0[2]*array0f[0] << " +/- " << sqrt(array0[2]*array0f[1]*array0[2]*array0f[1]+array0[3]*array0f[0]*array0[3]*array0f[0]) << endl;
+  cout << array1[0]*array0f[0] << " +/- " << sqrt(array1[0]*array0f[1]*array1[0]*array0f[1]+array1[1]*array0f[0]*array1[1]*array0f[0]) << " , " << array1[2]*array0f[0] << " +/- " << sqrt(array1[2]*array0f[1]*array1[2]*array0f[1]+array1[3]*array0f[0]*array1[3]*array0f[0]) << endl; 
+  cout << array2[0]*array0f[0] << " +/- " << sqrt(array2[0]*array0f[1]*array2[0]*array0f[1]+array2[1]*array0f[0]*array2[1]*array0f[0]) << " , " << array2[2]*array0f[0] << " +/- " << sqrt(array2[2]*array0f[1]*array2[2]*array0f[1]+array2[3]*array0f[0]*array2[3]*array0f[0]) << endl; 
+  cout << array3[0]*array0f[0] << " +/- " << sqrt(array3[0]*array0f[1]*array3[0]*array0f[1]+array3[1]*array0f[0]*array3[1]*array0f[0]) << " , " << array3[2]*array0f[0] << " +/- " << sqrt(array3[2]*array0f[1]*array3[2]*array0f[1]+array3[3]*array0f[0]*array3[3]*array0f[0]) << endl; 
+  cout << array4[0]*array0f[0] << " +/- " << sqrt(array4[0]*array0f[1]*array4[0]*array0f[1]+array4[1]*array0f[0]*array4[1]*array0f[0]) << " , " << array4[2]*array0f[0] << " +/- " << sqrt(array4[2]*array0f[1]*array4[2]*array0f[1]+array4[3]*array0f[0]*array4[3]*array0f[0]) << endl; 
+  cout << array5[0]*array0f[0] << " +/- " << sqrt(array5[0]*array0f[1]*array5[0]*array0f[1]+array5[1]*array0f[0]*array5[1]*array0f[0]) << " , " << array5[2]*array0f[0] << " +/- " << sqrt(array5[2]*array0f[1]*array5[2]*array0f[1]+array5[3]*array0f[0]*array5[3]*array0f[0]) << endl; 
+  cout << array6[0]*array0f[0] << " +/- " << sqrt(array6[0]*array0f[1]*array6[0]*array0f[1]+array6[1]*array0f[0]*array6[1]*array0f[0]) << " , " << array6[2]*array0f[0] << " +/- " << sqrt(array6[2]*array0f[1]*array6[2]*array0f[1]+array6[3]*array0f[0]*array6[3]*array0f[0]) << endl;
+  cout << array7[0]*array0f[0] << " +/- " << sqrt(array7[0]*array0f[1]*array7[0]*array0f[1]+array7[1]*array0f[0]*array7[1]*array0f[0]) << " , " << array7[2]*array0f[0] << " +/- " << sqrt(array7[2]*array0f[1]*array7[2]*array0f[1]+array7[3]*array0f[0]*array7[3]*array0f[0]) << endl; 
+  cout << endl;
+  cout << array0[0] << " +/- " << array0[1] << " , " << array0[2] << " +/- " << array0[3] << endl;
+  cout << array1[0] << " +/- " << array1[1] << " , " << array1[2] << " +/- " << array1[3] << endl;
+  cout << array2[0] << " +/- " << array2[1] << " , " << array2[2] << " +/- " << array2[3] << endl;
+  cout << array3[0] << " +/- " << array3[1] << " , " << array3[2] << " +/- " << array3[3] << endl;
+  cout << array4[0] << " +/- " << array4[1] << " , " << array4[2] << " +/- " << array4[3] << endl;
+  cout << array5[0] << " +/- " << array5[1] << " , " << array5[2] << " +/- " << array5[3] << endl;
+  cout << array6[0] << " +/- " << array6[1] << " , " << array6[2] << " +/- " << array6[3] << endl;
+  cout << array7[0] << " +/- " << array7[1] << " , " << array7[2] << " +/- " << array7[3] << endl;
+ }
