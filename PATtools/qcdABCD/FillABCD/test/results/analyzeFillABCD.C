@@ -162,6 +162,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   // histogram for A, B, C, D
   TH2D* hist1 = new TH2D("H_ABCD", "ABCD", 100,0,1000,160,0,pi);
   TH2D* hist2 = new TH2D("H_ABCD2", "ABCD2", 100,0,500,100,0,pi);
+  TH2D* hist3 = new TH2D("H_ABCD3", "ABCD3", 90,50,500,100,0,pi);
   TH2D* histA = new TH2D("H_A", "Region A", fitNum, xBinsL, 1, yBinsL);
   TH2D* histB = new TH2D("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
   TH2D* histC = new TH2D("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
@@ -315,6 +316,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
       //Fill histogram A, B, C, D
       hist1->Fill(x,y, weight);
       hist2->Fill(x,y, weight);
+      hist3->Fill(x,y, weight);
       histA->Fill(x,y, weight);
       histB->Fill(x,y, weight);
       histC->Fill(x,y, weight);
@@ -566,8 +568,16 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
 
 
-  TF2 *f2 = new TF2("f2","([0]*exp([1]*x)+[2]*exp([3]*x))*exp([4]*x*y)",0.,500.,0.,pi);
-  //f2->SetParameters();
+  //TF2 *f2 = new TF2("f2","([0]*exp([1]*x)+[2]*exp([3]*x))*exp([4]*x*y)",0.,500.,0.,pi);
+  TF2 *f2 = new TF2("f2","([0]*exp([1]*x))*exp([2]*x*y)",50.,500.,0.,pi);
+  f2->SetParameters(7500, -1./20.,-1./10.);
+  hist3->Fit("f2");
+  C_temp->cd();
+  hist3->Draw();
+  f2->Draw("cont1 same");
+  cout<< "h3 integral: " << hist3->Integral() << endl;
+  cout<< "f2 all int: " << f2->Integral(50.,500.,0.,3.14) << endl;;
+  cout<< "f2 sig int: " << f2->Integral(150.,500.,0.3,3.14) << endl;
 
 
 
@@ -673,9 +683,10 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   ////////////////////////////////////////////
   TF1 *fexp1 = new TF1("fexp1", "[0]*exp([1]*x)", borderv1a, borderv1b);
   fexp1->SetParameters(3.0, -1.0/30.0);
+  fexp1->SetParLimits(1,-1000.0,0.);
 
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
-  fexp2->SetParameters(4.0, -1.0/30.0, 0.001);  
+  fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
   fexp2->SetParLimits(2,0.,1000);
 
   TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv1b);
@@ -691,16 +702,17 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   cout << endl;
   cout << endl;
   fexp1->Draw("SAME");   
-  assert(!gr1->Fit("fexp2", "R0"));
+  TString secondFitFail = "";
+  if(gr1->Fit("fexp2", "R0")) secondFitFail = "FAILED!";
   cout << endl;
   cout << endl;
   fexp2->Draw("SAME");
   gr1->Fit("fexp3", "R0");
   fexp3->Draw("SAME"); 
   
-  C_temp->cd();
-  fexp1->Draw();
-  fexp2->Draw("SAME");
+  //  C_temp->cd();
+  // fexp1->Draw();
+  // fexp2->Draw("SAME");
   //fexp3->Draw("SAME");
 
   Double_t par_exp[2];
@@ -796,6 +808,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   }
   double ext_error_exp = sqrt(ext_serror_exp);
   double nC_error = sqrt(nC_e);
+  double nD_error = sqrt(nD_e);
   double nCextra_error = sqrt(nCextra_e);
   
   TGraphErrors * grc = new TGraphErrors(extendedNum, gr_contx, gr_conty, gr_contxe, gr_contye); 
@@ -832,7 +845,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
 
       //if in Region D
-      if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
+      if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b)){
 
 	double xvalue = x;
 	//double  xvalue = 150;
@@ -887,10 +900,10 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   if(fitmax != borderv1b) {cout << "WARNING: Zero in fit region at " << fitmax << endl;}
   cout << "hC integral: " << histC->Integral() << endl; //misses stuff between borderv2b_plot and borderv2b
   cout << "hD integral: " << histD->Integral() << endl; 
-  cout << "nD: " << nD << endl;
+  cout << "nD: " << nD << " +- " << nD_error << endl;
   cout << "nC: " << nC << " +- " << nC_error << endl;
   cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl; 
-  cout << "Unbinned exponential+constant extended estimate for nC: " << unbinnedEstimate2 << " +- " << ext_error_unBinexp2 << endl; 
+  cout << "Unbinned exponential+constant extended estimate for nC: " << unbinnedEstimate2 << " +- " << ext_error_unBinexp2 << " " << secondFitFail << endl; 
   //cout <<   "Binned exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
   //cout << "beforeAngular: " << beforeAngular;
   cout << "Dfrac: " << Dfrac/nD << endl;
@@ -911,6 +924,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   histx->Write();
   histdp->Write();
   hist2->Write();
+  hist3->Write();
 
   C_ABCD->Write();
   C_hist1->Write();
@@ -944,7 +958,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
 void analyzeFillABCD(){
 
-  TString type = "pfpf";
+  TString type = "calo";
 
   double *array0 = doAnalyzeFillABCD(type, 0, 30, 150, 8, false);
   double *array1 = doAnalyzeFillABCD(type, 0, 50, 150, 8, false);  
