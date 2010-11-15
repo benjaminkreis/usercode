@@ -33,6 +33,9 @@
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 
+#include "PhysicsTools/SelectorUtils/interface/JetIDSelectionFunctor.h"
+#include "PhysicsTools/SelectorUtils/interface/PFJetIDSelectionFunctor.h"
+
 //////////////////////////////////////////////////////////////////////
 class RA2FilterUHH : public edm::EDFilter {
    public:
@@ -67,6 +70,8 @@ private:
   edm::InputTag bsSrc_;
   double doABCD_;
 
+  PFJetIDSelectionFunctor PFjetIdLoose_;
+
 };
 
 
@@ -85,10 +90,12 @@ RA2FilterUHH::RA2FilterUHH(const edm::ParameterSet& iConfig):
   triggerResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("triggerResults")),
   pvSrc_(iConfig.getParameter<edm::InputTag>("pvSrc")),
   bsSrc_(iConfig.getParameter<edm::InputTag>("bsSrc")),
-  doABCD_(iConfig.getUntrackedParameter<double>("doABCD"))
+  doABCD_(iConfig.getUntrackedParameter<double>("doABCD")),
+  PFjetIdLoose_(iConfig.getParameter<edm::ParameterSet>("pfjetIdLoose") )
 
 {
    //now do what ever initialization is needed
+
   
 }
 
@@ -208,6 +215,7 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   //Jet Stuff///////////////////////////////////////////////
   //////////////////////////////////////////////////////////
+  pat::strbitset retpf = PFjetIdLoose_.getBitTemplate();
   int nTightJets = 0;
   int nLooseJets = 0;
   
@@ -219,16 +227,43 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   for(edm::View<pat::Jet>::const_iterator jet=jets->begin(); jet!=jets->end(); ++jet){
     
-    float jet_n90Hits = jet->jetID().n90Hits;
-    float jet_fHPD = jet->jetID().fHPD;
-    float jet_emf = jet->emEnergyFraction();
-
-    bool etaEMFcheck = true;
-    if( fabs(jet->eta())<2.6 && jet_emf <= 0.01) etaEMFcheck=false; 
-    
-    //good jet check
-    if( jet_n90Hits >1.0 && jet_fHPD<0.98 && etaEMFcheck){
+    bool passjetid = false;
+    if( jet->isCaloJet() ){
+      float jet_n90Hits = jet->jetID().n90Hits;
+      float jet_fHPD = jet->jetID().fHPD;
+      float jet_emf = jet->emEnergyFraction();
+      bool etaEMFcheck = true;
+      if( fabs(jet->eta())<2.6 && jet_emf <= 0.01) etaEMFcheck=false; 
+      if( jet_n90Hits >1.0 && jet_fHPD<0.98 && etaEMFcheck ) passjetid=true;
+    }
+    else if( jet->isPFJet() ){
+     
+      double chf = jet->chargedHadronEnergyFraction();
+      double nhf = jet->neutralHadronEnergyFraction();//( jet->neutralHadronEnergy() + jet->HFHadronEnergy() ) / jet->energy();
+      double cef = jet->chargedEmEnergyFraction();
+      double nef = jet->neutralEmEnergyFraction();
+      int nch = jet->chargedMultiplicity();
+      int nconstituents = jet->numberOfDaughters();
       
+      passjetid = true;
+      // if( !(nconstituents>1) || !(nef<0.99) || !(nhf<0.99) ) passjetid=false; 
+      //if( !(nef<0.99) ) passjetid=false; 
+      //if( !(nconstituents>1) ) passjetid=false; 
+      //std::cout << nconstituents << std::endl;
+
+      /*if( fabs(jet->eta()) < 2.4){
+	if ( !(cef<0.99) || !(chf>0.0) || !(nch>0) ) passjetid = false;
+	}*/
+      
+      //if(  PFjetIdLoose_(*jet,retpf) ) passjetid=true;
+      std::cout <<  PFjetIdLoose_(*jet,retpf) << std::endl;
+
+    }
+
+
+    // IF GOOD JET
+    if(passjetid){
+      std::cout << "good jet!" << std::endl;
       //loose pT and eta cut
       if( jet->pt()>30.0 && fabs(jet->eta())<5.0){
 	
