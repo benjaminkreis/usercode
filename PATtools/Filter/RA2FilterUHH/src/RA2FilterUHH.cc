@@ -58,6 +58,14 @@ private:
   unsigned int nEvPass6_;
   unsigned int nEvPass7_;
   
+  unsigned int eEvPass1_;
+  unsigned int eEvPass2_;
+  unsigned int eEvPass3_;
+  unsigned int eEvPass4_;
+  unsigned int eEvPass5_;
+  unsigned int eEvPass6_;
+  unsigned int eEvPass7_;
+
   std::vector<std::string> hltnames_;
 
   // input tags  
@@ -216,17 +224,21 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   //Jet Stuff///////////////////////////////////////////////
   //////////////////////////////////////////////////////////
   pat::strbitset retpf = PFjetIdLoose_.getBitTemplate();
-  int nTightJets = 0;
+  int nTightIDJets = 0;
   int nLooseJets = 0;
+  int jetCounter = 0;
   
   float myHT = 0; //scalar sum 
   float myMHTx=0, myMHTy=0;
   
-  float jetpt1=0, jetpt2=0, jetpt3=0;
+  //  float jetpt1=0, jetpt2=0, jetpt3=0;
+  double jetphi[3] = {-1,-1,-1};
   edm::View<pat::Jet>::const_iterator jet1=jets->end(), jet2=jets->end(),jet3=jets->end();
   
   for(edm::View<pat::Jet>::const_iterator jet=jets->begin(); jet!=jets->end(); ++jet){
-    
+    jetCounter++;
+
+    // JET ID /////////////////////////////
     bool passjetid = false;
     if( jet->isCaloJet() ){
       float jet_n90Hits = jet->jetID().n90Hits;
@@ -236,8 +248,7 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       if( fabs(jet->eta())<2.6 && jet_emf <= 0.01) etaEMFcheck=false; 
       if( jet_n90Hits >1.0 && jet_fHPD<0.98 && etaEMFcheck ) passjetid=true;
     }
-    else if( jet->isPFJet() ){
-     
+    /*else if( jet->isPFJet() ){
       double chf = jet->chargedHadronEnergyFraction();
       double nhf = jet->neutralHadronEnergyFraction();//( jet->neutralHadronEnergy() + jet->HFHadronEnergy() ) / jet->energy();
       double cef = jet->chargedEmEnergyFraction();
@@ -246,49 +257,35 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       int nconstituents = jet->numberOfDaughters();
       
       passjetid = true;
-      // if( !(nconstituents>1) || !(nef<0.99) || !(nhf<0.99) ) passjetid=false; 
-      //if( !(nef<0.99) ) passjetid=false; 
-      //if( !(nconstituents>1) ) passjetid=false; 
-      //std::cout << nconstituents << std::endl;
+      if( !(nconstituents>1) || !(nef<0.99) || !(nhf<0.99) ) passjetid=false; 
+      if( !(nef<0.99) ) passjetid=false; 
+      if( !(nconstituents>1) ) passjetid=false; 
+      std::cout << nconstituents << std::endl;
 
-      /*if( fabs(jet->eta()) < 2.4){
+      if( fabs(jet->eta()) < 2.4){
 	if ( !(cef<0.99) || !(chf>0.0) || !(nch>0) ) passjetid = false;
-	}*/
+	}
       
-      //if(  PFjetIdLoose_(*jet,retpf) ) passjetid=true;
+      if(  PFjetIdLoose_(*jet,retpf) ) passjetid=true;
       std::cout <<  PFjetIdLoose_(*jet,retpf) << std::endl;
-
     }
+    */
 
+    //assuming jets are sorted by pt
+    if(jetCounter<=3){
+      if( (jet->pt()>50.0) && (fabs(jet->eta())<2.5) && passjetid){
+	nTightIDJets++;
+	jetphi[jetCounter] = jet->phi();
+      }
+    }
 
     // IF GOOD JET
     if(passjetid){
-      std::cout << "good jet!" << std::endl;
       //loose pT and eta cut
       if( jet->pt()>30.0 && fabs(jet->eta())<5.0){
-	
+
 	nLooseJets++;
 
-	//find leading 3 jets
-	if(jet->pt() > jetpt1) {
-	  jet3 = jet2;
-	  jetpt3 = jetpt2;
-	  jet2 = jet1;
-	  jetpt2 = jetpt1;
-	  jet1 = jet;
-	  jetpt1 = jet->pt();
-	}
-	else if(jet->pt() > jetpt2){
-	  jet3 = jet2;
-	  jetpt3 = jetpt2;
-	  jet2 = jet;
-	  jetpt2 = jet->pt();
-	}
-	else if(jet->pt() > jetpt3){
-	  jet3 = jet;
-	  jetpt3 = jet->pt();
-	}
-		
 	// add jet to MHT estimate
 	myMHTx+=-jet->px();
 	myMHTy+=-jet->py();
@@ -296,32 +293,26 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	//add jet to HT estimate
 	myHT += jet->pt();
 	
-	//tight pT and eta cut
-	if( jet->pt()>50.0 && fabs(jet->eta())<2.5){
-	  
-	  nTightJets++;
-	  
-	}// end tight pT and eta cut
       }// end loose pT and eta cut
     }// end good jet cut
   }// end jets loop
   
   bool pass3 = false;
-  if(nTightJets>=3) pass3 = true;
+  if(nTightIDJets>=3) pass3 = true;
   
-  bool pass4 = false;
-  if(myHT>300) pass4 = true;
-
   bool pass5 = false;
+  if(myHT>300) pass5 = true;
+
+  bool pass6 = false;
   float myMHT = sqrt(myMHTx*myMHTx+myMHTy*myMHTy);
-  if(myMHT>150) pass5 = true;
+  if(myMHT>150) pass6 = true;
   
   //RA2 jet-phi stuff
   bool pass7 = false;
-  if(nLooseJets>=3){ 
-    float jet1phi = jet1->phi();
-    float jet2phi = jet2->phi();
-    float jet3phi = jet3->phi();
+  if(nTightIDJets>=3){ 
+    float jet1phi = jetphi[0];
+    float jet2phi = jetphi[1];
+    float jet3phi = jetphi[2];
     float myMHTphi = atan2(myMHTy,myMHTx);
     
     float jet1dPhi = acos(cos(jet1phi-myMHTphi));
@@ -380,8 +371,8 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // isolated lepton veto ////////////////////////////////
   ////////////////////////////////////////////////////////
-  bool pass6 = false;
-  if( !isolatedMuon && !isolatedElectron) pass6=true;
+  bool pass4 = false;
+  if( !isolatedMuon && !isolatedElectron) pass4=true;
   ////////////////////////////////////////////////////////
 
   
@@ -390,6 +381,13 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   // C    T        L    W  //
   //   U         F   O     //  
   ///////////////////////////
+  
+  if(pass1 && pass2 && pass3) eEvPass1_++;
+  if(pass4) eEvPass4_++;
+  if(pass5) eEvPass5_++;
+  if(pass6) eEvPass6_++;
+  if(pass7) eEvPass7_++;
+
   if(pass1){
     nEvPass1_++;
     if(pass2){
@@ -398,9 +396,9 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	nEvPass3_++;
 	if(pass4){
 	  nEvPass4_++;
-	  if(pass5 || (doABCD_>0.5) ){ // MHT cut
+	  if(pass5){
 	    nEvPass5_++;
-	    if(pass6){
+	    if(pass6 || (doABCD_>0.5) ){ // MHT cut
 	      nEvPass6_++;
 	      if(pass7 || (doABCD_>0.5) ){ // angular cuts
 		nEvPass7_++;
@@ -412,7 +410,8 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       }//end pass3
     }//end pass2
   }//end pass1
-  
+
+
   return false;
   
 }
@@ -429,12 +428,32 @@ RA2FilterUHH::beginJob()
   nEvPass5_ = 0;
   nEvPass6_ = 0;
   nEvPass7_ = 0;
+
+  eEvPass1_ = 0;
+  eEvPass2_ = 0;
+  eEvPass3_ = 0;
+  eEvPass4_ = 0;
+  eEvPass5_ = 0;
+  eEvPass6_ = 0;
+  eEvPass7_ = 0;
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 RA2FilterUHH::endJob() {
-  std::cout << "\n2010 RA2CUT FLOW:" << std::endl;
+
+
+  //exclusive
+  std::cout << std::endl;
+  std::cout << "eEvPass1: " << eEvPass1_ << " +- " << sqrt(eEvPass1_) << std::endl;
+  std::cout << "eEvPass4: " << eEvPass4_ << " +- " << sqrt(eEvPass4_) << std::endl;
+  std::cout << "eEvPass5: " << eEvPass5_ << " +- " << sqrt(eEvPass5_) << std::endl;
+  std::cout << "eEvPass6: " << eEvPass6_ << " +- " << sqrt(eEvPass6_) << std::endl;
+  std::cout << "eEvPass7: " << eEvPass7_ << " +- " << sqrt(eEvPass7_) << std::endl;
+  std::cout << std::endl;
+
+  //cutflow
+  std::cout << "2010 UHH RA2 CUTFLOW:" << std::endl;
   std::cout << "nEvPass0: " << nEvents_ << " +- " << sqrt(nEvents_) <<std::endl;
   std::cout << "nEvPass1: " << nEvPass1_ << " +- " << sqrt(nEvPass1_) << ", " << (float) nEvPass1_/nEvents_*100.0 << " %" << std::endl;
   std::cout << "nEvPass2: " << nEvPass2_ << " +- " << sqrt(nEvPass2_) << ", " << (float) nEvPass2_/nEvPass1_*100.0 << " %" << std::endl;
@@ -443,6 +462,7 @@ RA2FilterUHH::endJob() {
   std::cout << "nEvPass5: " << nEvPass5_ << " +- " << sqrt(nEvPass5_) << ", " << (float) nEvPass5_/nEvPass4_*100.0 << " %" << std::endl;
   std::cout << "nEvPass6: " << nEvPass6_ << " +- " << sqrt(nEvPass6_) << ", " << (float) nEvPass6_/nEvPass5_*100.0 << " %" << std::endl;
   std::cout << "nEvPass7: " << nEvPass7_ << " +- " << sqrt(nEvPass7_) << ", " << (float) nEvPass7_/nEvPass6_*100.0 << " %" << std::endl;
+
 }
 
 //define this as a plug-in

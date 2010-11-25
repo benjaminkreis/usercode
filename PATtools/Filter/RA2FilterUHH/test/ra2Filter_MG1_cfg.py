@@ -34,7 +34,12 @@ process.myFilter = cms.EDFilter("RA2FilterUHH",
                                 triggerResults = cms.untracked.InputTag("TriggerResults", "", "HLT"),
                                 pvSrc = cms.InputTag("offlinePrimaryVertices"),
                                 bsSrc= cms.InputTag("offlineBeamSpot"),
-                                doABCD=cms.untracked.double(1.0)                              
+                                doABCD=cms.untracked.double(1.0),
+                                pfjetIdLoose = cms.PSet( #for pf jets
+                                    version = cms.string('FIRSTDATA'), #these are the 384 defaults
+                                    quality = cms.string('LOOSE')
+                                )
+                                
 )
 
 process.p = cms.Path(process.myFilter)

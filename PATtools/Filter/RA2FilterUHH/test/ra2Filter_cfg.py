@@ -13,8 +13,8 @@ process.maxEvents = cms.untracked.PSet(
 process.source = cms.Source("PoolSource",
   fileNames = cms.untracked.vstring(
 #'rfio:/castor/cern.ch/user/w/wteo/susy/PAT_38X_run2010B_multijet_oct29_16_4_bgT.root',
-'rfio:/castor/cern.ch/user/k/kreis/CUSusy/RA2UHH/ABCD_Spring10/RA2UHHSelection_QCD_MG3_100_2_qaD.root',
-#  'rfio:/castor/cern.ch/user/w/wteo/susy/LM3_SPRING10_SUSYPAT_v000703_21_1.root',
+#'rfio:/castor/cern.ch/user/k/kreis/CUSusy/RA2UHH/ABCD_Spring10/RA2UHHSelection_QCD_MG3_100_2_qaD.root',
+  'rfio:/castor/cern.ch/user/w/wteo/susy/LM3_SPRING10_SUSYPAT_v000703_21_1.root',
     )
 )
 
@@ -31,8 +31,8 @@ process.myFilter = cms.EDFilter("RA2FilterUHH",
                                 #tauSrc      = cms.untracked.InputTag("cleanLayer1Taus"),
                                 #jetSrc      = cms.untracked.InputTag("selectedLayer1Jets"),
                                 #jetSrc      = cms.untracked.InputTag("cleanLayer1Jets"),
-                                #jetSrc      = cms.untracked.InputTag("cleanPatJetsAK5Calo"), #use with susypat
-                                jetSrc      = cms.untracked.InputTag("selectedPatJetsPF"), #use with susypat 
+                                jetSrc      = cms.untracked.InputTag("cleanPatJetsAK5Calo"), #use with susypat
+                                #jetSrc      = cms.untracked.InputTag("selectedPatJetsPF"), #use with susypat 
                                 #metSrc      = cms.untracked.InputTag("layer1METs"),
                                 metSrc      = cms.untracked.InputTag("patMETsAK5Calo"),
                                 triggerResults = cms.untracked.InputTag("TriggerResults", "", "HLT"),
