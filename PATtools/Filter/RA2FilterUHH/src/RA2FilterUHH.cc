@@ -163,7 +163,7 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   if(hasGenEventInfo){ pthat = ( genEvtInfo->hasBinningValues() ? (genEvtInfo->binningValues())[0] : 0.0);}
   else {pthat = -1.0;}
   
-  
+  double pi=4*atan(1.0);
   
   //Trigger Cut/////////////////////////////////////////////
   //////////////////////////////////////////////////////////
@@ -225,14 +225,13 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   //////////////////////////////////////////////////////////
   pat::strbitset retpf = PFjetIdLoose_.getBitTemplate();
   int nTightIDJets = 0;
-  int nLooseJets = 0;
   int jetCounter = 0;
   
-  float myHT = 0; //scalar sum 
-  float myMHTx=0, myMHTy=0;
+  double myHT = 0; //scalar sum 
+  double myMHTx=0, myMHTy=0;
   
   //  float jetpt1=0, jetpt2=0, jetpt3=0;
-  double jetphi[3] = {-1,-1,-1};
+  double jetphi[3] = {-5,-5,-5};
   edm::View<pat::Jet>::const_iterator jet1=jets->end(), jet2=jets->end(),jet3=jets->end();
   
   for(edm::View<pat::Jet>::const_iterator jet=jets->begin(); jet!=jets->end(); ++jet){
@@ -241,12 +240,12 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     // JET ID /////////////////////////////
     bool passjetid = false;
     if( jet->isCaloJet() ){
-      float jet_n90Hits = jet->jetID().n90Hits;
-      float jet_fHPD = jet->jetID().fHPD;
+      int jet_n90Hits = jet->jetID().n90Hits;
+      double jet_fHPD = jet->jetID().fHPD;
       float jet_emf = jet->emEnergyFraction();
       bool etaEMFcheck = true;
-      if( fabs(jet->eta())<2.6 && jet_emf <= 0.01) etaEMFcheck=false; 
-      if( jet_n90Hits >1.0 && jet_fHPD<0.98 && etaEMFcheck ) passjetid=true;
+      if( (fabs(jet->eta())<2.6) && (jet_emf<=0.01)) etaEMFcheck=false; 
+      if( (jet_n90Hits>1) && (jet_fHPD<0.98) && etaEMFcheck ) passjetid=true;
     }
     /*else if( jet->isPFJet() ){
       double chf = jet->chargedHadronEnergyFraction();
@@ -275,7 +274,7 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     if(jetCounter<=3){
       if( (jet->pt()>50.0) && (fabs(jet->eta())<2.5) && passjetid){
 	nTightIDJets++;
-	jetphi[jetCounter] = jet->phi();
+	jetphi[jetCounter-1] = jet->phi();
       }
     }
 
@@ -283,8 +282,6 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     if(passjetid){
       //loose pT and eta cut
       if( jet->pt()>30.0 && fabs(jet->eta())<5.0){
-
-	nLooseJets++;
 
 	// add jet to MHT estimate
 	myMHTx+=-jet->px();
@@ -298,28 +295,41 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   }// end jets loop
   
   bool pass3 = false;
-  if(nTightIDJets>=3) pass3 = true;
+  if(nTightIDJets==3) pass3 = true;
   
   bool pass5 = false;
   if(myHT>300) pass5 = true;
 
   bool pass6 = false;
-  float myMHT = sqrt(myMHTx*myMHTx+myMHTy*myMHTy);
+  double myMHT = sqrt(myMHTx*myMHTx+myMHTy*myMHTy);
   if(myMHT>150) pass6 = true;
   
   //RA2 jet-phi stuff
   bool pass7 = false;
-  if(nTightIDJets>=3){ 
-    float jet1phi = jetphi[0];
-    float jet2phi = jetphi[1];
-    float jet3phi = jetphi[2];
-    float myMHTphi = atan2(myMHTy,myMHTx);
+  if(nTightIDJets==3){ 
+    double jet1phi = jetphi[0];
+    double jet2phi = jetphi[1];
+    double jet3phi = jetphi[2];
+    assert(jet1phi>-pi);
+    assert(jet2phi>-pi);
+    assert(jet3phi>-pi);
+
     
-    float jet1dPhi = acos(cos(jet1phi-myMHTphi));
-    float jet2dPhi = acos(cos(jet2phi-myMHTphi));
-    float jet3dPhi = acos(cos(jet3phi-myMHTphi));
+    double myMHTphi = atan2(myMHTy,myMHTx);
+    
+    double jet1dPhi = acos(cos(jet1phi-myMHTphi));
+    double jet2dPhi = acos(cos(jet2phi-myMHTphi));
+    double jet3dPhi = acos(cos(jet3phi-myMHTphi));
   
-    if(jet1dPhi>0.3 && jet2dPhi>0.5  && jet3dPhi>0.3) pass7 = true;
+    //if(jet1dPhi>0.3 && jet2dPhi>0.5  && jet3dPhi>0.3) pass7 = true;  //2010 RA2
+    
+    //UHH minDPhi
+    double dPhiMin;
+    if(jet1dPhi <= jet2dPhi && jet1dPhi <= jet3dPhi){ dPhiMin = jet1dPhi; }
+    else if(jet2dPhi <= jet1dPhi && jet2dPhi <= jet3dPhi){ dPhiMin = jet2dPhi; }
+    else if(jet3dPhi <= jet1dPhi && jet3dPhi <= jet2dPhi){ dPhiMin = jet3dPhi; }
+    else {assert(0);}
+    if(dPhiMin>0.3) pass7 = true;
   }
   //end Jet Stuff//////////////////////////////////////////  
 
@@ -382,11 +392,12 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   //   U         F   O     //  
   ///////////////////////////
   
-  if(pass1 && pass2 && pass3) eEvPass1_++;
-  if(pass4) eEvPass4_++;
-  if(pass5) eEvPass5_++;
-  if(pass6) eEvPass6_++;
-  if(pass7) eEvPass7_++;
+  bool passPre = (pass1 && pass2 && pass3);
+  if(passPre) eEvPass1_++;
+  if(passPre && pass4) eEvPass4_++;
+  if(passPre && pass5) eEvPass5_++;
+  if(passPre && pass6) eEvPass6_++;
+  if(passPre && pass7) eEvPass7_++;
 
   if(pass1){
     nEvPass1_++;
