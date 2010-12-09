@@ -11,7 +11,6 @@
 #include "FWCore/Framework/interface/EDFilter.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 
-
 //#include "FWCore/ServiceRegistry/interface/Service.h"
 //#include "CommonTools/UtilAlgos/interface/TFileService.h"
 
@@ -49,22 +48,23 @@ private:
       
   // ----------member data ---------------------------
   
-  unsigned int nEvents_;
-  unsigned int nEvPass1_;
-  unsigned int nEvPass2_;
-  unsigned int nEvPass3_;
-  unsigned int nEvPass4_;
-  unsigned int nEvPass5_;
-  unsigned int nEvPass6_;
-  unsigned int nEvPass7_;
+  unsigned int nEventsUnweighted_;
+  double nEvents_;
+  double nEvPass1_;
+  double nEvPass2_;
+  double nEvPass3_;
+  double nEvPass4_;
+  double nEvPass5_;
+  double nEvPass6_;
+  double nEvPass7_;
   
-  unsigned int eEvPass1_;
-  unsigned int eEvPass2_;
-  unsigned int eEvPass3_;
-  unsigned int eEvPass4_;
-  unsigned int eEvPass5_;
-  unsigned int eEvPass6_;
-  unsigned int eEvPass7_;
+  double eEvPass1_;
+  double eEvPass2_;
+  double eEvPass3_;
+  double eEvPass4_;
+  double eEvPass5_;
+  double eEvPass6_;
+  double eEvPass7_;
 
   std::vector<std::string> hltnames_;
 
@@ -97,10 +97,10 @@ RA2FilterUHH::RA2FilterUHH(const edm::ParameterSet& iConfig):
   metSrc_(iConfig.getUntrackedParameter<edm::InputTag>("metSrc" )),
   triggerResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("triggerResults")),
   pvSrc_(iConfig.getParameter<edm::InputTag>("pvSrc")),
-  bsSrc_(iConfig.getParameter<edm::InputTag>("bsSrc")),
+  //bsSrc_(iConfig.getParameter<edm::InputTag>("bsSrc")),
   doABCD_(iConfig.getUntrackedParameter<double>("doABCD")),
   PFjetIdLoose_(iConfig.getParameter<edm::ParameterSet>("pfjetIdLoose") )
-
+  //  PFjetIdLoose_( PFJetIDSelectionFunctor::FIRSTDATA, PFJetIDSelectionFunctor::LOOSE)
 {
    //now do what ever initialization is needed
 
@@ -125,8 +125,14 @@ bool
 RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   // using namespace edm;
-  nEvents_++;
+  nEventsUnweighted_++;
  
+  edm::Handle<double> myweight1;
+  iEvent.getByLabel(edm::InputTag("weightProducer","weight"), myweight1);
+  //std::cout << *myweight1 << std::endl;
+  double myweight = *myweight1;
+  nEvents_+=myweight;
+
   // get electron collection
   edm::Handle<edm::View<pat::Electron> > electrons;
   iEvent.getByLabel(elecSrc_,electrons);
@@ -150,12 +156,14 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   // get primary vertex collection
   edm::Handle<std::vector<reco::Vertex> > pvHandle;
   iEvent.getByLabel(pvSrc_, pvHandle);
-  
+
+  /*
   //reco::BeamSpot beamSpot;
   // get beam spot collection
   edm::Handle<reco::BeamSpot> bsHandle;
   iEvent.getByLabel(bsSrc_, bsHandle);
-
+  */
+  
   edm::Handle<GenEventInfoProduct> genEvtInfo;
   bool hasGenEventInfo = iEvent.getByLabel("generator", genEvtInfo);
   
@@ -164,25 +172,16 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   else {pthat = -1.0;}
   
   double pi=4*atan(1.0);
-  
+ 
+ 
   //Trigger Cut/////////////////////////////////////////////
   //////////////////////////////////////////////////////////
+ 
   bool pass1 = false;
-  //BEN edm::TriggerNames triggerNames;
-  
+  pass1=true;
+  /*
   if(triggerResults.isValid() ){
     
-    //Ben
-    /*triggerNames.init(*triggerResults);
-    hltnames_=triggerNames.triggerNames();
-    for( int itrig=0; itrig<(int)hltnames_.size(); ++itrig){
-      //std::cout << "Trigger bit:" << itrig <<", Name:" << hltnames_[itrig] << ", Fired:" << triggerResults->accept(itrig) << std::endl;
-      if ( !triggerResults->wasrun(itrig)) std::cout<<"WARNING -- a trigger path was not run for this event!"<<std::endl;
-      if ( triggerResults->error(itrig)) std::cout<<"WARNING -- a trigger path had an error for this event!"<<std::endl;
-      if(hltnames_[itrig]=="HLT_HT200" && triggerResults->accept(itrig)) pass1=1;
-      }*/
-
-    //DON
     const edm::TriggerNames & triggerNames = iEvent.triggerNames(*triggerResults);
     unsigned int trigger_size = triggerResults->size();
     unsigned int trigger_position = triggerNames.triggerIndex("HLT_HT200");
@@ -196,7 +195,7 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     std::cout<<"ERROR -- triggerResults is invalid!"<<std::endl;
   }
   //end Trigger Cut////////////////////////////////////////  
-  
+  */
   
   //Primary Vertex Cut//////////////////////////////////////
   //////////////////////////////////////////////////////////
@@ -224,89 +223,70 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   //Jet Stuff///////////////////////////////////////////////
   //////////////////////////////////////////////////////////
   pat::strbitset retpf = PFjetIdLoose_.getBitTemplate();
-  int nTightIDJets = 0;
-  int jetCounter = 0;
-  
-  double myHT = 0; //scalar sum 
-  double myMHTx=0, myMHTy=0;
-  
-  //  float jetpt1=0, jetpt2=0, jetpt3=0;
-  double jetphi[3] = {-5,-5,-5};
-  edm::View<pat::Jet>::const_iterator jet1=jets->end(), jet2=jets->end(),jet3=jets->end();
-  
+  bool badJet = false;
+  ///////////loop for jetID event veto
   for(edm::View<pat::Jet>::const_iterator jet=jets->begin(); jet!=jets->end(); ++jet){
-    jetCounter++;
-
-    // JET ID /////////////////////////////
-    bool passjetid = false;
+    bool badJet = false;
+    
+    if( (fabs(jet->eta())>5.0) || (jet->pt()<30.) ) continue; 
+  
     if( jet->isCaloJet() ){
       int jet_n90Hits = jet->jetID().n90Hits;
       double jet_fHPD = jet->jetID().fHPD;
       float jet_emf = jet->emEnergyFraction();
       bool etaEMFcheck = true;
       if( (fabs(jet->eta())<2.6) && (jet_emf<=0.01)) etaEMFcheck=false; 
-      if( (jet_n90Hits>1) && (jet_fHPD<0.98) && etaEMFcheck ) passjetid=true;
+      if( !((jet_n90Hits>1) && (jet_fHPD<0.98) && etaEMFcheck) ) badJet=true;
     }
-    /*else if( jet->isPFJet() ){
-      double chf = jet->chargedHadronEnergyFraction();
-      double nhf = jet->neutralHadronEnergyFraction();//( jet->neutralHadronEnergy() + jet->HFHadronEnergy() ) / jet->energy();
-      double cef = jet->chargedEmEnergyFraction();
-      double nef = jet->neutralEmEnergyFraction();
-      int nch = jet->chargedMultiplicity();
-      int nconstituents = jet->numberOfDaughters();
+    else if( jet->isPFJet() ){
+      if( !PFjetIdLoose_(*jet,retpf) ) badJet=true;
+    }
+    if(badJet==true) break;   
+  }//end jet loop
+  
+  
+  int nTightJets = 0;
+  int jetCounter = 0;
+  double jetphi[3] = {-5.,-5.,-5.};
+  double myHT = 0; //scalar sum 
+  double myMHTx=0, myMHTy=0;
+  if(!badJet){
+    for(edm::View<pat::Jet>::const_iterator jet=jets->begin(); jet!=jets->end(); ++jet){
+      jetCounter++;
       
-      passjetid = true;
-      if( !(nconstituents>1) || !(nef<0.99) || !(nhf<0.99) ) passjetid=false; 
-      if( !(nef<0.99) ) passjetid=false; 
-      if( !(nconstituents>1) ) passjetid=false; 
-      std::cout << nconstituents << std::endl;
-
-      if( fabs(jet->eta()) < 2.4){
-	if ( !(cef<0.99) || !(chf>0.0) || !(nch>0) ) passjetid = false;
+      if( (fabs(jet->eta())>5.0) || (jet->pt()<30.) ) continue;
+      
+      //assuming jets are sorted by pt
+      if(jetCounter<=3){
+	if( (jet->pt()>50.0) && (fabs(jet->eta())<2.5)){
+	  nTightJets++;
+	  jetphi[jetCounter-1] = jet->phi();
 	}
-      
-      if(  PFjetIdLoose_(*jet,retpf) ) passjetid=true;
-      std::cout <<  PFjetIdLoose_(*jet,retpf) << std::endl;
-    }
-    */
-
-    //assuming jets are sorted by pt
-    if(jetCounter<=3){
-      if( (jet->pt()>50.0) && (fabs(jet->eta())<2.5) && passjetid){
-	nTightIDJets++;
-	jetphi[jetCounter-1] = jet->phi();
       }
-    }
-
-    // IF GOOD JET
-    if(passjetid){
-      //loose pT and eta cut
-      if( jet->pt()>30.0 && fabs(jet->eta())<5.0){
-
-	// add jet to MHT estimate
-	myMHTx+=-jet->px();
-	myMHTy+=-jet->py();
-	
-	//add jet to HT estimate
-	myHT += jet->pt();
-	
-      }// end loose pT and eta cut
-    }// end good jet cut
-  }// end jets loop
+      
+      // add jet to MHT estimate
+      myMHTx+=-jet->px();
+      myMHTy+=-jet->py();
+      
+      //add jet to HT estimate
+      myHT += jet->pt();
+      
+    }// end jets loop
+  }//end badJet check
   
   bool pass3 = false;
-  if(nTightIDJets==3) pass3 = true;
+  if(nTightJets==3) pass3 = true;
   
   bool pass5 = false;
-  if(myHT>300) pass5 = true;
-
+  if(myHT>300.) pass5 = true;
+  
   bool pass6 = false;
   double myMHT = sqrt(myMHTx*myMHTx+myMHTy*myMHTy);
-  if(myMHT>150) pass6 = true;
+  if(myMHT>150.) pass6 = true;
   
   //RA2 jet-phi stuff
   bool pass7 = false;
-  if(nTightIDJets==3){ 
+  if(nTightJets==3){ 
     double jet1phi = jetphi[0];
     double jet2phi = jetphi[1];
     double jet3phi = jetphi[2];
@@ -314,15 +294,12 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     assert(jet2phi>-pi);
     assert(jet3phi>-pi);
 
-    
     double myMHTphi = atan2(myMHTy,myMHTx);
     
     double jet1dPhi = acos(cos(jet1phi-myMHTphi));
     double jet2dPhi = acos(cos(jet2phi-myMHTphi));
     double jet3dPhi = acos(cos(jet3phi-myMHTphi));
   
-    //if(jet1dPhi>0.3 && jet2dPhi>0.5  && jet3dPhi>0.3) pass7 = true;  //2010 RA2
-    
     //UHH minDPhi
     double dPhiMin;
     if(jet1dPhi <= jet2dPhi && jet1dPhi <= jet3dPhi){ dPhiMin = jet1dPhi; }
@@ -333,34 +310,60 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   }
   //end Jet Stuff//////////////////////////////////////////  
 
-  // beam spot stuff //////////////////////////////////////
+  // beamspot/vertex stuff for lepton veto ////////////////
   /////////////////////////////////////////////////////////
-  reco::BeamSpot beamSpot;
- 
-  if (bsHandle.isValid()){
-    beamSpot = *bsHandle;
-  }
-  else{
-    std::cout<<"ERROR - bsHandle is invalid!" <<std::endl;
-  }
-  math::XYZPoint beamSpotPoint(beamSpot.x0(), beamSpot.y0(), beamSpot.z0());
+
+  reco::Vertex myBeamSpot;
+  edm::Handle <edm::View<reco::Vertex> >vertices;
+  iEvent.getByLabel(pvSrc_, vertices); 
+  if(!vertices->empty() && !vertices->front().isFake() ) myBeamSpot = vertices->front();
+
+  const math::XYZPointD & myPosition = myBeamSpot.position();
 
   /////////////////////////////////////////////////////////
 
 
-  // isolated muon stuff //////////////////////////////////
+   // isolated muon stuff //////////////////////////////////
   /////////////////////////////////////////////////////////
   bool isolatedMuon = false;
-  for(edm::View<pat::Muon>::const_iterator muon=muons->begin(); muon!=muons->end(); ++muon){
-    //note: can use muon->isGood("GlobalMuonPromptTight") or  muon::isGoodMuon(*muon, muon::GlobalMuonPromptTight) or muon->muonID("GlobalMuonPromptTight")
-    //note: muon->track()->pt() can be different from muon->pt()
-    if(muon->track().isAvailable()){
-      float m_d0bs =  -1.0 * (muon->track()->dxy(beamSpotPoint));
-      float m_nHits = muon->track()->numberOfValidHits();
-      float m_iso = (muon->trackIso()+muon->ecalIso()+muon->hcalIso())/muon->pt();
-      if( (muon->muonID("GlobalMuonPromptTight")) && (fabs(m_d0bs) < 0.2) && (m_nHits>=11.0)  && (muon->pt()>10) && (m_iso<0.1) ) isolatedMuon = true;
-    }//end track available check
+  int nIsolatedMuons = 0;
+  double currIso = 0;
+
+  if ( !muons.isValid() ) {
+    std::cout<<"ERROR -- muon handle is invalid!"<<std::endl;
+  }
+  
+  for(edm::View<pat::Muon>::const_iterator im=muons->begin(); im!=muons->end(); ++im){
+   
+    //common for PF and Reco:
+    if( im->isGood("GlobalMuonPromptTight") < 1 ) continue;
+    if (im->pt() < 10.) continue;
+    if (fabs(im->eta()) > 2.4) continue;
+    if (fabs(im->innerTrack()->dxy(myPosition)) > 0.02) continue;
+    if (fabs(im->vz() - myPosition.z()) > 1) continue;
+    if (im->innerTrack()->numberOfValidHits() < 11) continue;
+
+    //only PF
+    if(im->pfCandidateRef().isNonnull()){
+      for(int i =4; i<7; ++i){
+	const pat::IsoDeposit* Idep = im->isoDeposit((pat::IsolationKeys)(i));
+	if(Idep)
+	  currIso += Idep->depositWithin(0.3)/im->pt();
+	else{
+	  std::cout<<"Isolation Key: "<<i<<" not found"<<std::endl;
+	  continue;
+	}
+      }
+      if(currIso > 0.2) continue;
+    }// end pf muon
+    else{
+      std::cout<<"muon was not pf muon" << std::endl;
+      assert(1);
+    }
+    
+    nIsolatedMuons++;
   }//end muon loop
+  if(nIsolatedMuons>=1) isolatedMuon =true;
   
   // end isolated muon stuff  ///////////////////////////////
   
@@ -368,15 +371,44 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   // isolated electron stuff ///////////////////////////////
   //////////////////////////////////////////////////////////
   bool isolatedElectron = false;
-  for(edm::View<pat::Electron>::const_iterator electron=electrons->begin(); electron!=electrons->end(); ++electron){
-    //note: electron->trackIso() same as electron->dr04TkSumPt() 
-    if(electron->gsfTrack().isAvailable()){
-      float e_d0bs =  -1.0 * (electron->gsfTrack()->dxy(beamSpotPoint));
-      float e_iso =  (electron->dr03TkSumPt()+electron->ecalIso()+electron->hcalIso())/electron->pt();
-      if( (electron->electronID("eidLoose")) && (fabs(e_d0bs)<0.2) && (e_iso<0.5) && (electron->pt()>15)  ) isolatedElectron = true;
-    }//end gsfTrack available check
-  }//end electron loop
+  int nIsolatedElectrons=0;
 
+  if ( !electrons.isValid() ) {
+    std::cout<<"ERROR -- electrons handle is invalid!"<<std::endl;
+  }
+  
+  for(edm::View<pat::Electron>::const_iterator ie=electrons->begin(); ie!=electrons->end(); ++ie){
+    
+    //common for PF and Reco:
+    if (ie->electronID("eidLoose") < 1) continue;
+    if (ie->pt() < 10.) continue;
+    if (fabs(ie->eta()) > 2.5) continue;
+    if (fabs(ie->superCluster()->eta()) > 1.4442 && fabs(ie->superCluster()->eta()) < 1.566) continue;
+    if (fabs(ie->gsfTrack()->dxy(myPosition)) > 0.02) continue;
+    if (abs(ie->vz() - myPosition.z()) > 1) continue;
+    
+    //PF only:
+    if(ie->pfCandidateRef().isNonnull() ){
+      for(int i =4; i<7; ++i){
+	const pat::IsoDeposit* Idep = ie->isoDeposit((pat::IsolationKeys)(i));   //only 4,5 and 6 filled
+	if(Idep){                                                                 //charged,neutral and Photon candidates
+	  currIso += Idep->depositWithin(0.3)/ie->pt();
+	}
+	else{
+	  std::cout<<"Isolation Key: "<<i<<" not found"<<std::endl;
+	  continue;
+	}
+      }
+      if(currIso > 0.2) continue;
+    }
+    else {
+      std::cout<<"muon was not pf muon" << std::endl;
+      assert(1);
+    }
+    nIsolatedElectrons++;
+  }//end electron loop
+  if(nIsolatedElectrons>=1) isolatedElectron=true; 
+  
   // end isolated electron stuff /////////////////////////
 
   // isolated lepton veto ////////////////////////////////
@@ -393,27 +425,26 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   ///////////////////////////
   
   bool passPre = (pass1 && pass2 && pass3);
-  if(passPre) eEvPass1_++;
-  if(passPre && pass4) eEvPass4_++;
-  if(passPre && pass5) eEvPass5_++;
-  if(passPre && pass6) eEvPass6_++;
-  if(passPre && pass7) eEvPass7_++;
+  if(passPre) eEvPass1_+=myweight;
+  if(passPre && pass4) eEvPass4_+=myweight;
+  if(passPre && pass5) eEvPass5_+=myweight;
+  if(passPre && pass6) eEvPass6_+=myweight;
+  if(passPre && pass7) eEvPass7_+=myweight;
 
   if(pass1){
-    nEvPass1_++;
+    nEvPass1_+=myweight;
     if(pass2){
-      nEvPass2_++;
+      nEvPass2_+=myweight;
       if(pass3){
-	nEvPass3_++;
+	nEvPass3_+=myweight;
 	if(pass4){
-	  nEvPass4_++;
+	  nEvPass4_+=myweight;
 	  if(pass5){
-	    nEvPass5_++;
-	    if(pass6 || (doABCD_>0.5) ){ // MHT cut
-	      nEvPass6_++;
-	      if(pass7 || (doABCD_>0.5) ){ // angular cuts
-		nEvPass7_++;
-		return true;
+	    nEvPass5_+=myweight;
+	    if(pass6){
+	      nEvPass6_+=myweight;
+	      if(pass7){ 
+		nEvPass7_+=myweight;
 	      }//end pass7
 	    }//end pass6
 	  }//end pass5
@@ -421,7 +452,22 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       }//end pass3
     }//end pass2
   }//end pass1
-
+  
+  if(pass1){
+    if(pass2){
+      if(pass3){
+	if(pass4){
+	  if(pass5){
+	    if(pass6 || (doABCD_>0.5) ){ // MHT cut      
+              if(pass7 || (doABCD_>0.5) ){ // angular cuts
+		return true;
+              }//end pass7
+            }//end pass6
+          }//end pass5
+        }//end pass4 
+      }//end pass3
+    }//end pass2
+  }//end pass1
 
   return false;
   
@@ -431,22 +477,23 @@ RA2FilterUHH::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 RA2FilterUHH::beginJob()
 {
-  nEvents_ = 0;
-  nEvPass1_ = 0;
-  nEvPass2_ = 0;
-  nEvPass3_ = 0;
-  nEvPass4_ = 0;
-  nEvPass5_ = 0;
-  nEvPass6_ = 0;
-  nEvPass7_ = 0;
+  nEventsUnweighted_ = 0;
+  nEvents_ = 0.;
+  nEvPass1_ = 0.;
+  nEvPass2_ = 0.;
+  nEvPass3_ = 0.;
+  nEvPass4_ = 0.;
+  nEvPass5_ = 0.;
+  nEvPass6_ = 0.;
+  nEvPass7_ = 0.;
 
-  eEvPass1_ = 0;
-  eEvPass2_ = 0;
-  eEvPass3_ = 0;
-  eEvPass4_ = 0;
-  eEvPass5_ = 0;
-  eEvPass6_ = 0;
-  eEvPass7_ = 0;
+  eEvPass1_ = 0.;
+  eEvPass2_ = 0.;
+  eEvPass3_ = 0.;
+  eEvPass4_ = 0.;
+  eEvPass5_ = 0.;
+  eEvPass6_ = 0.;
+  eEvPass7_ = 0.;
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -465,6 +512,7 @@ RA2FilterUHH::endJob() {
 
   //cutflow
   std::cout << "2010 UHH RA2 CUTFLOW:" << std::endl;
+  std::cout << "nEventsUnweighted: " << nEventsUnweighted_ << " +- " << sqrt(nEventsUnweighted_) <<std::endl;
   std::cout << "nEvPass0: " << nEvents_ << " +- " << sqrt(nEvents_) <<std::endl;
   std::cout << "nEvPass1: " << nEvPass1_ << " +- " << sqrt(nEvPass1_) << ", " << (float) nEvPass1_/nEvents_*100.0 << " %" << std::endl;
   std::cout << "nEvPass2: " << nEvPass2_ << " +- " << sqrt(nEvPass2_) << ", " << (float) nEvPass2_/nEvPass1_*100.0 << " %" << std::endl;
