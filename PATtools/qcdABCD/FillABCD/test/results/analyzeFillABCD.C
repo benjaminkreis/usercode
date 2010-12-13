@@ -30,27 +30,6 @@
 
 using namespace std;
 
-//souvik
-Double_t crystalBall(Double_t *x, Double_t *par) //
-{
-  // Double shouldered 
-  Double_t std=(x[0]-par[0])/par[1];
-  Double_t A=pow(par[3]/par[2], par[3])*exp(-0.5*pow(par[2], 2));
-  Double_t B=par[3]/par[2]-par[2];
-  Double_t result=0;
-  if (std<=par[2]) // Gaussian Region
-    {
-      result=exp(-0.5*pow(std, 2));
-    }
-  else // Power Law Region
-    {
-      result=A/pow(B+std, par[3]);
-    }
-  result=result*par[4];
-  return result;
-}
-
-
 bool bcontinue(int nbtags, int min){
   
   if(nbtags>=min){
@@ -81,7 +60,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   bool josh=true;
   // int fitNum = 10; //number of bins in xL region, used to fit ratio
   int extendedNum = 21; //number of bins in xR region, used in extrapolation
-  TString xLabel = "MET";
+  TString xLabel = "MHT";
 
   //LOAD WEIGHTS
   TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/CMSSW_3_6_3/src/Filter/RA2Filter/test/results/weight_MG.root","READ");
@@ -192,6 +171,9 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   TH2D* histB = new TH2D("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
   TH2D* histC = new TH2D("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2D* histD = new TH2D("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
+  TH1D* histU = new TH1D("histU", "histU", 30, borderv1a, borderv2b_plot);
+  TH1D* histL = new TH1D("histL", "histL", 30, borderv1a, borderv2b_plot);
+  TH1D* histUL = new TH1D("histUL", "histUL", 30, borderv1a, borderv2b_plot);
   TH2D* histDm = new TH2D("H_Dm", "Region Dm", extendedNum, xBinsU, 1, yBinsL);
   TH1D* histCx = new TH1D("H_Cx", "Region C - "+xLabel, extendedNum, borderv2a, borderv2b_plot);
   TH1D* histDx = new TH1D("H_Dx", "Region D - "+xLabel, extendedNum, borderv2a, borderv2b_plot);
@@ -205,6 +187,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   histDx->Sumw2();
   histdp->Sumw2();
   histx->Sumw2();
+  histU->Sumw2();
+  histL->Sumw2();
   TAxis *xaxA = histA->GetXaxis();
   TAxis *xaxB = histB->GetXaxis();
   TAxis *xaxC = histC->GetXaxis();
@@ -261,7 +245,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   double x,y, MG=1, weightJosh;
   int nbtags=0;
   if(josh){
-    InputChain->SetBranchAddress("MHT",&x);
+    InputChain->SetBranchAddress("MET",&x);
     InputChain->SetBranchAddress("minDeltaPhiMET",&y);
     InputChain->SetBranchAddress("weight",&weightJosh);
     InputChain->SetBranchAddress("nbSSVM",&nbtags);
@@ -343,7 +327,9 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	nCextra_e += weight*weight;
 	if(!Cnow && verbose) cout << "nCextra with weight = " << weight << endl;
       }
-      
+      if(y>=borderh1a && y<borderh1b) histL->Fill(x,weight);
+      if(y>=borderh2a && y<borderh2b) histU->Fill(x,weight);
+
 
       //Fill histogram A, B, C, D
       hist1->Fill(x,y, weight);
@@ -364,10 +350,14 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   }//end loop tree
  
   
+
+
   ////////////////////////////////////////////////////////////////////
   ////////////////////////// Analysis ////////////////////////////////
   ////////////////////////////////////////////////////////////////////
 
+  histUL->Divide(histU, histL, 1., 1.,"");
+  
   C_x->cd();
   histx->Draw();
   C_dp->cd();
@@ -739,19 +729,11 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp3->SetParameters(4.0, -1.0/20.0, 4.0, -1.0/200.0);  
   fexp3->SetParLimits(1,-1000,0);
   fexp3->SetParLimits(3,-1000,0);
-
-  TF1 *fexp4 = new TF1("fexp4",crystalBall,borderv1a,borderv1b,5);
-  fexp4->SetParLimits(0,20.,30.); //mean of gaussian
-  fexp4->SetParLimits(1,10.,100.); //stdev
-  fexp4->SetParLimits(2, 1,20); // number of sigmas for turn on of power law
-  fexp4->SetParLimits(3, 0. ,2. );// exponent of power law
-				  
   				  
   fexp1->SetLineColor(kBlue);
   fexp2->SetLineColor(kViolet+1);
   fexp3->SetLineColor(kRed);
   
-  gr1->Fit("fexp4", "R0");
   assert(!( gr1->Fit("fexp1", "R0") ));
   cout << endl;
   cout << endl;
@@ -764,7 +746,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp2->Draw("SAME");
   gr1->Fit("fexp3", "R0");
   fexp3->Draw("SAME"); 
-  fexp4->Draw("SAME"); 
+ 
   
   //  C_temp->cd();
   // fexp1->Draw();
@@ -777,21 +759,14 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp2->GetParameters(par_exp2);
   Double_t par_exp3[4];  
   fexp3->GetParameters(par_exp3);
-  Double_t par_exp4[5];
-  fexp4->GetParameters(par_exp4);
-
+ 
   TF1 *fexp1b = new TF1("fexp1b", "[0]*exp([1]*x)", borderv1a, borderv2b);
   fexp1b->SetParameters(par_exp[0], par_exp[1]);
   TF1 *fexp2b = new TF1("fexp2b", "[0]*exp([1]*x)+[2]", borderv1a, borderv2b);
   fexp2b->SetParameters(par_exp2[0], par_exp2[1],par_exp2[2]);
   TF1 *fexp3b = new TF1("fexp3b", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv2b);
   fexp3b->SetParameters(par_exp3[0], par_exp3[1], par_exp3[2], par_exp3[3]);
-  TF1 *fexp4b = new TF1("fexp4b",crystalBall, 0. ,200. ,5);
-  fexp4b->SetParameters(par_exp4);//[0],par_exp4[1],par_exp4[2],par_exp4[3],par_exp4[4]);
-  
-  fexp4b->GetParameters(par_exp4);
-  cout << "par4 " << par_exp4[0] << " " << par_exp4[3] << endl;
-
+ 
   fexp1b->SetLineColor(kBlue);
   fexp2b->SetLineColor(kViolet+1);
   fexp3b->SetLineColor(kRed);
@@ -827,16 +802,10 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   
   //add fit to C_extrap
   C_extrap->cd();
-  //fexp1b->Draw("SAME");
-   // fexp2b->Draw("SAME");
+  fexp1b->Draw("SAME");
+  fexp2b->Draw("SAME");
   // fexp3b->Draw("SAME");
-  cout << "par4 " << par_exp4[0] << " " << par_exp4[3] << endl;
-  fexp4b->Draw("SAME");
-  cout << "par4 " << par_exp4[0] << " " << par_exp4[3] << endl;
-  C_extrap->SetLogy(1);
-  C_extrap->Modified();
-  
-
+ 
   ////////////////////////////////////////////////
   ///   Calculate estimate with uncertainty   ////
   ////////////////////////////////////////////////
@@ -997,6 +966,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   hist2->Write();
   hist3->Write();
   histDm->Write();
+  histUL->Write();
 
   C_ABCD->Write();
   C_hist1->Write();
@@ -1078,7 +1048,7 @@ void analyzeFillABCD(){
   double *arrayL = doAnalyzeFillABCD(type, 2, 0, 150, 6, false);
 
   double *array0f = Dfrac(type,2);
-
+  cout << "dfrac: " << array0f[0] << " " << array0f[1] << endl;
   
   cout << endl;
   cout << array0[0]*array0f[0] << " +/- " << sqrt(array0[0]*array0f[1]*array0[0]*array0f[1]+array0[1]*array0f[0]*array0[1]*array0f[0]) << " , " << array0[2]*array0f[0] << " +/- " << sqrt(array0[2]*array0f[1]*array0[2]*array0f[1]+array0[3]*array0f[0]*array0[3]*array0f[0]) << endl;
