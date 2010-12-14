@@ -30,8 +30,8 @@ void doExtrapPlot(TString noCName = "multi_calo_nob", TString yesCName = "multi_
   grNC->SetMarkerColor(kRed);
   
   TLegend *leg = new TLegend(.2,.75,.3,.85);
-  leg->AddEntry(grNC, "data, 21.762/pb", "l");
-  leg->AddEntry(grC, "MC, 21.762/pb", "l");
+  leg->AddEntry(grNC, "B", "l");
+  leg->AddEntry(grC, "BS", "l");
   leg->SetFillColor(0);
   leg->SetLineColor(0);
   leg->SetTextSize(0.04);
@@ -41,13 +41,13 @@ void doExtrapPlot(TString noCName = "multi_calo_nob", TString yesCName = "multi_
 
 
   
-  grNC->GetYaxis()->SetRangeUser(0.005, 1.6);
+  //grNC->GetYaxis()->SetRangeUser(0.005, 1.6);
   grNC->GetYaxis()->SetTitle("minDPhi ratio");
   grNC->GetXaxis()->SetTitle("MET [GeV]");
-  grNC->GetXaxis()->SetRangeUser(0,200);
+  // grNC->GetXaxis()->SetRangeUser(0,200);
   grNC->Draw();
   grC->Draw("SAME");
-  myC->SetLogy(0);
+  myC->SetLogy(1);
   myC->Modified();
 
   //  grC->Draw("AP");
@@ -65,8 +65,9 @@ void plotExUL(){
   // doExtrapPlot( "plots_calo_nC", "plots_calo_yC");
   // doExtrapPlot( "plots_calo_nC", "plots_calo_yCB");
   
-
-  //doExtrapPlot("plots_QCD", "plots_QCDb");
-   doExtrapPlot("plots_data22", "plots_MC22");
-   //doExtrapPlot("plots_UHH", "plots_J");
+  //  doExtrapPlot("plots_QCD", "plots_QCDcontBS");
+  //doExtrapPlot("plots_QCDcontB", "plots_QCDcontBS");
+  doExtrapPlot("plots_B", "plots_BS");
+  //doExtrapPlot("plots_data22", "plots_MC22");
+  //doExtrapPlot("plots_UHH", "plots_J");
 }

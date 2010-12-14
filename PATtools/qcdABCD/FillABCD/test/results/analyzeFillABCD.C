@@ -862,11 +862,19 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   ///////////////// u n b i n n e d ////////////////////
   //////////////////////////////////////////////////////
 
-  double unbinnedEstimate = 0;
-  double ext_serror_unBinexp = 0;
+  double unbinnedEstimate = 0.;
+  double ext_serror_unBinexp = 0.;
+  double ext_serror_exp_w = 0.;
+  double ext_serror_exp_p0 = 0.;
+  double ext_serror_exp_p1 = 0.;
 
-  double unbinnedEstimate2 = 0;
-  double ext_serror_unBinexp2 = 0;
+
+  double unbinnedEstimate2 = 0.;
+  double ext_serror_unBinexp2 = 0.;
+  double ext_serror_exp2_w = 0.;
+  double ext_serror_exp2_p0 = 0.;
+  double ext_serror_exp2_p1 = 0.;
+  double ext_serror_exp2_p2 = 0.;
 
   for(int i = 1; i<=numEntries; i++){
     InputChain->GetEvent(i);
@@ -894,29 +902,29 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	unbinnedEstimate+=weight*(par_exp[0]*exp(par_exp[1]*xvalue));
 	unbinnedEstimate2+=weight*(par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2]);
 	
-	double ext_serror_exp_t = 0;
-	ext_serror_exp_t += exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(0)) * exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(0));
-	ext_serror_exp_t += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(1)) * par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(1));
-	ext_serror_exp_t += par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(weight)*xError *  par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(weight)*xError;
-	ext_serror_exp_t += par_exp[0]*exp(par_exp[1]*xvalue)*(eventError) *  par_exp[0]*exp(par_exp[1]*xvalue)*(eventError);
-	ext_serror_unBinexp += ext_serror_exp_t;
-	
-	double ext_serror_exp2_t = 0;
-	ext_serror_exp2_t += exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(0)) * exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(0));
-	ext_serror_exp2_t += par_exp2[0]*xvalue*exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(1)) * par_exp2[0]*xvalue*exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(1));
-	ext_serror_exp2_t += weight*(fexp2->GetParError(2)) *  weight*(fexp2->GetParError(2));
-	ext_serror_exp2_t += par_exp2[0]*par_exp2[1]*exp(par_exp2[1]*xvalue)*(weight)*xError *  par_exp2[0]*par_exp2[1]*exp(par_exp2[1]*xvalue)*(weight)*xError;
-	ext_serror_exp2_t += (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError) *  (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError);
-	ext_serror_unBinexp2 += ext_serror_exp2_t;
+	//ext_serror_exp_t += par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(weight)*xError *  par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(weight)*xError;
+	//ext_serror_exp2_t += par_exp2[0]*par_exp2[1]*exp(par_exp2[1]*xvalue)*(weight)*xError *  par_exp2[0]*par_exp2[1]*exp(par_exp2[1]*xvalue)*(weight)*xError;
+     
+	//correct exp error
+	ext_serror_exp_p0 += exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(0)) ; 
+	ext_serror_exp_p1 += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(1)) ; 
+	ext_serror_exp_w  += par_exp[0]*exp(par_exp[1]*xvalue)*(eventError) *  par_exp[0]*exp(par_exp[1]*xvalue)*(eventError); 
+
+	//correct exp+c error
+	ext_serror_exp2_p0 += exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(0));
+	ext_serror_exp2_p1 += par_exp2[0]*xvalue*exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(1));
+	ext_serror_exp2_p2 += weight*(fexp2->GetParError(2));
+	ext_serror_exp2_w  += (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError) *  (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError);
       }
       
       
     }//end bcontinueNow
   }//end loop
-  double ext_error_unBinexp = sqrt(ext_serror_unBinexp);
-  double ext_error_unBinexp2 = sqrt(ext_serror_unBinexp2);
-    
-  
+  double ext_error_unBinexp;
+  double ext_error_unBinexp2;
+  ext_error_unBinexp2 = sqrt(ext_serror_exp2_p0*ext_serror_exp2_p0 + ext_serror_exp2_p1*ext_serror_exp2_p1 + ext_serror_exp2_p2*ext_serror_exp2_p2 + ext_serror_exp2_w);
+  ext_error_unBinexp = sqrt(ext_serror_exp2_p0*ext_serror_exp_p0 + ext_serror_exp2_p1*ext_serror_exp_p1+ext_serror_exp_w);
+
   //////////////////////////////////////////////
   //////// e     /// n      /// d       ////////
   //////////////////////////////////////////////

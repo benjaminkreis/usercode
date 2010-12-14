@@ -25,17 +25,23 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
   bool exp;
 
   expc = true;
-  exp = true;
-
+  exp =true;
+  
   
   double trueN;
   double trueN_err;
-  
+  double trueN_factor = 36./50.; // the numbers below are for 50/pb
 
   if(type == "pfpf"){
     trueN = 0.269125;
     trueN_err = 0.107335;
-    //ymax =4.;
+    bool oneTag = false;
+    if(oneTag){ //these numbers are for 36/pb
+      trueN =2.34219;
+      trueN_err =1.26983;
+      trueN_factor=1.;
+    }
+   //ymax =4.;
     //expc = true;
   }
   else if( type == "pf"){
@@ -80,6 +86,8 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
     //ymax = 45;
     // expc = true;
   }
+  trueN = trueN*trueN_factor;
+  trueN_err = trueN_err*trueN_factor;
 
   cout << "Opening multiResults/multi_"+type+add+".dat" << endl;
   ifstream inFile("multiResults/multi_"+type+add+".dat", std::ios::in);
@@ -97,8 +105,8 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
   TH1D *hrE = new TH1D("hrE", "hrE", size, -0.5, size-0.5);
   TH1D *hrEb = new TH1D("hrEb", "hrEb", size, -0.5, size-0.5);
 
-  double numE, numE_err, numE_mean=0, numE_sd=0;
-  double numEb, numEb_err, numEb_mean=0, numEb_sd=0;
+  double numE, numE_err, numE_mean=0, numE_sd=0, numE_errT=0;
+  double numEb, numEb_err, numEb_mean=0, numEb_sd=0, numEb_errT=0;
   string fill1, fill2, fill3;
 
   int i =0;
@@ -115,6 +123,8 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
   for(int j=1; j<=i; j++){
     numE_mean+=hrE->GetBinContent(j);
     numEb_mean+=hrEb->GetBinContent(j);
+    numE_errT+=hrE->GetBinError(j);
+    numEb_errT+=hrEb->GetBinError(j);
   }
   numE_mean=numE_mean/((double)i);
   numEb_mean=numEb_mean/((double)i);
@@ -124,8 +134,15 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
   }
   numE_sd=sqrt(1./((double)i)*numE_sd);
   numEb_sd=sqrt(1./((double)i)*numEb_sd);
-  cout << "numE_mean: " << numE_mean << " +- " << numE_sd << endl;
+  //mean and standard deviation
+  // cout << "numE_mean: " << numE_mean << " +- " << numE_sd << endl;
   cout << "numEb_mean: " << numEb_mean << " +- " << numEb_sd << endl;
+  cout << "true: " << trueN << " +- " << trueN_err << endl; 
+  cout << type << add << endl;
+  // cout << "error prop" << endl;
+  // cout << "numE_mean: " << numE_mean << " +- " << numE_errT/((double)i) << endl;
+  // cout << "numEb_mean: " << numEb_mean << " +- " << numEb_errT/((double)i) << endl;
+  
 
   TLine *line0 = new TLine(-0.5, trueN, size-0.5, trueN);
   TLine *lineA = new TLine(-0.5, trueN-trueN_err, size-0.5, trueN-trueN_err);
@@ -151,7 +168,7 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
   
   hrE->SetTitle(type);
   hrEb->SetTitle(type);
-  yA->SetTitle("Number of QCD Events per 50/pb");
+  yA->SetTitle("Number of QCD Events per 36/pb");
   yA->SetTitleOffset(1.2);
   /* xA->SetBinLabel(1,"30-150,8");
   xA->SetBinLabel(2,"50-150,8");
@@ -208,9 +225,12 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
 //if(expc) hrEb->Draw("SAME");
   
   leg->Draw();
-  line0->Draw();
-  lineA->Draw();
-  lineB->Draw();
+  bool drawLines =true;
+  if(drawLines){
+    line0->Draw();
+    lineA->Draw();
+    lineB->Draw();
+  }
   myC->Print("multiResults/multi_"+type+add+".pdf");
  
   
@@ -252,12 +272,35 @@ void multi(){
   */
   
 
-  //  doMulti("pfpf", "_2L", .8);
-  //  doMulti("pfpf", "_contBS_2L", 3);
-  //  doMulti("pfpf", "_contB_2L",3);
-
+  /*
+  doMulti("pfpf", "_2L", .8);
+  doMulti("pfpf", "_contBS_2L", 3);
+  doMulti("pfpf", "_contB_2L",3);
+  
   doMulti("pfpf_nob", "_2L", 20.);
-  //  doMulti("pfpf_nob", "_contBS_2L", 50.);
-  //  doMulti("pfpf_nob", "_contB_2L", 50.);
+  doMulti("pfpf_nob", "_contBS_2L", 50.);
+  doMulti("pfpf_nob", "_contB_2L", 50.);
+  */
+
+  //doMulti("pfpf", "_22", 2);
+  //doMulti("pfpf", "_contB22", 2);
+  // doMulti("pfpf", "_data22",2);
+
+  //doMulti("pfpf_nob", "_22", 50);
+  //doMulti("pfpf_nob", "_contB22", 50);
+  //doMulti("pfpf_nob", "_data22", 50);
+
+
+  // doMulti("pfpf_nob", "_36", 35);
+  //doMulti("pfpf_nob", "_contB36", 35);
+  //doMulti("pfpf_nob", "_contBS36", 35);
+  //doMulti("pfpf", "_36", 2); 
+  //doMulti("pfpf", "_contB36", 2); 
+  //doMulti("pfpf", "_contBS36", 2); 
+  //doMulti("pfpf", "_36_1", 10);
+  //doMulti("pfpf", "_contB36_1", 10);
+  //doMulti("pfpf", "_contBS36_1", 10);
+  
+  doMulti("pfpf_nob", "_36c", 35);
 
 }
