@@ -1,3 +1,4 @@
+#include "TLatex.h"
 #include "TGraphErrors.h"
 #include "TVectorD.h"
 #include "TCanvas.h"
@@ -12,24 +13,26 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include "tdrstyle.C"
 
 using namespace std;
 
 void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
-  gROOT->SetStyle("Plain");
-  gStyle->SetPalette(1);
-  gStyle->SetOptStat("");
-  
+  //  gROOT->SetStyle("Plain");
+  // gStyle->SetPalette(1);
+  // gStyle->SetOptStat("");
+  setTDRStyle();  
+
   //  TString type = "calo_nob";
   bool expc;
   bool exp;
 
   expc = true;
-  exp =true;
+  exp = false;
   
   
-  double trueN;
-  double trueN_err;
+  double trueN=0.;
+  double trueN_err=0.;
   double trueN_factor = 36./50.; // the numbers below are for 50/pb
 
   if(type == "pfpf"){
@@ -98,7 +101,8 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
 
   //  TFile fout("multiResults/multi_"+type+add+".root","RECREATE");
 
-  TCanvas *myC = new TCanvas("myC", "myC", 640, 480);
+  //TCanvas *myC = new TCanvas("myC", "myC", 600, 600);
+  TCanvas *myC = new TCanvas("myC", "myC");
   myC->cd();
 
   int size = 16;
@@ -164,12 +168,12 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
   hrE->SetLineWidth(2);
   hrE->SetLineColor(kBlue);
   hrEb->SetLineWidth(2);
-  hrEb->SetLineColor(kRed);
+  //hrEb->SetLineColor(kRed);
   
   hrE->SetTitle(type);
   hrEb->SetTitle(type);
-  yA->SetTitle("Number of QCD Events per 36/pb");
-  yA->SetTitleOffset(1.2);
+  yA->SetTitle("Predicted Number of QCD Events");
+  //  yA->SetTitleOffset(1.2);
   /* xA->SetBinLabel(1,"30-150,8");
   xA->SetBinLabel(2,"50-150,8");
   xA->SetBinLabel(3,"70-150,8");
@@ -193,27 +197,52 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
   xA->SetBinLabel(5,"60-90,10");
   xA->SetBinLabel(6,"40-70,10");
   xA->SetBinLabel(7,"40-80,10");
-  xA->SetBinLabel(8,"40-100,8");
-  xA->SetBinLabel(9,"40-110,8");
-  xA->SetBinLabel(10,"40-120,8");
+  xA->SetBinLabel(8,"40-100,10");
+  xA->SetBinLabel(9,"40-110,10");
+  xA->SetBinLabel(10,"40-120,10");
   xA->SetBinLabel(11,"40-90,5");
   xA->SetBinLabel(12,"40-90,20");
   xA->SetBinLabel(13,"40-110,5");
   xA->SetBinLabel(14,"40-110,20");
   xA->SetBinLabel(15,"20-90,5");
   xA->SetBinLabel(16,"20-90,20");
+  xA->SetLabelSize(0.03);
   xA->SetTitle("Fit range min-max, Number of bins");
   
 
 
-  TLegend *leg = new TLegend(.65,.75,.85,.85);
+  TLegend *leg = new TLegend(.7,.87,.85,.89);
   if(exp)  leg->AddEntry(hrE, "a*exp(b*x)", "l");
   if(expc) leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
   leg->SetFillColor(0);
-  leg->SetLineColor(0);
+  leg->SetBorderSize(0);
+  leg->SetLineStyle(0);
+  leg->SetTextFont(42);
+  leg->SetFillStyle(0);
   leg->SetTextSize(0.04);
 
+  TLatex* text1 = new TLatex(3.570061,23.08044,"CMS Preliminary");
+  text1->SetNDC();
+  text1->SetTextAlign(13);
+  text1->SetX(0.184);
+  text1->SetY(0.928);
+  //text1->SetLineWidth(2);
+  text1->SetTextFont(42);
+  text1->SetTextSizePixels(24);// dflt=28
   
+
+  TLatex* text2 = new TLatex(3.570061,23.08044,"36.1 pb^{-1} at #sqrt{s} = 7 TeV");
+  text2->SetNDC();
+  text2->SetTextAlign(13);
+  text2->SetX(0.184);
+  text2->SetY(0.88);
+  //text2->SetLineWidth(2);
+  text2->SetTextFont(42);
+  text2->SetTextSizePixels(24);// dflt=28
+  
+
+
+
   if(exp && expc){
     hrEb->Draw();
     hrE->Draw("SAME");
@@ -224,7 +253,9 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
  
 //if(expc) hrEb->Draw("SAME");
   
-  leg->Draw();
+  text1->Draw();
+  text2->Draw();
+  // leg->Draw();
   bool drawLines =true;
   if(drawLines){
     line0->Draw();
@@ -291,7 +322,7 @@ void multi(){
   //doMulti("pfpf_nob", "_data22", 50);
 
 
-  // doMulti("pfpf_nob", "_36", 35);
+  doMulti("pfpf_nob", "_36", 35);
   //doMulti("pfpf_nob", "_contB36", 35);
   //doMulti("pfpf_nob", "_contBS36", 35);
   //doMulti("pfpf", "_36", 2); 
@@ -301,6 +332,6 @@ void multi(){
   //doMulti("pfpf", "_contB36_1", 10);
   //doMulti("pfpf", "_contBS36_1", 10);
   
-  doMulti("pfpf_nob", "_36c", 35);
+  // doMulti("pfpf_nob", "_36c", 35);
 
 }
