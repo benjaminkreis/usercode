@@ -13,15 +13,14 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include "tdrstyle.C"
 
 using namespace std;
 
-void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
+void doMulti(TString type = "calo", TString add= "", double ymax= 50., TString legEntry = ""){
   //  gROOT->SetStyle("Plain");
   // gStyle->SetPalette(1);
   // gStyle->SetOptStat("");
-  setTDRStyle();  
+  gROOT->SetStyle("CMS");
 
   //  TString type = "calo_nob";
   bool expc;
@@ -211,9 +210,9 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
   
 
 
-  TLegend *leg = new TLegend(.7,.87,.85,.89);
+  TLegend *leg = new TLegend(.17,.77,.35,.8);
   if(exp)  leg->AddEntry(hrE, "a*exp(b*x)", "l");
-  if(expc) leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
+  if(expc) leg->AddEntry(hrEb, legEntry, "P");// leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
   leg->SetFillColor(0);
   leg->SetBorderSize(0);
   leg->SetLineStyle(0);
@@ -253,9 +252,10 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
  
 //if(expc) hrEb->Draw("SAME");
   
-  text1->Draw();
+  // text1->Draw();
   text2->Draw();
-  // leg->Draw();
+  leg->Draw();
+  gPad->SetRightMargin(0.05);
   bool drawLines =true;
   if(drawLines){
     line0->Draw();
@@ -273,65 +273,25 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50.){
 
 void multi(){
 
-  /*
-  doMulti("pfpf_nob", "", 50.);
-  doMulti("pfpf", "",3.);
-  doMulti("pfpf_nob", "", 50.);
-  doMulti("pfpf", "",3.);
- 
-  doMulti("calo_nob", "", 70.);
-  doMulti("calo", "",4.5);
-  doMulti("calo_nob", "",70.);
-  doMulti("calo", "", 4.5);
-
-  doMulti("pfpf_nob", "_contB", 50.);
-  doMulti("pfpf", "_contB",3.);
-  doMulti("pfpf_nob", "_contBS", 50.);
-  doMulti("pfpf", "_contBS",3.);
- 
-  doMulti("calo_nob", "_contB", 70.);
-  doMulti("calo", "_contB",4.5);
-  doMulti("calo_nob", "_contBS",70.);
-  doMulti("calo", "_contBS", 4.5);
-  */
   
-  /*
-  doMulti("pfpf_nob", "_contBS_2", 20.);
-  doMulti("pfpf_nob", "_2", 20.);
-  doMulti("pfpf", "_2", 0.5);
-  doMulti("pfpf", "_contBS_2", 0.5);
-  */
-  
-
-  /*
-  doMulti("pfpf", "_2L", .8);
-  doMulti("pfpf", "_contBS_2L", 3);
-  doMulti("pfpf", "_contB_2L",3);
-  
-  doMulti("pfpf_nob", "_2L", 20.);
-  doMulti("pfpf_nob", "_contBS_2L", 50.);
-  doMulti("pfpf_nob", "_contB_2L", 50.);
-  */
-
   //doMulti("pfpf", "_22", 2);
   //doMulti("pfpf", "_contB22", 2);
-  // doMulti("pfpf", "_data22",2);
+  //doMulti("pfpf", "_data22",2);
 
   //doMulti("pfpf_nob", "_22", 50);
   //doMulti("pfpf_nob", "_contB22", 50);
   //doMulti("pfpf_nob", "_data22", 50);
 
 
-  doMulti("pfpf_nob", "_36", 35);
-  //doMulti("pfpf_nob", "_contB36", 35);
-  //doMulti("pfpf_nob", "_contBS36", 35);
-  //doMulti("pfpf", "_36", 2); 
-  //doMulti("pfpf", "_contB36", 2); 
-  //doMulti("pfpf", "_contBS36", 2); 
-  //doMulti("pfpf", "_36_1", 10);
-  //doMulti("pfpf", "_contB36_1", 10);
-  //doMulti("pfpf", "_contBS36_1", 10);
+  doMulti("pfpf_nob", "_36", 35, "QCD MC");
+  //doMulti("pfpf_nob", "_contB36", 35, "QCD+SM MC");
+  //doMulti("pfpf_nob", "_contBS36", 35, "QCD+SM+LM13 MC");
+  //doMulti("pfpf", "_36", 2, "QCD MC"); 
+  //doMulti("pfpf", "_contB36", 2, "QCC+SM MC"); 
+  //doMulti("pfpf", "_contBS36", 2, "QCD+SM+LM13 MC"); 
+  //doMulti("pfpf", "_36_1", 10, "QCD MC");
+  //doMulti("pfpf", "_contB36_1", 10, "QCD+SM MC");
+  //doMulti("pfpf", "_contBS36_1", 10, "QCD+SM+LM13 MC");
   
-  // doMulti("pfpf_nob", "_36c", 35);
 
 }
