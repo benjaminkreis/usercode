@@ -1,3 +1,4 @@
+#include "TLatex.h"
 #include "TFile.h"
 #include "TChain.h"
 #include "TH1.h"
@@ -49,18 +50,20 @@ int passbtagcut(int nbtags){
   }
 }
 
-double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv1a = 50, double borderv1b = 150, int fitNum = 6, bool verbose = false){
+double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv1a = 50, double borderv1b = 150, int fitNum = 6, bool verbose = false, TString fName = ""){
   cout << endl;
   if(verbose)cout << "Begin analyzeFillABCD" << endl;
-  gROOT->SetStyle("Plain");
-  gStyle->SetPalette(1);
-  gStyle->SetOptStat("nemruo");
+  // gROOT->SetStyle("Plain");
+  // gStyle->SetPalette(1);
+  //gStyle->SetOptStat("nemruo");
   //gStyle->SetOptStat("");
-  
+  gROOT->SetStyle("CMS");
+
   bool josh=true;
+  bool drawLines=false;
   // int fitNum = 10; //number of bins in xL region, used to fit ratio
   int extendedNum = 21; //number of bins in xR region, used in extrapolation
-  TString xLabel = "MHT";
+  TString xLabel = "MET";
 
   //LOAD WEIGHTS
   TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/CMSSW_3_6_3/src/Filter/RA2Filter/test/results/weight_MG.root","READ");
@@ -74,13 +77,13 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   else{
     cout << "ERROR loading weights" << endl;
   }
-  TFile fout("plots.root", "RECREATE");
+  TFile fout("plots"+fName+".root", "RECREATE");
   TH1D Hweight = *HweightP;
   finweight.Close();
 
-  TString yTitle = "minDeltaPhi("+xLabel+", jet 1 2 3)";
-  TString yTitle_ratio = "minDeltaPhi ratio";
-  TString xTitle = xLabel+" (GeV)";
+  TString yTitle = "#Delta #phi_{min}";
+  TString yTitle_ratio = "f(E_{T}^{miss}) ";
+  TString xTitle = "E_{T}^{miss} [GeV]";
   
   double pi=4*atan(1.0);
   
@@ -375,8 +378,40 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   TAxis* xax =  hist1->GetXaxis();
   TAxis* yax =  hist1->GetYaxis();
   xax->SetTitle(xTitle);
+  xax->SetLabelSize(0.04);
   yax->SetTitle(yTitle);
+  
+  TLatex* text1 = new TLatex(3.570061,23.08044,"CMS Preliminary");
+  text1->SetNDC();
+  text1->SetTextAlign(13);
+  text1->SetX(0.184);
+  text1->SetY(0.928);
+  //text1->SetLineWidth(2);                                                                                                                              
+  text1->SetTextFont(42);
+  text1->SetTextSizePixels(24);// dflt=28                                                                                                                        
+  TLatex* text2 = new TLatex(3.570061,23.08044,"36.1 pb^{-1} at #sqrt{s} = 7 TeV");
+  text2->SetNDC();
+  text2->SetTextAlign(13);
+  //text2->SetX(0.184);
+  text2->SetX(0.4);
+  text2->SetY(0.88);
+  //text2->SetLineWidth(2);     
+  text2->SetTextFont(42);
+  text2->SetTextSizePixels(24);// dflt=28                  
+
+  TLegend *leg = new TLegend(.61,.77,.8,.8);
+  leg->AddEntry(hist1, "QCD MC", "P");// leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
+  leg->SetFillColor(0);
+  leg->SetBorderSize(0);
+  leg->SetLineStyle(0);
+  leg->SetTextFont(42);
+  leg->SetFillStyle(0);
+  leg->SetTextSize(0.04);
+
+
   hist1->Draw("COLZ");
+  text2->Draw();
+  leg->Draw();
   gPad->SetRightMargin(.18);
   gPad->Modified();
   //cout << "x axis from " << xax->GetXmin() <<" to " <<  xax->GetXmax()<< endl;;
@@ -393,10 +428,10 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   lineAt->SetLineColor(kBlack);
   lineAl->SetLineColor(kBlack);
   lineAr->SetLineColor(kBlack);
-  lineAb->Draw(); 
-  lineAt->Draw();
-  lineAl->Draw();
-  lineAr->Draw();
+  if(drawLines) lineAb->Draw(); 
+  if(drawLines) lineAt->Draw();
+  if(drawLines) lineAl->Draw();
+  if(drawLines) lineAr->Draw();
   TLine* lineBb = new TLine(borderv1a,borderh2a,borderv1b, borderh2a);
   TLine* lineBt = new TLine(borderv1a,borderh2b,borderv1b, borderh2b);
   TLine* lineBl = new TLine(borderv1a,borderh2a,borderv1a, borderh2b);
@@ -409,10 +444,10 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   lineBt->SetLineColor(kBlack);
   lineBl->SetLineColor(kBlack);
   lineBr->SetLineColor(kBlack);
-  lineBb->Draw(); 
-  lineBt->Draw();
-  lineBl->Draw();
-  lineBr->Draw();
+  if(drawLines) lineBb->Draw(); 
+  if(drawLines) lineBt->Draw();
+  if(drawLines) lineBl->Draw();
+  if(drawLines) lineBr->Draw();
   TLine* lineCb = new TLine(borderv2a,borderh2a,borderv2b, borderh2a);
   TLine* lineCt = new TLine(borderv2a,borderh2b,borderv2b, borderh2b);
   TLine* lineCl = new TLine(borderv2a,borderh2a,borderv2a, borderh2b);
@@ -425,10 +460,10 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   lineCt->SetLineColor(kBlack);
   lineCl->SetLineColor(kBlack);
   lineCr->SetLineColor(kBlack);
-  lineCb->Draw(); 
-  lineCt->Draw();
-  lineCl->Draw();
-  lineCr->Draw();
+  if(drawLines) lineCb->Draw(); 
+  if(drawLines) lineCt->Draw();
+  if(drawLines) lineCl->Draw();
+  if(drawLines) lineCr->Draw();
   TLine* lineDb = new TLine(borderv2a,borderh1a,borderv2b, borderh1a);
   TLine* lineDt = new TLine(borderv2a,borderh1b,borderv2b, borderh1b);
   TLine* lineDl = new TLine(borderv2a,borderh1a,borderv2a, borderh1b);
@@ -441,10 +476,10 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   lineDt->SetLineColor(kBlack);
   lineDl->SetLineColor(kBlack);
   lineDr->SetLineColor(kBlack);
-  lineDb->Draw(); 
-  lineDt->Draw();
-  lineDl->Draw();
-  lineDr->Draw();
+  if(drawLines) lineDb->Draw(); 
+  if(drawLines) lineDt->Draw();
+  if(drawLines) lineDl->Draw();
+  if(drawLines) lineDr->Draw();
   
   C_ABCD->cd(3);
   gPad->SetRightMargin(.22);
@@ -964,6 +999,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   result[2] = unbinnedEstimate2;
   result[3] = ext_error_unBinexp2;
 
+  fexp1b->Write();
+  fexp2b->Write();
   gr0->Write();
   histWD->Write();
   histWC->Write();
@@ -1034,28 +1071,28 @@ void analyzeFillABCD(){
   double *array7 = doAnalyzeFillABCD(type, 0, 40, 90, 16, false);
   */
   
-  double *array0 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false);
-  double *array1 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false);
-  double *array2 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false);
-  double *array3 = doAnalyzeFillABCD(type, 0, 50, 90, 10, false);
-  double *array4 = doAnalyzeFillABCD(type, 0, 60, 90, 10, false);
-  double *array5 = doAnalyzeFillABCD(type, 0, 40, 70, 10, false);
-  double *array6 = doAnalyzeFillABCD(type, 0, 40, 80, 10, false);
-  double *array7 = doAnalyzeFillABCD(type, 0, 40, 100, 10, false);
-  double *array8 = doAnalyzeFillABCD(type, 0, 40, 110, 10, false);
-  double *array9 = doAnalyzeFillABCD(type, 0, 40, 120, 10, false);
-  double *array10 = doAnalyzeFillABCD(type, 0, 40, 90, 5, false);
-  double *array11 = doAnalyzeFillABCD(type, 0, 40, 90, 20, false);
-  double *array12 = doAnalyzeFillABCD(type, 0, 40, 110, 5, false);
-  double *array13 = doAnalyzeFillABCD(type, 0, 40, 110, 20, false);
-  double *array14 = doAnalyzeFillABCD(type, 0, 20, 90, 5, false);
-  double *array15 = doAnalyzeFillABCD(type, 0, 20, 90, 20, false);
+  double *array0 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false, "0");
+  double *array1 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false, "1");
+  double *array2 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "2");
+  double *array3 = doAnalyzeFillABCD(type, 0, 50, 90, 10, false, "3");
+  double *array4 = doAnalyzeFillABCD(type, 0, 60, 90, 10, false, "4");
+  double *array5 = doAnalyzeFillABCD(type, 0, 40, 70, 10, false, "5");
+  double *array6 = doAnalyzeFillABCD(type, 0, 40, 80, 10, false, "6");
+  double *array7 = doAnalyzeFillABCD(type, 0, 40, 100, 10, false, "7");
+  double *array8 = doAnalyzeFillABCD(type, 0, 40, 110, 10, false, "8");
+  double *array9 = doAnalyzeFillABCD(type, 0, 40, 120, 10, false, "9");
+  double *array10 = doAnalyzeFillABCD(type, 0, 40, 90, 5, false, "10");
+  double *array11 = doAnalyzeFillABCD(type, 0, 40, 90, 20, false, "11");
+  double *array12 = doAnalyzeFillABCD(type, 0, 40, 110, 5, false, "12");
+  double *array13 = doAnalyzeFillABCD(type, 0, 40, 110, 20, false, "13");
+  double *array14 = doAnalyzeFillABCD(type, 0, 20, 90, 5, false, "14");
+  double *array15 = doAnalyzeFillABCD(type, 0, 20, 90, 20, false, "15");
   
 
   // keep for the dfrac calculation
-  double *arrayL = doAnalyzeFillABCD(type, 2, 0, 150, 6, false);
+  double *arrayL = doAnalyzeFillABCD(type, 2, 0, 150, 6, false,"2tags");
 
-  double *array0f = Dfrac(type,2);
+  double *array0f = Dfrac(type,1);
   cout << "dfrac: " << array0f[0] << " " << array0f[1] << endl;
   
   cout << endl;
