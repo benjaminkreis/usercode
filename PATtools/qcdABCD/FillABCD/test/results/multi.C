@@ -17,94 +17,55 @@
 using namespace std;
 
 void doMulti(TString type = "calo", TString add= "", double ymax= 50., TString legEntry = ""){
-  //  gROOT->SetStyle("Plain");
-  // gStyle->SetPalette(1);
-  // gStyle->SetOptStat("");
+  //gROOT->SetStyle("Plain");
+  //gStyle->SetPalette(1);
+  //gStyle->SetOptStat("");
   gROOT->SetStyle("CMS");
 
-  //  TString type = "calo_nob";
+  //TString type = "calo_nob";
   bool expc;
   bool exp;
-
   expc = true;
   exp = false;
   
-  
   double trueN=0.;
   double trueN_err=0.;
-  double trueN_factor = 36./50.; // the numbers below are for 50/pb
+  double trueN_factor = 1.;
 
   if(type == "pfpf"){
-    trueN = 0.269125;
-    trueN_err = 0.107335;
-    bool oneTag = false;
+    trueN =0.19454;
+    trueN_err =0.0775882;
+    bool oneTag = true;
     if(oneTag){ //these numbers are for 36/pb
-      trueN =2.34219;
-      trueN_err =1.26983;
+      trueN = 2.35149;
+      trueN_err = 1.27487;
       trueN_factor=1.;
     }
-   //ymax =4.;
-    //expc = true;
-  }
-  else if( type == "pf"){
-    trueN = 0.284114;
-    trueN_err = 0.107509;
-    //ymax = .5;
-    // expc = true;
-  }
-  else if( type == "tc"){
-    trueN = 0.463308;
-    trueN_err = 0.151177;
-    //ymax = 1.;
-    //expc = true;
-  }
-  else if(type == "calo"){
-    trueN = 0.604643;
-    trueN_err = 0.0657204;
-    //ymax = 2.;
-    //  expc = true;
   }
   else if(type == "pfpf_nob"){
-    trueN = 12.1611;
-    trueN_err = 3.0787;
-    // ymax = 50;
-    //   expc = true;
-  }
-  else if(type == "pf_nob"){
-    trueN = 9.95917;
-    trueN_err = 2.53115;
-    //ymax = 20;
-    //  expc = true;
-  }
-  else if(type == "tc_nob"){
-    trueN = 7.02955;
-    trueN_err = 0.585675;
-    //ymax = 13;
-    // expc = true;
-  }
-  else if(type == "calo_nob"){
-    trueN = 15.8387;
-    trueN_err = .869234;
-    //ymax = 45;
-    // expc = true;
+    trueN =8.79075;
+    trueN_err =2.22547;
+    //ymax = 50;
+    //expc = true;
   }
   trueN = trueN*trueN_factor;
   trueN_err = trueN_err*trueN_factor;
-
+  
   cout << "Opening multiResults/multi_"+type+add+".dat" << endl;
   ifstream inFile("multiResults/multi_"+type+add+".dat", std::ios::in);
   if(!inFile.good()){
     cout << "Could not open inFile!" << endl;
     return;
   }
-
-  //  TFile fout("multiResults/multi_"+type+add+".root","RECREATE");
+  
+  //TFile fout("multiResults/multi_"+type+add+".root","RECREATE");
 
   //TCanvas *myC = new TCanvas("myC", "myC", 600, 600);
   TCanvas *myC = new TCanvas("myC", "myC");
   myC->cd();
-
-  int size = 16;
+  
+  const int size = 12;
+  const int k = 10;
   TH1D *hrE = new TH1D("hrE", "hrE", size, -0.5, size-0.5);
   TH1D *hrEb = new TH1D("hrEb", "hrEb", size, -0.5, size-0.5);
 
@@ -123,20 +84,22 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50., TString l
   }
   
   cout << "i: " << i << endl;
-  for(int j=1; j<=i; j++){
+  cout << "Use first " << k << " bins for mean calculation. " << endl;
+  for(int j=1; j<=k; j++){
     numE_mean+=hrE->GetBinContent(j);
     numEb_mean+=hrEb->GetBinContent(j);
     numE_errT+=hrE->GetBinError(j);
     numEb_errT+=hrEb->GetBinError(j);
   }
-  numE_mean=numE_mean/((double)i);
-  numEb_mean=numEb_mean/((double)i);
-  for(int j=1; j<=i; j++){
+  numE_mean=numE_mean/((double)k);
+  numEb_mean=numEb_mean/((double)k);
+
+  for(int j=1; j<=k; j++){
     numE_sd+=(hrE->GetBinContent(j)-numE_mean)*(hrE->GetBinContent(j)-numE_mean);
     numEb_sd+=(hrEb->GetBinContent(j)-numEb_mean)*(hrEb->GetBinContent(j)-numEb_mean);
   }
-  numE_sd=sqrt(1./((double)i)*numE_sd);
-  numEb_sd=sqrt(1./((double)i)*numEb_sd);
+  numE_sd=sqrt(numE_sd*1./((double)k));
+  numEb_sd=sqrt(numEb_sd*1./((double)k));
   //mean and standard deviation
   // cout << "numE_mean: " << numE_mean << " +- " << numE_sd << endl;
   cout << "numEb_mean: " << numEb_mean << " +- " << numEb_sd << endl;
@@ -189,7 +152,7 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50., TString l
   xA->SetBinLabel(6,"40-100,8");
   xA->SetBinLabel(7,"40-110,8");
   xA->SetBinLabel(8,"40-90,16");*/
-  xA->SetBinLabel(1,"20-90,10");
+  /* xA->SetBinLabel(1,"20-90,10");
   xA->SetBinLabel(2,"30-90,10");
   xA->SetBinLabel(3,"40-90,10");
   xA->SetBinLabel(4,"50-90,10");
@@ -204,7 +167,19 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50., TString l
   xA->SetBinLabel(13,"40-110,5");
   xA->SetBinLabel(14,"40-110,20");
   xA->SetBinLabel(15,"20-90,5");
-  xA->SetBinLabel(16,"20-90,20");
+  xA->SetBinLabel(16,"20-90,20");*/
+  xA->SetBinLabel(1,"0-90,10");
+  xA->SetBinLabel(2,"10-90,10");
+  xA->SetBinLabel(3,"20-90,10"); 
+  xA->SetBinLabel(4,"30-90,10"); 
+  xA->SetBinLabel(5,"40-90,10"); 
+  xA->SetBinLabel(6,"50-90,10"); 
+  xA->SetBinLabel(7,"10-70,10"); 
+  xA->SetBinLabel(8,"10-80,10"); 
+  xA->SetBinLabel(9,"10-100,10"); 
+  xA->SetBinLabel(10,"10-110,10"); 
+  xA->SetBinLabel(11,"10-90,5"); 
+  xA->SetBinLabel(12,"10-90,20"); 
   xA->SetLabelSize(0.03);
   xA->SetTitle("Fit range min-max, Number of bins");
   
@@ -256,7 +231,7 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50., TString l
   text2->Draw();
   leg->Draw();
   gPad->SetRightMargin(0.05);
-  bool drawLines =true;
+  bool drawLines =false;
   if(drawLines){
     line0->Draw();
     lineA->Draw();
@@ -273,25 +248,29 @@ void doMulti(TString type = "calo", TString add= "", double ymax= 50., TString l
 
 void multi(){
 
-  
+  //old
   //doMulti("pfpf", "_22", 2);
   //doMulti("pfpf", "_contB22", 2);
   //doMulti("pfpf", "_data22",2);
-
   //doMulti("pfpf_nob", "_22", 50);
   //doMulti("pfpf_nob", "_contB22", 50);
   //doMulti("pfpf_nob", "_data22", 50);
 
 
-  doMulti("pfpf_nob", "_36", 35, "QCD MC");
-  //doMulti("pfpf_nob", "_contB36", 35, "QCD+SM MC");
-  //doMulti("pfpf_nob", "_contBS36", 35, "QCD+SM+LM13 MC");
-  //doMulti("pfpf", "_36", 2, "QCD MC"); 
-  //doMulti("pfpf", "_contB36", 2, "QCC+SM MC"); 
-  //doMulti("pfpf", "_contBS36", 2, "QCD+SM+LM13 MC"); 
-  //doMulti("pfpf", "_36_1", 10, "QCD MC");
-  //doMulti("pfpf", "_contB36_1", 10, "QCD+SM MC");
-  //doMulti("pfpf", "_contBS36_1", 10, "QCD+SM+LM13 MC");
+  //doMulti("pfpf_nob", "_36", 40, "QCD MC");
+  //doMulti("pfpf_nob", "_contB36", 40, "QCD+SM MC");
+  //doMulti("pfpf_nob", "_contBS36", 40, "QCD+SM+LM13 MC");
   
+  //doMulti("pfpf", "_36", 2.5, "QCD MC");  //remember to set oneTag to false for these!
+  //doMulti("pfpf", "_contB36", 2.5, "QCC+SM MC"); 
+  //doMulti("pfpf", "_contBS36", 2.5, "QCD+SM+LM13 MC"); 
+  
+  //doMulti("pfpf", "_36_1", 13, "QCD MC"); //remember to set oneTag to true for these!
+  //doMulti("pfpf", "_contB36_1", 13, "QCD+SM MC");
+  //doMulti("pfpf", "_contBS36_1", 13, "QCD+SM+LM13 MC");
+  
+  doMulti("pfpf_nob", "_data", 70, "Data");  //remember to set drawLines to false for these!
+  //doMulti("pfpf", "_data", 2.5, "Data"); 
+  //doMulti("pfpf", "_data_1", 18, "Data");
 
 }
