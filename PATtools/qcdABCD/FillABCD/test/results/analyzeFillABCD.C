@@ -58,6 +58,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //gStyle->SetOptStat("nemruo");
   //gStyle->SetOptStat("");
   gROOT->SetStyle("CMS");
+  gStyle->SetOptFit(1);
 
   bool josh=true;
   bool drawLines=false;
@@ -82,7 +83,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   finweight.Close();
 
   TString yTitle = "#Delta #phi_{min}";
-  TString yTitle_ratio = "f(E_{T}^{miss}) ";
+  TString yTitle_ratio = "r(E_{T}^{miss}) ";
   TString xTitle = "E_{T}^{miss} [GeV]";
   
   double pi=4*atan(1.0);
@@ -118,7 +119,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   TCanvas * C_ABCD = new TCanvas("C_ABCD", "Canvas ABCD", 1000, 1000);
   C_ABCD->Divide(2,2);
   C_ABCD->cd(1);
-  TCanvas * C_hist1 = new TCanvas("C_hist1", "Canvas hist1", 800, 700);
+  TCanvas * C_hist1 = new TCanvas("C_hist1", "Canvas hist1");//, 800, 700);
   C_hist1->Divide(1,1);
   C_hist1->cd(1);
   TCanvas * C_dp = new TCanvas("C_dp", "Canvas dp", 640, 480);
@@ -393,13 +394,13 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   text2->SetNDC();
   text2->SetTextAlign(13);
   //text2->SetX(0.184);
-  text2->SetX(0.4);
+  text2->SetX(0.35);
   text2->SetY(0.88);
   //text2->SetLineWidth(2);     
   text2->SetTextFont(42);
   text2->SetTextSizePixels(24);// dflt=28                  
 
-  TLegend *leg = new TLegend(.61,.77,.8,.8);
+  TLegend *leg = new TLegend(.58,.77,.8,.8);
   leg->AddEntry(hist1, "QCD MC", "P");// leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
   leg->SetFillColor(0);
   leg->SetBorderSize(0);
@@ -480,7 +481,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   if(drawLines) lineDt->Draw();
   if(drawLines) lineDl->Draw();
   if(drawLines) lineDr->Draw();
-  
+  C_hist1->Print("hist1.pdf");
+
   C_ABCD->cd(3);
   gPad->SetRightMargin(.22);
   gPad->SetLeftMargin(.14);
@@ -766,21 +768,24 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp3->SetParLimits(3,-1000,0);
   				  
   fexp1->SetLineColor(kBlue);
-  fexp2->SetLineColor(kViolet+1);
+  fexp2->SetLineColor(kBlack);
   fexp3->SetLineColor(kRed);
   
   assert(!( gr1->Fit("fexp1", "R0") ));
   cout << endl;
   cout << endl;
-  fexp1->Draw("SAME");   
+  // fexp1->Draw("SAME");   
   TString secondFitFail = "";
   //if(gr1->Fit("fexp2", "R0")) secondFitFail = "FAILED!";
   assert(!( gr1->Fit("fexp2", "R0") ));
+  cout << "Chisquare: " << fexp2->GetChisquare() << endl;
+  cout << "NDF: " << fexp2->GetNDF() << endl;
+  cout << "Chisquare/NDF: " <<  fexp2->GetChisquare()/fexp2->GetNDF() << endl;
   cout << endl;
   cout << endl;
   fexp2->Draw("SAME");
-  gr1->Fit("fexp3", "R0");
-  fexp3->Draw("SAME"); 
+  //gr1->Fit("fexp3", "R0");
+  // fexp3->Draw("SAME"); 
  
   
   //  C_temp->cd();
@@ -803,7 +808,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp3b->SetParameters(par_exp3[0], par_exp3[1], par_exp3[2], par_exp3[3]);
  
   fexp1b->SetLineColor(kBlue);
-  fexp2b->SetLineColor(kViolet+1);
+  fexp2b->SetLineColor(kBlack);
   fexp3b->SetLineColor(kRed);
 
   
@@ -833,7 +838,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   pt_exp->AddText( "Fit (blue) = "+par_exp0+" *exp( "+par_exp1+"*x)");
   pt_exp->AddText( "Fit (purple) = "+par_exp2_0+" *exp( "+par_exp2_1+"*x)+"+par_exp2_2);
   pt_exp->AddText( "Fit (red) = "+par_exp3_0+" *exp( "+par_exp3_1+"*x)+"+par_exp3_2+" *exp( "+par_exp3_3+"*x)");
-  pt_exp->Draw();
+  //  pt_exp->Draw();
   
   //add fit to C_extrap
   C_extrap->cd();
@@ -1071,6 +1076,9 @@ void analyzeFillABCD(){
   double *array7 = doAnalyzeFillABCD(type, 0, 40, 90, 16, false);
   */
   
+
+  /*
+  //note_dec2010
   double *array0 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false, "0");
   double *array1 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false, "1");
   double *array2 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "2");
@@ -1087,32 +1095,53 @@ void analyzeFillABCD(){
   double *array13 = doAnalyzeFillABCD(type, 0, 40, 110, 20, false, "13");
   double *array14 = doAnalyzeFillABCD(type, 0, 20, 90, 5, false, "14");
   double *array15 = doAnalyzeFillABCD(type, 0, 20, 90, 20, false, "15");
-  
+  */  
 
-  // keep for the dfrac calculation
-  double *arrayL = doAnalyzeFillABCD(type, 2, 0, 150, 6, false,"2tags");
+  /*
+  //jan 6
+  double *array0 = doAnalyzeFillABCD(type, 0, 0, 80, 10, false, "0");
+  double *array1 = doAnalyzeFillABCD(type, 0, 10, 80, 10, false, "1");
+  double *array2 = doAnalyzeFillABCD(type, 0, 20, 80, 10, false, "2");
+  double *array3 = doAnalyzeFillABCD(type, 0, 30, 80, 10, false, "3");
+  double *array4 = doAnalyzeFillABCD(type, 0, 40, 80, 10, false, "4");
+  double *array5 = doAnalyzeFillABCD(type, 0, 50, 80, 10, false, "5");
+  double *array6 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "6");
+  double *array7 = doAnalyzeFillABCD(type, 0, 10, 90, 10, false, "7");
+  double *array8 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false, "8");
+  double *array9 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false, "9");
+  double *array10 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "10");
+  double *array11 = doAnalyzeFillABCD(type, 0, 50, 90, 10, false, "11");
+  double *array12 = doAnalyzeFillABCD(type, 0, 0, 100, 10, false, "12");
+  double *array13 = doAnalyzeFillABCD(type, 0, 10, 100, 10, false, "13");
+  double *array14 = doAnalyzeFillABCD(type, 0, 20, 100, 10, false, "14");
+  double *array15 = doAnalyzeFillABCD(type, 0, 30, 100, 10, false, "15");
+  */
 
-  double *array0f = Dfrac(type,1);
-  cout << "dfrac: " << array0f[0] << " " << array0f[1] << endl;
+  double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "0");
+  double *array1 = doAnalyzeFillABCD(type, 0, 10, 90, 10, false, "1");
+  double *array2 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false, "2");
+  double *array3 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false, "3");
+  double *array4 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "4");
+  double *array5 = doAnalyzeFillABCD(type, 0, 50, 90, 10, false, "5");
+  double *array6 = doAnalyzeFillABCD(type, 0, 10, 70, 10, false, "6");
+  double *array7 = doAnalyzeFillABCD(type, 0, 10, 80, 10, false, "7");
+  double *array8 = doAnalyzeFillABCD(type, 0, 10, 100, 10, false, "8");
+  double *array9 = doAnalyzeFillABCD(type, 0, 10, 110, 10, false, "9");
+  double *array10 = doAnalyzeFillABCD(type, 0, 10, 90, 5, false, "10");
+  double *array11 = doAnalyzeFillABCD(type, 0, 10, 90, 20, false, "11");
+
+  // keep for the dfrac calculation - not needed!!
+  //double *arrayL = doAnalyzeFillABCD(type, 2, 0, 150, 6, false,"2tags");
+
+  double *array1f = Dfrac(type,1);
+  double *array2f = Dfrac(type,2);
   
   cout << endl;
-  cout << array0[0]*array0f[0] << " +/- " << sqrt(array0[0]*array0f[1]*array0[0]*array0f[1]+array0[1]*array0f[0]*array0[1]*array0f[0]) << " , " << array0[2]*array0f[0] << " +/- " << sqrt(array0[2]*array0f[1]*array0[2]*array0f[1]+array0[3]*array0f[0]*array0[3]*array0f[0]) << endl;
-  cout << array1[0]*array0f[0] << " +/- " << sqrt(array1[0]*array0f[1]*array1[0]*array0f[1]+array1[1]*array0f[0]*array1[1]*array0f[0]) << " , " << array1[2]*array0f[0] << " +/- " << sqrt(array1[2]*array0f[1]*array1[2]*array0f[1]+array1[3]*array0f[0]*array1[3]*array0f[0]) << endl; 
-  cout << array2[0]*array0f[0] << " +/- " << sqrt(array2[0]*array0f[1]*array2[0]*array0f[1]+array2[1]*array0f[0]*array2[1]*array0f[0]) << " , " << array2[2]*array0f[0] << " +/- " << sqrt(array2[2]*array0f[1]*array2[2]*array0f[1]+array2[3]*array0f[0]*array2[3]*array0f[0]) << endl; 
-  cout << array3[0]*array0f[0] << " +/- " << sqrt(array3[0]*array0f[1]*array3[0]*array0f[1]+array3[1]*array0f[0]*array3[1]*array0f[0]) << " , " << array3[2]*array0f[0] << " +/- " << sqrt(array3[2]*array0f[1]*array3[2]*array0f[1]+array3[3]*array0f[0]*array3[3]*array0f[0]) << endl; 
-  cout << array4[0]*array0f[0] << " +/- " << sqrt(array4[0]*array0f[1]*array4[0]*array0f[1]+array4[1]*array0f[0]*array4[1]*array0f[0]) << " , " << array4[2]*array0f[0] << " +/- " << sqrt(array4[2]*array0f[1]*array4[2]*array0f[1]+array4[3]*array0f[0]*array4[3]*array0f[0]) << endl; 
-  cout << array5[0]*array0f[0] << " +/- " << sqrt(array5[0]*array0f[1]*array5[0]*array0f[1]+array5[1]*array0f[0]*array5[1]*array0f[0]) << " , " << array5[2]*array0f[0] << " +/- " << sqrt(array5[2]*array0f[1]*array5[2]*array0f[1]+array5[3]*array0f[0]*array5[3]*array0f[0]) << endl; 
-  cout << array6[0]*array0f[0] << " +/- " << sqrt(array6[0]*array0f[1]*array6[0]*array0f[1]+array6[1]*array0f[0]*array6[1]*array0f[0]) << " , " << array6[2]*array0f[0] << " +/- " << sqrt(array6[2]*array0f[1]*array6[2]*array0f[1]+array6[3]*array0f[0]*array6[3]*array0f[0]) << endl;
-  cout << array7[0]*array0f[0] << " +/- " << sqrt(array7[0]*array0f[1]*array7[0]*array0f[1]+array7[1]*array0f[0]*array7[1]*array0f[0]) << " , " << array7[2]*array0f[0] << " +/- " << sqrt(array7[2]*array0f[1]*array7[2]*array0f[1]+array7[3]*array0f[0]*array7[3]*array0f[0]) << endl; 
-  cout << array8[0]*array0f[0] << " +/- " << sqrt(array8[0]*array0f[1]*array8[0]*array0f[1]+array8[1]*array0f[0]*array8[1]*array0f[0]) << " , " << array8[2]*array0f[0] << " +/- " << sqrt(array8[2]*array0f[1]*array8[2]*array0f[1]+array8[3]*array0f[0]*array8[3]*array0f[0]) << endl; 
-  cout << array9[0]*array0f[0] << " +/- " << sqrt(array9[0]*array0f[1]*array9[0]*array0f[1]+array9[1]*array0f[0]*array9[1]*array0f[0]) << " , " << array9[2]*array0f[0] << " +/- " << sqrt(array9[2]*array0f[1]*array9[2]*array0f[1]+array9[3]*array0f[0]*array9[3]*array0f[0]) << endl; 
-  cout << array10[0]*array0f[0] << " +/- " << sqrt(array10[0]*array0f[1]*array10[0]*array0f[1]+array10[1]*array0f[0]*array10[1]*array0f[0]) << " , " << array10[2]*array0f[0] << " +/- " << sqrt(array10[2]*array0f[1]*array10[2]*array0f[1]+array10[3]*array0f[0]*array10[3]*array0f[0]) << endl; 
-  cout << array11[0]*array0f[0] << " +/- " << sqrt(array11[0]*array0f[1]*array11[0]*array0f[1]+array11[1]*array0f[0]*array11[1]*array0f[0]) << " , " << array11[2]*array0f[0] << " +/- " << sqrt(array11[2]*array0f[1]*array11[2]*array0f[1]+array11[3]*array0f[0]*array11[3]*array0f[0]) << endl; 
-  cout << array12[0]*array0f[0] << " +/- " << sqrt(array12[0]*array0f[1]*array12[0]*array0f[1]+array12[1]*array0f[0]*array12[1]*array0f[0]) << " , " << array12[2]*array0f[0] << " +/- " << sqrt(array12[2]*array0f[1]*array12[2]*array0f[1]+array12[3]*array0f[0]*array12[3]*array0f[0]) << endl; 
-  cout << array13[0]*array0f[0] << " +/- " << sqrt(array13[0]*array0f[1]*array13[0]*array0f[1]+array13[1]*array0f[0]*array13[1]*array0f[0]) << " , " << array13[2]*array0f[0] << " +/- " << sqrt(array13[2]*array0f[1]*array13[2]*array0f[1]+array13[3]*array0f[0]*array13[3]*array0f[0]) << endl; 
-  cout << array14[0]*array0f[0] << " +/- " << sqrt(array14[0]*array0f[1]*array14[0]*array0f[1]+array14[1]*array0f[0]*array14[1]*array0f[0]) << " , " << array14[2]*array0f[0] << " +/- " << sqrt(array14[2]*array0f[1]*array14[2]*array0f[1]+array14[3]*array0f[0]*array14[3]*array0f[0]) << endl; 
-  cout << array15[0]*array0f[0] << " +/- " << sqrt(array15[0]*array0f[1]*array15[0]*array0f[1]+array15[1]*array0f[0]*array15[1]*array0f[0]) << " , " << array15[2]*array0f[0] << " +/- " << sqrt(array15[2]*array0f[1]*array15[2]*array0f[1]+array15[3]*array0f[0]*array15[3]*array0f[0]) << endl; 
+  cout << "dfrac 1tag: " << array1f[0] << " " << array1f[1] << endl;
+  cout << "dfrac 2tag: " << array2f[0] << " " << array2f[1] << endl;
+
   cout << endl;
+  cout << "nob" << endl;
   cout << array0[0] << " +/- " << array0[1] << " , " << array0[2] << " +/- " << array0[3] << endl;
   cout << array1[0] << " +/- " << array1[1] << " , " << array1[2] << " +/- " << array1[3] << endl;
   cout << array2[0] << " +/- " << array2[1] << " , " << array2[2] << " +/- " << array2[3] << endl;
@@ -1125,9 +1154,46 @@ void analyzeFillABCD(){
   cout << array9[0] << " +/- " << array9[1] << " , " << array9[2] << " +/- " << array9[3] << endl;
   cout << array10[0] << " +/- " << array10[1] << " , " << array10[2] << " +/- " << array10[3] << endl;
   cout << array11[0] << " +/- " << array11[1] << " , " << array11[2] << " +/- " << array11[3] << endl;
-  cout << array12[0] << " +/- " << array12[1] << " , " << array12[2] << " +/- " << array12[3] << endl;
-  cout << array13[0] << " +/- " << array13[1] << " , " << array13[2] << " +/- " << array13[3] << endl;
-  cout << array14[0] << " +/- " << array14[1] << " , " << array14[2] << " +/- " << array14[3] << endl;
-  cout << array15[0] << " +/- " << array15[1] << " , " << array15[2] << " +/- " << array15[3] << endl;
-  
+  //cout << array12[0] << " +/- " << array12[1] << " , " << array12[2] << " +/- " << array12[3] << endl;
+  //cout << array13[0] << " +/- " << array13[1] << " , " << array13[2] << " +/- " << array13[3] << endl;
+  //cout << array14[0] << " +/- " << array14[1] << " , " << array14[2] << " +/- " << array14[3] << endl;
+  //cout << array15[0] << " +/- " << array15[1] << " , " << array15[2] << " +/- " << array15[3] << endl;                                                                                                                                                                                                                       
+  cout << endl;
+  cout << "btagging 1 tag" << endl;
+  cout << array0[0]*array1f[0] << " +/- " << sqrt(array0[0]*array1f[1]*array0[0]*array1f[1]+array0[1]*array1f[0]*array0[1]*array1f[0]) << " , " << array0[2]*array1f[0] << " +/- " << sqrt(array0[2]*array1f[1]*array0[2]*array1f[1]+array0[3]*array1f[0]*array0[3]*array1f[0]) << endl;
+  cout << array1[0]*array1f[0] << " +/- " << sqrt(array1[0]*array1f[1]*array1[0]*array1f[1]+array1[1]*array1f[0]*array1[1]*array1f[0]) << " , " << array1[2]*array1f[0] << " +/- " << sqrt(array1[2]*array1f[1]*array1[2]*array1f[1]+array1[3]*array1f[0]*array1[3]*array1f[0]) << endl; 
+  cout << array2[0]*array1f[0] << " +/- " << sqrt(array2[0]*array1f[1]*array2[0]*array1f[1]+array2[1]*array1f[0]*array2[1]*array1f[0]) << " , " << array2[2]*array1f[0] << " +/- " << sqrt(array2[2]*array1f[1]*array2[2]*array1f[1]+array2[3]*array1f[0]*array2[3]*array1f[0]) << endl; 
+  cout << array3[0]*array1f[0] << " +/- " << sqrt(array3[0]*array1f[1]*array3[0]*array1f[1]+array3[1]*array1f[0]*array3[1]*array1f[0]) << " , " << array3[2]*array1f[0] << " +/- " << sqrt(array3[2]*array1f[1]*array3[2]*array1f[1]+array3[3]*array1f[0]*array3[3]*array1f[0]) << endl; 
+  cout << array4[0]*array1f[0] << " +/- " << sqrt(array4[0]*array1f[1]*array4[0]*array1f[1]+array4[1]*array1f[0]*array4[1]*array1f[0]) << " , " << array4[2]*array1f[0] << " +/- " << sqrt(array4[2]*array1f[1]*array4[2]*array1f[1]+array4[3]*array1f[0]*array4[3]*array1f[0]) << endl; 
+  cout << array5[0]*array1f[0] << " +/- " << sqrt(array5[0]*array1f[1]*array5[0]*array1f[1]+array5[1]*array1f[0]*array5[1]*array1f[0]) << " , " << array5[2]*array1f[0] << " +/- " << sqrt(array5[2]*array1f[1]*array5[2]*array1f[1]+array5[3]*array1f[0]*array5[3]*array1f[0]) << endl; 
+  cout << array6[0]*array1f[0] << " +/- " << sqrt(array6[0]*array1f[1]*array6[0]*array1f[1]+array6[1]*array1f[0]*array6[1]*array1f[0]) << " , " << array6[2]*array1f[0] << " +/- " << sqrt(array6[2]*array1f[1]*array6[2]*array1f[1]+array6[3]*array1f[0]*array6[3]*array1f[0]) << endl;
+  cout << array7[0]*array1f[0] << " +/- " << sqrt(array7[0]*array1f[1]*array7[0]*array1f[1]+array7[1]*array1f[0]*array7[1]*array1f[0]) << " , " << array7[2]*array1f[0] << " +/- " << sqrt(array7[2]*array1f[1]*array7[2]*array1f[1]+array7[3]*array1f[0]*array7[3]*array1f[0]) << endl; 
+  cout << array8[0]*array1f[0] << " +/- " << sqrt(array8[0]*array1f[1]*array8[0]*array1f[1]+array8[1]*array1f[0]*array8[1]*array1f[0]) << " , " << array8[2]*array1f[0] << " +/- " << sqrt(array8[2]*array1f[1]*array8[2]*array1f[1]+array8[3]*array1f[0]*array8[3]*array1f[0]) << endl; 
+  cout << array9[0]*array1f[0] << " +/- " << sqrt(array9[0]*array1f[1]*array9[0]*array1f[1]+array9[1]*array1f[0]*array9[1]*array1f[0]) << " , " << array9[2]*array1f[0] << " +/- " << sqrt(array9[2]*array1f[1]*array9[2]*array1f[1]+array9[3]*array1f[0]*array9[3]*array1f[0]) << endl; 
+  cout << array10[0]*array1f[0] << " +/- " << sqrt(array10[0]*array1f[1]*array10[0]*array1f[1]+array10[1]*array1f[0]*array10[1]*array1f[0]) << " , " << array10[2]*array1f[0] << " +/- " << sqrt(array10[2]*array1f[1]*array10[2]*array1f[1]+array10[3]*array1f[0]*array10[3]*array1f[0]) << endl; 
+  cout << array11[0]*array1f[0] << " +/- " << sqrt(array11[0]*array1f[1]*array11[0]*array1f[1]+array11[1]*array1f[0]*array11[1]*array1f[0]) << " , " << array11[2]*array1f[0] << " +/- " << sqrt(array11[2]*array1f[1]*array11[2]*array1f[1]+array11[3]*array1f[0]*array11[3]*array1f[0]) << endl; 
+  //cout << array12[0]*array1f[0] << " +/- " << sqrt(array12[0]*array1f[1]*array12[0]*array1f[1]+array12[1]*array1f[0]*array12[1]*array1f[0]) << " , " << array12[2]*array1f[0] << " +/- " << sqrt(array12[2]*array1f[1]*array12[2]*array1f[1]+array12[3]*array1f[0]*array12[3]*array1f[0]) << endl; 
+  //cout << array13[0]*array1f[0] << " +/- " << sqrt(array13[0]*array1f[1]*array13[0]*array1f[1]+array13[1]*array1f[0]*array13[1]*array1f[0]) << " , " << array13[2]*array1f[0] << " +/- " << sqrt(array13[2]*array1f[1]*array13[2]*array1f[1]+array13[3]*array1f[0]*array13[3]*array1f[0]) << endl; 
+  //cout << array14[0]*array1f[0] << " +/- " << sqrt(array14[0]*array1f[1]*array14[0]*array1f[1]+array14[1]*array1f[0]*array14[1]*array1f[0]) << " , " << array14[2]*array1f[0] << " +/- " << sqrt(array14[2]*array1f[1]*array14[2]*array1f[1]+array14[3]*array1f[0]*array14[3]*array1f[0]) << endl; 
+  //cout << array15[0]*array1f[0] << " +/- " << sqrt(array15[0]*array1f[1]*array15[0]*array1f[1]+array15[1]*array1f[0]*array15[1]*array1f[0]) << " , " << array15[2]*array1f[0] << " +/- " << sqrt(array15[2]*array1f[1]*array15[2]*array1f[1]+array15[3]*array1f[0]*array15[3]*array1f[0]) << endl; 
+
+  cout << endl;
+  cout << "btagging 2 tag" << endl;
+  cout << array0[0]*array2f[0] << " +/- " << sqrt(array0[0]*array2f[1]*array0[0]*array2f[1]+array0[1]*array2f[0]*array0[1]*array2f[0]) << " , " << array0[2]*array2f[0] << " +/- " << sqrt(array0[2]*array2f[1]*array0[2]*array2f[1]+array0[3]*array2f[0]*array0[3]*array2f[0]) << endl;
+  cout << array1[0]*array2f[0] << " +/- " << sqrt(array1[0]*array2f[1]*array1[0]*array2f[1]+array1[1]*array2f[0]*array1[1]*array2f[0]) << " , " << array1[2]*array2f[0] << " +/- " << sqrt(array1[2]*array2f[1]*array1[2]*array2f[1]+array1[3]*array2f[0]*array1[3]*array2f[0]) << endl;
+  cout << array2[0]*array2f[0] << " +/- " << sqrt(array2[0]*array2f[1]*array2[0]*array2f[1]+array2[1]*array2f[0]*array2[1]*array2f[0]) << " , " << array2[2]*array2f[0] << " +/- " << sqrt(array2[2]*array2f[1]*array2[2]*array2f[1]+array2[3]*array2f[0]*array2[3]*array2f[0]) << endl;
+  cout << array3[0]*array2f[0] << " +/- " << sqrt(array3[0]*array2f[1]*array3[0]*array2f[1]+array3[1]*array2f[0]*array3[1]*array2f[0]) << " , " << array3[2]*array2f[0] << " +/- " << sqrt(array3[2]*array2f[1]*array3[2]*array2f[1]+array3[3]*array2f[0]*array3[3]*array2f[0]) << endl;
+  cout << array4[0]*array2f[0] << " +/- " << sqrt(array4[0]*array2f[1]*array4[0]*array2f[1]+array4[1]*array2f[0]*array4[1]*array2f[0]) << " , " << array4[2]*array2f[0] << " +/- " << sqrt(array4[2]*array2f[1]*array4[2]*array2f[1]+array4[3]*array2f[0]*array4[3]*array2f[0]) << endl;
+  cout << array5[0]*array2f[0] << " +/- " << sqrt(array5[0]*array2f[1]*array5[0]*array2f[1]+array5[1]*array2f[0]*array5[1]*array2f[0]) << " , " << array5[2]*array2f[0] << " +/- " << sqrt(array5[2]*array2f[1]*array5[2]*array2f[1]+array5[3]*array2f[0]*array5[3]*array2f[0]) << endl;
+  cout << array6[0]*array2f[0] << " +/- " << sqrt(array6[0]*array2f[1]*array6[0]*array2f[1]+array6[1]*array2f[0]*array6[1]*array2f[0]) << " , " << array6[2]*array2f[0] << " +/- " << sqrt(array6[2]*array2f[1]*array6[2]*array2f[1]+array6[3]*array2f[0]*array6[3]*array2f[0]) << endl;
+  cout << array7[0]*array2f[0] << " +/- " << sqrt(array7[0]*array2f[1]*array7[0]*array2f[1]+array7[1]*array2f[0]*array7[1]*array2f[0]) << " , " << array7[2]*array2f[0] << " +/- " << sqrt(array7[2]*array2f[1]*array7[2]*array2f[1]+array7[3]*array2f[0]*array7[3]*array2f[0]) << endl;
+  cout << array8[0]*array2f[0] << " +/- " << sqrt(array8[0]*array2f[1]*array8[0]*array2f[1]+array8[1]*array2f[0]*array8[1]*array2f[0]) << " , " << array8[2]*array2f[0] << " +/- " << sqrt(array8[2]*array2f[1]*array8[2]*array2f[1]+array8[3]*array2f[0]*array8[3]*array2f[0]) << endl;
+  cout << array9[0]*array2f[0] << " +/- " << sqrt(array9[0]*array2f[1]*array9[0]*array2f[1]+array9[1]*array2f[0]*array9[1]*array2f[0]) << " , " << array9[2]*array2f[0] << " +/- " << sqrt(array9[2]*array2f[1]*array9[2]*array2f[1]+array9[3]*array2f[0]*array9[3]*array2f[0]) << endl;
+  cout << array10[0]*array2f[0] << " +/- " << sqrt(array10[0]*array2f[1]*array10[0]*array2f[1]+array10[1]*array2f[0]*array10[1]*array2f[0]) << " , " << array10[2]*array2f[0] << " +/- " << sqrt(array10[2]*array2f[1]*array10[2]*array2f[1]+array10[3]*array2f[0]*array10[3]*array2f[0]) << endl;
+  cout << array11[0]*array2f[0] << " +/- " << sqrt(array11[0]*array2f[1]*array11[0]*array2f[1]+array11[1]*array2f[0]*array11[1]*array2f[0]) << " , " << array11[2]*array2f[0] << " +/- " << sqrt(array11[2]*array2f[1]*array11[2]*array2f[1]+array11[3]*array2f[0]*array11[3]*array2f[0]) << endl;
+  //cout << array12[0]*array2f[0] << " +/- " << sqrt(array12[0]*array2f[1]*array12[0]*array2f[1]+array12[1]*array2f[0]*array12[1]*array2f[0]) << " , " << array12[2]*array2f[0] << " +/- " << sqrt(array12[2]*array2f[1]*array12[2]*array2f[1]+array12[3]*array2f[0]*array12[3]*array2f[0]) << endl;
+  //cout << array13[0]*array2f[0] << " +/- " << sqrt(array13[0]*array2f[1]*array13[0]*array2f[1]+array13[1]*array2f[0]*array13[1]*array2f[0]) << " , " << array13[2]*array2f[0] << " +/- " << sqrt(array13[2]*array2f[1]*array13[2]*array2f[1]+array13[3]*array2f[0]*array13[3]*array2f[0]) << endl;
+  //cout << array14[0]*array2f[0] << " +/- " << sqrt(array14[0]*array2f[1]*array14[0]*array2f[1]+array14[1]*array2f[0]*array14[1]*array2f[0]) << " , " << array14[2]*array2f[0] << " +/- " << sqrt(array14[2]*array2f[1]*array14[2]*array2f[1]+array14[3]*array2f[0]*array14[3]*array2f[0]) << endl;
+  //cout << array15[0]*array2f[0] << " +/- " << sqrt(array15[0]*array2f[1]*array15[0]*array2f[1]+array15[1]*array2f[0]*array15[1]*array2f[0]) << " , " << array15[2]*array2f[0] << " +/- " << sqrt(array15[2]*array2f[1]*array15[2]*array2f[1]+array15[3]*array2f[0]*array15[3]*array2f[0]) << endl;
+
  }
