@@ -744,8 +744,39 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   TAxis* yaxG = gr1->GetYaxis();
   xaxG->SetTitle(xTitle);
   yaxG->SetTitle(yTitle_ratio);
+  yaxG->SetRangeUser(.2,2.5);
   gr1->SetMarkerStyle(4);
   gr1->Draw("AP");
+
+
+  TLegend *legF = new TLegend(.19,.15,.3,.3);
+  legF->AddEntry(gr1, "Data", "P");
+  legF->SetFillColor(0);
+  legF->SetBorderSize(0);
+  legF->SetLineStyle(0);
+  legF->SetTextFont(42);
+  legF->SetFillStyle(0);
+  legF->SetTextSize(0.04);
+
+  TLatex* text1F = new TLatex(3.570061,23.08044,"CMS Preliminary");
+  text1F->SetNDC();
+  text1F->SetTextAlign(13);
+  text1F->SetX(0.184);
+  text1F->SetY(0.928);
+  //text1F->SetLineWidth(2);                                                                                                                                                                                                
+  text1F->SetTextFont(42);
+  text1F->SetTextSizePixels(24);// dflt=28                                                                                                                                                                                  
+
+  TLatex* text2F = new TLatex(3.570061,23.08044,"36.1 pb^{-1} at #sqrt{s} = 7 TeV");
+  text2F->SetNDC();
+  text2F->SetTextAlign(13);
+  text2F->SetX(0.184);
+  text2F->SetY(0.88);
+  //text2F->SetLineWidth(2);                                                                                                                                                                                              
+  text2F->SetTextFont(42);
+  text2F->SetTextSizePixels(24);// dflt=28   
+  text2F->Draw();
+  legF->Draw();
 
   for(int i =0; i<fitNum; i++){
     cout << gr0x[i] << " " << gr1x[i] << endl;
