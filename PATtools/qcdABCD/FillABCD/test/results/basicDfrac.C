@@ -7,8 +7,8 @@
 
 using namespace std;
 
-void doBasicDfrac(int nbcut = 0){
-  cout << "nbcut: " << nbcut << endl;
+void doBasicDfrac(int nbcut = 0, TString cutType = ""){
+  cout << "nbcut: " << cutType << nbcut << endl;
   double pi=4*atan(1.0);
 
   TH1D* hDpass = new TH1D("hDpass", "hDpass", 1, 0.0, .3);
@@ -39,15 +39,23 @@ void doBasicDfrac(int nbcut = 0){
     InputChain->GetEvent(i);
     
     int pass = 0;
-    if(nbtags>=nbcut)pass =1;
+    if(cutType=="e"){
+          if(nbtags==nbcut)pass =1;
+    }
+    else if(cutType=="ge"){
+      if(nbtags>=nbcut)pass =1;
+    }
+    else{
+      cout << "INVALID CUT TYPE!" << endl;
+    }
 
-       if(x>=150.0){
-	 hCall->Fill(y, weight);
-	 hDall->Fill(y, weight);
-	 if(pass) hCpass->Fill(y, weight);
-	 if(pass) hDpass->Fill(y, weight);
-       }//end MET check
-       
+    if(x>=150.0){
+      hCall->Fill(y, weight);
+      hDall->Fill(y, weight);
+      if(pass) hCpass->Fill(y, weight);
+      if(pass) hDpass->Fill(y, weight);
+    }//end MET check
+    
   }//end loop over InputChain
   
   hCeff->Divide(hCpass, hCall, 1., 1., "B");
@@ -62,7 +70,9 @@ void doBasicDfrac(int nbcut = 0){
   cout << "Dfrac: " << Dfrac <<" +- " << Dfrac_e <<  endl;
   cout << "nC: " << hCall->GetBinContent(1) << " +- " << hCall->GetBinError(1) << endl;
   cout << "Cfrac: " << Cfrac <<" +- " << Cfrac_e <<  endl;
-  
+  cout << endl;
+  cout << endl;
+
   hDpass->Clear();
   hDall->Clear();
   hDeff->Clear();
@@ -74,7 +84,8 @@ void doBasicDfrac(int nbcut = 0){
 
 void *basicDfrac(){
   
-  doBasicDfrac(1);
-  doBasicDfrac(2);
+  doBasicDfrac(1,"e");
+  doBasicDfrac(1,"ge");
+  doBasicDfrac(2,"ge");
 
 }
