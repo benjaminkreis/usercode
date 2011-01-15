@@ -184,6 +184,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   TH1D* histdp = new TH1D("H_dp", "dp", 50, borderh1a, borderh2b);
   TH1D* histx = new TH1D("H_x", "x", 200, 0, borderv2b_plot);
   histA->Sumw2();
+  histAm->Sumw2();
   histB->Sumw2();
   histC->Sumw2();
   histD->Sumw2();
@@ -793,11 +794,16 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
   fexp2->SetParLimits(2,0.,1000);
 
-  TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv1b);
-  fexp3->SetParameters(4.0, -1.0/20.0, 4.0, -1.0/200.0);  
-  fexp3->SetParLimits(1,-1000,0);
-  fexp3->SetParLimits(3,-1000,0);
-  				  
+  //TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv1b);
+  //fexp3->SetParameters(4.0, -1.0/20.0, 4.0, -1.0/200.0);  
+  //fexp3->SetParLimits(1,-1000,0);
+  //fexp3->SetParLimits(3,-1000,0);
+ 
+  TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]+[3]*x", borderv1a, borderv1b);
+  fexp3->SetParameters(10.0, -1.0/30.0, 0.001,0.);  
+  fexp3->SetParLimits(2,0.,1000);
+  //fexp3->SetParLimits(3,0.,1000);
+  
   fexp1->SetLineColor(kBlue);
   fexp2->SetLineColor(kBlack);
   fexp3->SetLineColor(kRed);
@@ -805,7 +811,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   assert(!( gr1->Fit("fexp1", "R0") ));
   cout << endl;
   cout << endl;
-  // fexp1->Draw("SAME");   
+  fexp1->Draw("SAME");   
   TString secondFitFail = "";
   //if(gr1->Fit("fexp2", "R0")) secondFitFail = "FAILED!";
   assert(!( gr1->Fit("fexp2", "R0") ));
@@ -815,8 +821,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   cout << endl;
   cout << endl;
   fexp2->Draw("SAME");
-  //gr1->Fit("fexp3", "R0");
-  // fexp3->Draw("SAME"); 
+  gr1->Fit("fexp3", "R0");
+  fexp3->Draw("SAME"); 
  
   
   //  C_temp->cd();
@@ -835,7 +841,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp1b->SetParameters(par_exp[0], par_exp[1]);
   TF1 *fexp2b = new TF1("fexp2b", "[0]*exp([1]*x)+[2]", borderv1a, borderv2b);
   fexp2b->SetParameters(par_exp2[0], par_exp2[1],par_exp2[2]);
-  TF1 *fexp3b = new TF1("fexp3b", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv2b);
+  //TF1 *fexp3b = new TF1("fexp3b", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv2b);
+  TF1 *fexp3b = new TF1("fexp3b", "[0]*exp([1]*x)+[2]+[3]*x", borderv1a, borderv2b);
   fexp3b->SetParameters(par_exp3[0], par_exp3[1], par_exp3[2], par_exp3[3]);
  
   fexp1b->SetLineColor(kBlue);
@@ -875,7 +882,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_extrap->cd();
   fexp1b->Draw("SAME");
   fexp2b->Draw("SAME");
-  // fexp3b->Draw("SAME");
+  fexp3b->Draw("SAME");
  
   ////////////////////////////////////////////////
   ///   Calculate estimate with uncertainty   ////
@@ -1037,6 +1044,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
   fexp1b->Write();
   fexp2b->Write();
+  fexp3b->Write();
   gr0->Write();
   histWD->Write();
   histWC->Write();
