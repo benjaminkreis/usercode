@@ -19,7 +19,7 @@ using namespace std;
 
 
 
-void doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
+double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
   bool verbose = true;
   double pi=4*atan(1.0);
   double borderv2a=150.0;
@@ -139,8 +139,14 @@ void doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
   ext_error_unBinexp2 = sqrt(ext_serror_exp2_p0*ext_serror_exp2_p0 + ext_serror_exp2_p1*ext_serror_exp2_p1 + ext_serror_exp2_p2*ext_serror_exp2_p2 + ext_serror_exp2_w);  
   
   cout << "Unbinned exponential+constant extended estimate for nC: " << unbinnedEstimate2 << " +- " << ext_error_unBinexp2 << endl;
+  
+  histA->Clear();
+  histAm->Clear();
+  histB->Clear();
 
-
+  double *result = new double[2];
+  result[0] = unbinnedEstimate2;
+  result[1] = ext_error_unBinexp2;
 }//end doBasicABCD
 
 
@@ -151,6 +157,33 @@ void basicABCD(){
   gStyle->SetOptFit(1);
   cout << "begin basicABCD" << endl;
 
-  doBasicABCD(20.,90.,10.);
+  double *a0 = doBasicABCD(0.,90.,10);
+  double *a1 = doBasicABCD(10.,90.,10);
+  double *a2 = doBasicABCD(20.,90.,10);
+  double *a3 = doBasicABCD(30.,90.,10);
+  double *a4 = doBasicABCD(40.,90.,10);
+  double *a5 = doBasicABCD(50.,90.,10);
+  double *a6 = doBasicABCD(10.,70.,10);
+  double *a7 = doBasicABCD(10.,80.,10);
+  double *a8 = doBasicABCD(10.,100.,10);
+  double *a9 = doBasicABCD(10.,110.,10);
+  double *a10 = doBasicABCD(10.,90.,5);
+  double *a11 = doBasicABCD(10.,90.,20);
+  
+  cout << endl;
+  cout << endl;
+  cout << "nob" << endl;
+  cout << a0[0] << " +/- " << a0[1] << endl;
+  cout << a1[0] << " +/- " << a1[1] << endl;
+  cout << a2[0] << " +/- " << a2[1] << endl;
+  cout << a3[0] << " +/- " << a3[1] << endl;
+  cout << a4[0] << " +/- " << a4[1] << endl;
+  cout << a5[0] << " +/- " << a5[1] << endl;
+  cout << a6[0] << " +/- " << a6[1] << endl;
+  cout << a7[0] << " +/- " << a7[1] << endl;
+  cout << a8[0] << " +/- " << a8[1] << endl;
+  cout << a9[0] << " +/- " << a9[1] << endl;
+  cout << a10[0] << " +/- " << a10[1] << endl;
+  cout << a11[0] << " +/- " << a11[1] << endl;
 
 }
