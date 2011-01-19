@@ -53,23 +53,22 @@ int passbtagcut(int nbtags){
 double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv1a = 50, double borderv1b = 150, int fitNum = 6, bool verbose = false, TString fName = ""){
   cout << endl;
   if(verbose)cout << "Begin analyzeFillABCD" << endl;
-  // gROOT->SetStyle("Plain");
-  // gStyle->SetPalette(1);
+  //gROOT->SetStyle("Plain");
+  //gStyle->SetPalette(1);
   //gStyle->SetOptStat("nemruo");
   //gStyle->SetOptStat("");
   gROOT->SetStyle("CMS");
   gStyle->SetOptFit(1);
 
   bool josh=true;
+  bool subtractSM =true;
   bool drawLines=false;
   // int fitNum = 10; //number of bins in xL region, used to fit ratio
   int extendedNum = 21; //number of bins in xR region, used in extrapolation
   TString xLabel = "MET";
-
+  
   //LOAD WEIGHTS
   TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/CMSSW_3_6_3/src/Filter/RA2Filter/test/results/weight_MG.root","READ");
-  //TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD.root","READ");
-  //TFile finweight("/afs/cern.ch/user/k/kreis/scratch0/PATtest/CMSSW_3_3_6/src/qcdABCD/weight_QCD170.root","READ");
   
   TH1D* HweightP = 0;
   if(!finweight.IsZombie()){
@@ -86,8 +85,9 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   TString yTitle_ratio = "r(E_{T}^{miss}) ";
   TString xTitle = "E_{T}^{miss} [GeV]";
   
-  double pi=4*atan(1.0);
-  
+  //double pi=4*atan(1.0);
+  double pi = 3.142;
+
   // double borderv1a=80.0;
   // double borderv1b=140.0;
   double borderv2a=150.0;
@@ -170,9 +170,21 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   TH2D* hist1 = new TH2D("H_ABCD", "ABCD", 100,0,1000,160,0,pi);
   TH2D* hist2 = new TH2D("H_ABCD2", "ABCD2", 100,0,500,100,0,pi);
   TH2D* hist3 = new TH2D("H_ABCD3", "ABCD3", 90,50,500,100,0,pi);
+  
+  //essential
   TH2D* histA = new TH2D("H_A", "Region A", fitNum, xBinsL, 1, yBinsL);
   TH2D* histAm = new TH2D("H_Am", "Region Am", fitNum, xBinsL, 1, yBinsT);
   TH2D* histB = new TH2D("H_B", "Region B", fitNum, xBinsL, 1, yBinsU);
+  TH2D* histAs = new TH2D("H_As", "Region A", fitNum, xBinsL, 1, yBinsL);
+  TH2D* histAms = new TH2D("H_Ams", "Region Am", fitNum, xBinsL, 1, yBinsT);
+  TH2D* histBs = new TH2D("H_Bs", "Region B", fitNum, xBinsL, 1, yBinsU);
+  TH2D* histASM = new TH2D("H_ASM", "Region A", fitNum, xBinsL, 1, yBinsL);
+  TH2D* histAmSM = new TH2D("H_AmSM", "Region Am", fitNum, xBinsL, 1, yBinsT);
+  TH2D* histBSM = new TH2D("H_BSM", "Region B", fitNum, xBinsL, 1, yBinsU);
+  TH2D* histAd = new TH2D("H_Ad", "Region A", fitNum, xBinsL, 1, yBinsL);
+  TH2D* histAmd = new TH2D("H_Amd", "Region Am", fitNum, xBinsL, 1, yBinsT);
+  TH2D* histBd = new TH2D("H_Bd", "Region B", fitNum, xBinsL, 1, yBinsU);
+  
   TH2D* histC = new TH2D("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2D* histD = new TH2D("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
   TH1D* histU = new TH1D("histU", "histU", 30, borderv1a, borderv2b_plot);
@@ -186,6 +198,15 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   histA->Sumw2();
   histAm->Sumw2();
   histB->Sumw2();
+  histAs->Sumw2();
+  histAms->Sumw2();
+  histBs->Sumw2();
+  histASM->Sumw2();
+  histAmSM->Sumw2();
+  histBSM->Sumw2();
+  histAd->Sumw2();
+  histAmd->Sumw2();
+  histBd->Sumw2();
   histC->Sumw2();
   histD->Sumw2();
   histCx->Sumw2();
@@ -233,19 +254,24 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //////////////////////////
   
   TChain* InputChain = 0;
+  TChain* InputChainSM = 0;
   //TChain* InputChain = FormChain170();
   if(josh){
     InputChain = FormChainJosh(joshType);
+    if(subtractSM) InputChainSM = FormChainJoshSM(joshType);
   }
   else{
     InputChain = FormChain();
   }
   
   int numEntries = InputChain->GetEntries();
+  int numEntriesSM = 0;
+  if(subtractSM) numEntriesSM = InputChainSM->GetEntries();
   if(verbose)cout <<"numEntries: " << numEntries << endl;
+  if(verbose)cout << "numEntriesSM: " << numEntriesSM << endl;
   cout << endl;
 
-  double pass_x=0, pass_y=0;
+  double pass_x=0, pass_y=0, myHT=-1;
   double Dfrac=0;
   double x,y, MG=1, weightJosh;
   int nbtags=0;
@@ -262,7 +288,6 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
     InputChain->SetBranchAddress("MG",&MG);
     InputChain->SetBranchAddress("btag", &nbtags);
   }
-
 
   double beforeAngular = 0;
   for(int i = 0; i<numEntries; i++){
@@ -284,7 +309,6 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
       histPtHat->Fill(MG,weight);
       histPtHat_noW->Fill(MG);
       
-      //weight=1;
       assert(weight>0.);
       if(x>=borderv2a)beforeAngular+=weight;
       if(x>borderv2a) pass_x+=weight;
@@ -340,21 +364,71 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
       hist1->Fill(x,y, weight);
       hist2->Fill(x,y, weight);
       hist3->Fill(x,y, weight);
-      histA->Fill(x,y, weight);
-      histB->Fill(x,y, weight);
       histC->Fill(x,y, weight);
       histD->Fill(x,y, weight);
       if(Cnow) histCx->Fill(x,weight);
       if(Dnow) histDx->Fill(x,weight);
-     
-      //means A and D
-      histAm->Fill(x,y,x*weight);
-      histDm->Fill(x,y,x*weight);
 
+      //could check ht here
+      //histA->Fill(x,y, weight);
+      //histB->Fill(x,y, weight);
+      //histAm->Fill(x,y,x*weight);
+      histAs->Fill(x,y, weight);
+      histBs->Fill(x,y, weight);
+      histAms->Fill(x,y,x*weight);
+      histAd->Fill(x,y, weight);
+      histBd->Fill(x,y, weight);
+      histAmd->Fill(x,y,x*weight);
+      
+      histDm->Fill(x,y,x*weight);
+      
     }//end bcontinue
   }//end loop tree
- 
   
+  
+  //SM LOOP///////////////////////////////////////
+  //double xSM, ySM, weightSM;
+  if(subtractSM){
+    if(josh){
+      InputChainSM->SetBranchAddress("MET",&x);
+      InputChainSM->SetBranchAddress("minDeltaPhiMET",&y);
+      InputChainSM->SetBranchAddress("weight",&weightJosh);
+      InputChainSM->SetBranchAddress("nbSSVM",&nbtags);
+    }
+    else{assert(0);}
+    
+    for(int i = 0; i<numEntriesSM; i++){
+      InputChainSM->GetEvent(i);
+      
+      //btag requirement
+      bool bcontinueNow = bcontinue(nbtags, bcont);
+      if(bcontinueNow){
+	
+	double weight = weightJosh;
+	histAs->Fill(x,y, -weight);
+	histBs->Fill(x,y, -weight);
+	histAms->Fill(x,y,-x*weight);
+	
+	histASM->Fill(x,y, weight);
+	histBSM->Fill(x,y, weight);
+	histAmSM->Fill(x,y,x*weight);
+	
+      }//bcontinue
+      
+    }
+    if(verbose)cout << "histA: " << histA->GetBinContent(3,1) << " +- "<< histA->GetBinError(3,1)<< endl;
+    if(verbose)cout << "histAs: " << histAs->GetBinContent(3,1) << " +- "<< histAs->GetBinError(3,1)<< endl;
+    if(verbose)cout << "histASM: " << histASM->GetBinContent(3,1)  << " +- "<< histASM->GetBinError(3,1)<< endl;
+    histA=histAs;
+    histB=histBs;
+    histAm=histAms;
+    
+  }
+  else{
+    histA=histAd;
+    histB=histBd;
+    histAm=histAmd;
+  }
 
 
   ////////////////////////////////////////////////////////////////////
@@ -522,35 +596,6 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   leghpx->SetLineColor(0);
   leghpx->SetTextSize(0.04);
   
-  //hpx gives 1d histograms of MET, hpy gives 1d histograms of minDPhi
-  double hpby[pNum+1] = {0,30,60,90,120,150, 180, 250, 499};
-  double hpbx[pNum+1] = {0,0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.5, pi-0.01};
-  //Color_t col1[pNum] = {kBlue+4, kBlue+3, kBlue+2, kBlue+1, kBlue, kBlue-4, kBlue-7, kBlue-9};
-  //Color_t col2[pNum] = {kBlue+4, kBlue+3, kBlue+2, kBlue+1, kBlue, kBlue-4, kBlue-7, kBlue-9};
-
-  /*
-  int j = 0;
-  TString js = "";
-  for(int i =0; i<pNum; i++){
-    cout << hist2->GetXaxis()->FindBin(hpby[i]) << " " << hist2->GetXaxis()->FindBin(hpby[i+1])-1 << endl;
-    cout << hist2->GetYaxis()->FindBin(hpbx[i]) << " " << hist2->GetYaxis()->FindBin(hpbx[i+1])-1 << endl;
-    hpy[i] =  hist2->ProjectionY("hpy_"+i,hist2->GetXaxis()->FindBin(hpby[i]),hist2->GetXaxis()->FindBin(hpby[i+1])-1,pOpt);
-    hpx[i] =  hist2->ProjectionX("hpx_"+i,hist2->GetYaxis()->FindBin(hpbx[i]),hist2->GetYaxis()->FindBin(hpbx[i+1])-1,pOpt);
-  
-    hpy[i]->SetLineWidth(2);
-    hpy[i]->SetLineColor(col1[i]);   
-    hpx[i]->SetLineWidth(2);
-    hpx[i]->SetLineColor(col2[i]);   
-
-    if(hpy[i]->Integral()<0.00001) cout << "hpy[i]->Integral() of " << i << ": " << hpy[i]->Integral() << endl;
-    if(hpx[i]->Integral()<0.00001) cout << "hpx[i]->Integral() of " << i << ": " << hpx[i]->Integral() << endl;
-    hpy[i]->Scale(1./hpy[i]->Integral());
-    hpx[i]->Scale(1./hpx[i]->Integral());
-    
-     hpy[i]->GetYaxis()->SetRangeUser(0, .2);
-     hpx[i]->GetYaxis()->SetRangeUser(0, .4);
-     }
-  */
 
   hpy[0] =  hist2->ProjectionY("hpy_0",1,3);
   hpy[1] =  hist2->ProjectionY("hpy_1",4,6);
@@ -628,22 +673,6 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   leghpy->Draw();
   C_hpx->cd();
   leghpx->Draw();
-
-
-
-
-  /*
-    TF2 *f2 = new TF2("f2","([0]*exp([1]*x)+[2]*exp([3]*x))*exp([4]*x*y)",0.,500.,0.,pi);
-    TF2 *f2 = new TF2("f2","([0]*exp([1]*x))*exp([2]*x*y)",50.,500.,0.,pi);
-    f2->SetParameters(7500, -1./20.,-1./10.);
-    hist3->Fit("f2");
-    C_temp->cd();
-    hist3->Draw();
-    f2->Draw("cont1 same");
-    cout<< "h3 integral: " << hist3->Integral() << endl;
-    cout<< "f2 all int: " << f2->Integral(50.,500.,0.,3.14) << endl;;
-    cout<< "f2 sig int: " << f2->Integral(150.,500.,0.3,3.14) << endl;
-  */
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////
@@ -724,6 +753,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   double fitmax = borderv1b;
   for(int i =0; i<fitNum; i++){
     if( histB->GetBinContent(i+1,1)==0 || histA->GetBinContent(i+1,1)==0 ){
+      assert(0);
       fitmax =  xaxA->GetBinCenter(i+1); 
     }
    
@@ -748,7 +778,6 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   yaxG->SetRangeUser(.2,2.5);
   gr1->SetMarkerStyle(4);
   gr1->Draw("AP");
-
 
   TLegend *legF = new TLegend(.19,.15,.3,.3);
   legF->AddEntry(gr1, "Data", "P");
@@ -783,17 +812,18 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
     cout << gr0x[i] << " " << gr1x[i] << endl;
   }
   
-  ////////////////////////////////////////////
-  /////////////EXPONENTIAL FIT////////////////
-  ////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////
+  // FIT /////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////
+
   TF1 *fexp1 = new TF1("fexp1", "[0]*exp([1]*x)", borderv1a, borderv1b);
   fexp1->SetParameters(3.0, -1.0/30.0);
   fexp1->SetParLimits(1,-1000.0,0.);
-
+  
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
   fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
   fexp2->SetParLimits(2,0.,1000);
-
+  
   //TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv1b);
   //fexp3->SetParameters(4.0, -1.0/20.0, 4.0, -1.0/200.0);  
   //fexp3->SetParLimits(1,-1000,0);
@@ -808,12 +838,15 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp2->SetLineColor(kBlack);
   fexp3->SetLineColor(kRed);
   
+  //FIT Exponential////////////////////////////////////////////////////////////
   assert(!( gr1->Fit("fexp1", "R0") ));
   cout << endl;
   cout << endl;
-  fexp1->Draw("SAME");   
+  //fexp1->Draw("SAME");   
   TString secondFitFail = "";
   //if(gr1->Fit("fexp2", "R0")) secondFitFail = "FAILED!";
+  
+  //FIT Exponential+c//////////////////////////////////////////////////////////
   assert(!( gr1->Fit("fexp2", "R0") ));
   cout << "Chisquare: " << fexp2->GetChisquare() << endl;
   cout << "NDF: " << fexp2->GetNDF() << endl;
@@ -821,15 +854,11 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   cout << endl;
   cout << endl;
   fexp2->Draw("SAME");
-  gr1->Fit("fexp3", "R0");
-  fexp3->Draw("SAME"); 
- 
-  
-  //  C_temp->cd();
-  // fexp1->Draw();
-  // fexp2->Draw("SAME");
-  //fexp3->Draw("SAME");
 
+  //FIT another one///////////////////////////////////////////////////////////
+  //gr1->Fit("fexp3", "R0");
+  //fexp3->Draw("SAME"); 
+ 
   Double_t par_exp[2];
   fexp1->GetParameters(par_exp);
   Double_t par_exp2[3];  
@@ -849,7 +878,6 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp2b->SetLineColor(kBlack);
   fexp3b->SetLineColor(kRed);
 
-  
   TPaveText *pt_exp = new TPaveText(.25, .7, .88, .88, "NDC");
   TString par_exp0 = "";
   par_exp0+=par_exp[0];
@@ -878,12 +906,14 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   pt_exp->AddText( "Fit (red) = "+par_exp3_0+" *exp( "+par_exp3_1+"*x)+"+par_exp3_2+" *exp( "+par_exp3_3+"*x)");
   //  pt_exp->Draw();
   
-  //add fit to C_extrap
+  //add fit(s) to C_extrap///////
   C_extrap->cd();
-  fexp1b->Draw("SAME");
+  //fexp1b->Draw("SAME");
   fexp2b->Draw("SAME");
-  fexp3b->Draw("SAME");
+  //fexp3b->Draw("SAME");
  
+
+
   ////////////////////////////////////////////////
   ///   Calculate estimate with uncertainty   ////
   ////////////////////////////////////////////////
@@ -910,7 +940,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
     double ratiox_exp = par_exp[0]*exp(par_exp[1]*xvalue);
     double exp_contribution = ratiox_exp*(histD->GetBinContent(i,1));
  
-    //calculate error squared for exponential
+    //calculate error squared for exponential -- not sure this is correct since noticed mistake in december 2010
     double ext_serror_exp_t = 0;
     ext_serror_exp_t += exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0))   *   exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(0));
     ext_serror_exp_t += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1))   *   par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(histD->GetBinContent(i,1))*(fexp1->GetParError(1));
@@ -980,9 +1010,6 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	unbinnedEstimate+=weight*(par_exp[0]*exp(par_exp[1]*xvalue));
 	unbinnedEstimate2+=weight*(par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2]);
 	
-	//ext_serror_exp_t += par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(weight)*xError *  par_exp[0]*par_exp[1]*exp(par_exp[1]*xvalue)*(weight)*xError;
-	//ext_serror_exp2_t += par_exp2[0]*par_exp2[1]*exp(par_exp2[1]*xvalue)*(weight)*xError *  par_exp2[0]*par_exp2[1]*exp(par_exp2[1]*xvalue)*(weight)*xError;
-     
 	//correct exp error
 	ext_serror_exp_p0 += exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(0)) ; 
 	ext_serror_exp_p1 += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(1)) ; 
@@ -1028,8 +1055,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   cout << "hD integral: " << histD->Integral() << endl; 
   cout << "nD: " << nD << " +- " << nD_error << endl;
   cout << "nC: " << nC << " +- " << nC_error << endl;
-  cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl; 
   cout << "Unbinned exponential+constant extended estimate for nC: " << unbinnedEstimate2 << " +- " << ext_error_unBinexp2 << " " << secondFitFail << endl; 
+  //cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl; 
   //cout <<   "Binned exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
   //cout << "beforeAngular: " << beforeAngular;
   cout << "Dfrac: " << Dfrac/nD << endl;
@@ -1056,6 +1083,19 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   hist3->Write();
   histDm->Write();
   histUL->Write();
+
+  histA->Write();
+  histB->Write();
+  histAm->Write();
+  histAd->Write();
+  histBd->Write();
+  histAmd->Write();
+  histAs->Write();
+  histBs->Write();
+  histAms->Write();
+  histASM->Write();
+  histBSM->Write();
+  histAmSM->Write();
 
   C_ABCD->Write();
   C_hist1->Write();
@@ -1088,73 +1128,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
 
 void analyzeFillABCD(){
-
-  TString type = "pfpf";
-
-  //first settings
-  /*
-  double *array0 = doAnalyzeFillABCD(type, 0, 30, 150, 8, false);
-  double *array1 = doAnalyzeFillABCD(type, 0, 50, 150, 8, false);  
-  double *array2 = doAnalyzeFillABCD(type, 0, 70, 150, 8, false);
-  double *array3 = doAnalyzeFillABCD(type, 0, 90, 150, 8, false);
-  double *array4 = doAnalyzeFillABCD(type, 0, 50, 140, 8, false); 
-  double *array5 = doAnalyzeFillABCD(type, 0, 50, 130, 8, false);
-  double *array6 = doAnalyzeFillABCD(type, 0, 50, 150, 5, false);
-  double *array7 = doAnalyzeFillABCD(type, 0, 50, 150, 12, false);
-  double *array8 = doAnalyzeFillABCD(type, 2, 50, 150, 6, false);
-  */ 
-
-  /*
-  double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 8, false);
-  double *array1 = doAnalyzeFillABCD(type, 0, 20, 90, 8, false);  
-  double *array2 = doAnalyzeFillABCD(type, 0, 40, 90, 8, false);
-  double *array3 = doAnalyzeFillABCD(type, 0, 50, 90, 8, false);
-  double *array4 = doAnalyzeFillABCD(type, 0, 60, 90, 8, false); 
-  double *array5 = doAnalyzeFillABCD(type, 0, 40, 100, 8, false);
-  double *array6 = doAnalyzeFillABCD(type, 0, 40, 110, 8, false);
-  double *array7 = doAnalyzeFillABCD(type, 0, 40, 90, 16, false);
-  */
   
-
-  /*
-  //note_dec2010
-  double *array0 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false, "0");
-  double *array1 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false, "1");
-  double *array2 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "2");
-  double *array3 = doAnalyzeFillABCD(type, 0, 50, 90, 10, false, "3");
-  double *array4 = doAnalyzeFillABCD(type, 0, 60, 90, 10, false, "4");
-  double *array5 = doAnalyzeFillABCD(type, 0, 40, 70, 10, false, "5");
-  double *array6 = doAnalyzeFillABCD(type, 0, 40, 80, 10, false, "6");
-  double *array7 = doAnalyzeFillABCD(type, 0, 40, 100, 10, false, "7");
-  double *array8 = doAnalyzeFillABCD(type, 0, 40, 110, 10, false, "8");
-  double *array9 = doAnalyzeFillABCD(type, 0, 40, 120, 10, false, "9");
-  double *array10 = doAnalyzeFillABCD(type, 0, 40, 90, 5, false, "10");
-  double *array11 = doAnalyzeFillABCD(type, 0, 40, 90, 20, false, "11");
-  double *array12 = doAnalyzeFillABCD(type, 0, 40, 110, 5, false, "12");
-  double *array13 = doAnalyzeFillABCD(type, 0, 40, 110, 20, false, "13");
-  double *array14 = doAnalyzeFillABCD(type, 0, 20, 90, 5, false, "14");
-  double *array15 = doAnalyzeFillABCD(type, 0, 20, 90, 20, false, "15");
-  */  
-
-  /*
-  //jan 6
-  double *array0 = doAnalyzeFillABCD(type, 0, 0, 80, 10, false, "0");
-  double *array1 = doAnalyzeFillABCD(type, 0, 10, 80, 10, false, "1");
-  double *array2 = doAnalyzeFillABCD(type, 0, 20, 80, 10, false, "2");
-  double *array3 = doAnalyzeFillABCD(type, 0, 30, 80, 10, false, "3");
-  double *array4 = doAnalyzeFillABCD(type, 0, 40, 80, 10, false, "4");
-  double *array5 = doAnalyzeFillABCD(type, 0, 50, 80, 10, false, "5");
-  double *array6 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "6");
-  double *array7 = doAnalyzeFillABCD(type, 0, 10, 90, 10, false, "7");
-  double *array8 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false, "8");
-  double *array9 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false, "9");
-  double *array10 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "10");
-  double *array11 = doAnalyzeFillABCD(type, 0, 50, 90, 10, false, "11");
-  double *array12 = doAnalyzeFillABCD(type, 0, 0, 100, 10, false, "12");
-  double *array13 = doAnalyzeFillABCD(type, 0, 10, 100, 10, false, "13");
-  double *array14 = doAnalyzeFillABCD(type, 0, 20, 100, 10, false, "14");
-  double *array15 = doAnalyzeFillABCD(type, 0, 30, 100, 10, false, "15");
-  */
+  TString type = "pfpf";
 
   double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "0");
   double *array1 = doAnalyzeFillABCD(type, 0, 10, 90, 10, false, "1");
@@ -1169,9 +1144,6 @@ void analyzeFillABCD(){
   double *array10 = doAnalyzeFillABCD(type, 0, 10, 90, 5, false, "10");
   double *array11 = doAnalyzeFillABCD(type, 0, 10, 90, 20, false, "11");
 
-  // keep for the dfrac calculation - not needed!!
-  //double *arrayL = doAnalyzeFillABCD(type, 2, 0, 150, 6, false,"2tags");
-
   double *array1f = Dfrac(type,1);
   double *array2f = Dfrac(type,2);
   
@@ -1181,58 +1153,47 @@ void analyzeFillABCD(){
 
   cout << endl;
   cout << "nob" << endl;
-  cout << array0[0] << " +/- " << array0[1] << " , " << array0[2] << " +/- " << array0[3] << endl;
-  cout << array1[0] << " +/- " << array1[1] << " , " << array1[2] << " +/- " << array1[3] << endl;
-  cout << array2[0] << " +/- " << array2[1] << " , " << array2[2] << " +/- " << array2[3] << endl;
-  cout << array3[0] << " +/- " << array3[1] << " , " << array3[2] << " +/- " << array3[3] << endl;
-  cout << array4[0] << " +/- " << array4[1] << " , " << array4[2] << " +/- " << array4[3] << endl;
-  cout << array5[0] << " +/- " << array5[1] << " , " << array5[2] << " +/- " << array5[3] << endl;
-  cout << array6[0] << " +/- " << array6[1] << " , " << array6[2] << " +/- " << array6[3] << endl;
-  cout << array7[0] << " +/- " << array7[1] << " , " << array7[2] << " +/- " << array7[3] << endl;
-  cout << array8[0] << " +/- " << array8[1] << " , " << array8[2] << " +/- " << array8[3] << endl;
-  cout << array9[0] << " +/- " << array9[1] << " , " << array9[2] << " +/- " << array9[3] << endl;
-  cout << array10[0] << " +/- " << array10[1] << " , " << array10[2] << " +/- " << array10[3] << endl;
-  cout << array11[0] << " +/- " << array11[1] << " , " << array11[2] << " +/- " << array11[3] << endl;
-  //cout << array12[0] << " +/- " << array12[1] << " , " << array12[2] << " +/- " << array12[3] << endl;
-  //cout << array13[0] << " +/- " << array13[1] << " , " << array13[2] << " +/- " << array13[3] << endl;
-  //cout << array14[0] << " +/- " << array14[1] << " , " << array14[2] << " +/- " << array14[3] << endl;
-  //cout << array15[0] << " +/- " << array15[1] << " , " << array15[2] << " +/- " << array15[3] << endl;                                                                                                                                                                                                                       
+  cout << array0[2] << " +/- " << array0[3] << endl;
+  cout << array1[2] << " +/- " << array1[3] << endl;
+  cout << array2[2] << " +/- " << array2[3] << endl;
+  cout << array3[2] << " +/- " << array3[3] << endl;
+  cout << array4[2] << " +/- " << array4[3] << endl;
+  cout << array5[2] << " +/- " << array5[3] << endl;
+  cout << array6[2] << " +/- " << array6[3] << endl;
+  cout << array7[2] << " +/- " << array7[3] << endl;
+  cout << array8[2] << " +/- " << array8[3] << endl;
+  cout << array9[2] << " +/- " << array9[3] << endl;
+  cout << array10[2] << " +/- " << array10[3] << endl;
+  cout << array11[2] << " +/- " << array11[3] << endl;
+
   cout << endl;
   cout << "btagging 1 tag" << endl;
-  cout << array0[0]*array1f[0] << " +/- " << sqrt(array0[0]*array1f[1]*array0[0]*array1f[1]+array0[1]*array1f[0]*array0[1]*array1f[0]) << " , " << array0[2]*array1f[0] << " +/- " << sqrt(array0[2]*array1f[1]*array0[2]*array1f[1]+array0[3]*array1f[0]*array0[3]*array1f[0]) << endl;
-  cout << array1[0]*array1f[0] << " +/- " << sqrt(array1[0]*array1f[1]*array1[0]*array1f[1]+array1[1]*array1f[0]*array1[1]*array1f[0]) << " , " << array1[2]*array1f[0] << " +/- " << sqrt(array1[2]*array1f[1]*array1[2]*array1f[1]+array1[3]*array1f[0]*array1[3]*array1f[0]) << endl; 
-  cout << array2[0]*array1f[0] << " +/- " << sqrt(array2[0]*array1f[1]*array2[0]*array1f[1]+array2[1]*array1f[0]*array2[1]*array1f[0]) << " , " << array2[2]*array1f[0] << " +/- " << sqrt(array2[2]*array1f[1]*array2[2]*array1f[1]+array2[3]*array1f[0]*array2[3]*array1f[0]) << endl; 
-  cout << array3[0]*array1f[0] << " +/- " << sqrt(array3[0]*array1f[1]*array3[0]*array1f[1]+array3[1]*array1f[0]*array3[1]*array1f[0]) << " , " << array3[2]*array1f[0] << " +/- " << sqrt(array3[2]*array1f[1]*array3[2]*array1f[1]+array3[3]*array1f[0]*array3[3]*array1f[0]) << endl; 
-  cout << array4[0]*array1f[0] << " +/- " << sqrt(array4[0]*array1f[1]*array4[0]*array1f[1]+array4[1]*array1f[0]*array4[1]*array1f[0]) << " , " << array4[2]*array1f[0] << " +/- " << sqrt(array4[2]*array1f[1]*array4[2]*array1f[1]+array4[3]*array1f[0]*array4[3]*array1f[0]) << endl; 
-  cout << array5[0]*array1f[0] << " +/- " << sqrt(array5[0]*array1f[1]*array5[0]*array1f[1]+array5[1]*array1f[0]*array5[1]*array1f[0]) << " , " << array5[2]*array1f[0] << " +/- " << sqrt(array5[2]*array1f[1]*array5[2]*array1f[1]+array5[3]*array1f[0]*array5[3]*array1f[0]) << endl; 
-  cout << array6[0]*array1f[0] << " +/- " << sqrt(array6[0]*array1f[1]*array6[0]*array1f[1]+array6[1]*array1f[0]*array6[1]*array1f[0]) << " , " << array6[2]*array1f[0] << " +/- " << sqrt(array6[2]*array1f[1]*array6[2]*array1f[1]+array6[3]*array1f[0]*array6[3]*array1f[0]) << endl;
-  cout << array7[0]*array1f[0] << " +/- " << sqrt(array7[0]*array1f[1]*array7[0]*array1f[1]+array7[1]*array1f[0]*array7[1]*array1f[0]) << " , " << array7[2]*array1f[0] << " +/- " << sqrt(array7[2]*array1f[1]*array7[2]*array1f[1]+array7[3]*array1f[0]*array7[3]*array1f[0]) << endl; 
-  cout << array8[0]*array1f[0] << " +/- " << sqrt(array8[0]*array1f[1]*array8[0]*array1f[1]+array8[1]*array1f[0]*array8[1]*array1f[0]) << " , " << array8[2]*array1f[0] << " +/- " << sqrt(array8[2]*array1f[1]*array8[2]*array1f[1]+array8[3]*array1f[0]*array8[3]*array1f[0]) << endl; 
-  cout << array9[0]*array1f[0] << " +/- " << sqrt(array9[0]*array1f[1]*array9[0]*array1f[1]+array9[1]*array1f[0]*array9[1]*array1f[0]) << " , " << array9[2]*array1f[0] << " +/- " << sqrt(array9[2]*array1f[1]*array9[2]*array1f[1]+array9[3]*array1f[0]*array9[3]*array1f[0]) << endl; 
-  cout << array10[0]*array1f[0] << " +/- " << sqrt(array10[0]*array1f[1]*array10[0]*array1f[1]+array10[1]*array1f[0]*array10[1]*array1f[0]) << " , " << array10[2]*array1f[0] << " +/- " << sqrt(array10[2]*array1f[1]*array10[2]*array1f[1]+array10[3]*array1f[0]*array10[3]*array1f[0]) << endl; 
-  cout << array11[0]*array1f[0] << " +/- " << sqrt(array11[0]*array1f[1]*array11[0]*array1f[1]+array11[1]*array1f[0]*array11[1]*array1f[0]) << " , " << array11[2]*array1f[0] << " +/- " << sqrt(array11[2]*array1f[1]*array11[2]*array1f[1]+array11[3]*array1f[0]*array11[3]*array1f[0]) << endl; 
-  //cout << array12[0]*array1f[0] << " +/- " << sqrt(array12[0]*array1f[1]*array12[0]*array1f[1]+array12[1]*array1f[0]*array12[1]*array1f[0]) << " , " << array12[2]*array1f[0] << " +/- " << sqrt(array12[2]*array1f[1]*array12[2]*array1f[1]+array12[3]*array1f[0]*array12[3]*array1f[0]) << endl; 
-  //cout << array13[0]*array1f[0] << " +/- " << sqrt(array13[0]*array1f[1]*array13[0]*array1f[1]+array13[1]*array1f[0]*array13[1]*array1f[0]) << " , " << array13[2]*array1f[0] << " +/- " << sqrt(array13[2]*array1f[1]*array13[2]*array1f[1]+array13[3]*array1f[0]*array13[3]*array1f[0]) << endl; 
-  //cout << array14[0]*array1f[0] << " +/- " << sqrt(array14[0]*array1f[1]*array14[0]*array1f[1]+array14[1]*array1f[0]*array14[1]*array1f[0]) << " , " << array14[2]*array1f[0] << " +/- " << sqrt(array14[2]*array1f[1]*array14[2]*array1f[1]+array14[3]*array1f[0]*array14[3]*array1f[0]) << endl; 
-  //cout << array15[0]*array1f[0] << " +/- " << sqrt(array15[0]*array1f[1]*array15[0]*array1f[1]+array15[1]*array1f[0]*array15[1]*array1f[0]) << " , " << array15[2]*array1f[0] << " +/- " << sqrt(array15[2]*array1f[1]*array15[2]*array1f[1]+array15[3]*array1f[0]*array15[3]*array1f[0]) << endl; 
+  cout << array0[2]*array1f[0] << " +/- " << sqrt(array0[2]*array1f[1]*array0[2]*array1f[1]+array0[3]*array1f[0]*array0[3]*array1f[0]) << endl;
+  cout << array1[2]*array1f[0] << " +/- " << sqrt(array1[2]*array1f[1]*array1[2]*array1f[1]+array1[3]*array1f[0]*array1[3]*array1f[0]) << endl; 
+  cout << array2[2]*array1f[0] << " +/- " << sqrt(array2[2]*array1f[1]*array2[2]*array1f[1]+array2[3]*array1f[0]*array2[3]*array1f[0]) << endl; 
+  cout << array3[2]*array1f[0] << " +/- " << sqrt(array3[2]*array1f[1]*array3[2]*array1f[1]+array3[3]*array1f[0]*array3[3]*array1f[0]) << endl; 
+  cout << array4[2]*array1f[0] << " +/- " << sqrt(array4[2]*array1f[1]*array4[2]*array1f[1]+array4[3]*array1f[0]*array4[3]*array1f[0]) << endl; 
+  cout << array5[2]*array1f[0] << " +/- " << sqrt(array5[2]*array1f[1]*array5[2]*array1f[1]+array5[3]*array1f[0]*array5[3]*array1f[0]) << endl; 
+  cout << array6[2]*array1f[0] << " +/- " << sqrt(array6[2]*array1f[1]*array6[2]*array1f[1]+array6[3]*array1f[0]*array6[3]*array1f[0]) << endl;
+  cout << array7[2]*array1f[0] << " +/- " << sqrt(array7[2]*array1f[1]*array7[2]*array1f[1]+array7[3]*array1f[0]*array7[3]*array1f[0]) << endl; 
+  cout << array8[2]*array1f[0] << " +/- " << sqrt(array8[2]*array1f[1]*array8[2]*array1f[1]+array8[3]*array1f[0]*array8[3]*array1f[0]) << endl; 
+  cout << array9[2]*array1f[0] << " +/- " << sqrt(array9[2]*array1f[1]*array9[2]*array1f[1]+array9[3]*array1f[0]*array9[3]*array1f[0]) << endl; 
+  cout << array10[2]*array1f[0] << " +/- " << sqrt(array10[2]*array1f[1]*array10[2]*array1f[1]+array10[3]*array1f[0]*array10[3]*array1f[0]) << endl; 
+  cout << array11[2]*array1f[0] << " +/- " << sqrt(array11[2]*array1f[1]*array11[2]*array1f[1]+array11[3]*array1f[0]*array11[3]*array1f[0]) << endl; 
 
   cout << endl;
   cout << "btagging 2 tag" << endl;
-  cout << array0[0]*array2f[0] << " +/- " << sqrt(array0[0]*array2f[1]*array0[0]*array2f[1]+array0[1]*array2f[0]*array0[1]*array2f[0]) << " , " << array0[2]*array2f[0] << " +/- " << sqrt(array0[2]*array2f[1]*array0[2]*array2f[1]+array0[3]*array2f[0]*array0[3]*array2f[0]) << endl;
-  cout << array1[0]*array2f[0] << " +/- " << sqrt(array1[0]*array2f[1]*array1[0]*array2f[1]+array1[1]*array2f[0]*array1[1]*array2f[0]) << " , " << array1[2]*array2f[0] << " +/- " << sqrt(array1[2]*array2f[1]*array1[2]*array2f[1]+array1[3]*array2f[0]*array1[3]*array2f[0]) << endl;
-  cout << array2[0]*array2f[0] << " +/- " << sqrt(array2[0]*array2f[1]*array2[0]*array2f[1]+array2[1]*array2f[0]*array2[1]*array2f[0]) << " , " << array2[2]*array2f[0] << " +/- " << sqrt(array2[2]*array2f[1]*array2[2]*array2f[1]+array2[3]*array2f[0]*array2[3]*array2f[0]) << endl;
-  cout << array3[0]*array2f[0] << " +/- " << sqrt(array3[0]*array2f[1]*array3[0]*array2f[1]+array3[1]*array2f[0]*array3[1]*array2f[0]) << " , " << array3[2]*array2f[0] << " +/- " << sqrt(array3[2]*array2f[1]*array3[2]*array2f[1]+array3[3]*array2f[0]*array3[3]*array2f[0]) << endl;
-  cout << array4[0]*array2f[0] << " +/- " << sqrt(array4[0]*array2f[1]*array4[0]*array2f[1]+array4[1]*array2f[0]*array4[1]*array2f[0]) << " , " << array4[2]*array2f[0] << " +/- " << sqrt(array4[2]*array2f[1]*array4[2]*array2f[1]+array4[3]*array2f[0]*array4[3]*array2f[0]) << endl;
-  cout << array5[0]*array2f[0] << " +/- " << sqrt(array5[0]*array2f[1]*array5[0]*array2f[1]+array5[1]*array2f[0]*array5[1]*array2f[0]) << " , " << array5[2]*array2f[0] << " +/- " << sqrt(array5[2]*array2f[1]*array5[2]*array2f[1]+array5[3]*array2f[0]*array5[3]*array2f[0]) << endl;
-  cout << array6[0]*array2f[0] << " +/- " << sqrt(array6[0]*array2f[1]*array6[0]*array2f[1]+array6[1]*array2f[0]*array6[1]*array2f[0]) << " , " << array6[2]*array2f[0] << " +/- " << sqrt(array6[2]*array2f[1]*array6[2]*array2f[1]+array6[3]*array2f[0]*array6[3]*array2f[0]) << endl;
-  cout << array7[0]*array2f[0] << " +/- " << sqrt(array7[0]*array2f[1]*array7[0]*array2f[1]+array7[1]*array2f[0]*array7[1]*array2f[0]) << " , " << array7[2]*array2f[0] << " +/- " << sqrt(array7[2]*array2f[1]*array7[2]*array2f[1]+array7[3]*array2f[0]*array7[3]*array2f[0]) << endl;
-  cout << array8[0]*array2f[0] << " +/- " << sqrt(array8[0]*array2f[1]*array8[0]*array2f[1]+array8[1]*array2f[0]*array8[1]*array2f[0]) << " , " << array8[2]*array2f[0] << " +/- " << sqrt(array8[2]*array2f[1]*array8[2]*array2f[1]+array8[3]*array2f[0]*array8[3]*array2f[0]) << endl;
-  cout << array9[0]*array2f[0] << " +/- " << sqrt(array9[0]*array2f[1]*array9[0]*array2f[1]+array9[1]*array2f[0]*array9[1]*array2f[0]) << " , " << array9[2]*array2f[0] << " +/- " << sqrt(array9[2]*array2f[1]*array9[2]*array2f[1]+array9[3]*array2f[0]*array9[3]*array2f[0]) << endl;
-  cout << array10[0]*array2f[0] << " +/- " << sqrt(array10[0]*array2f[1]*array10[0]*array2f[1]+array10[1]*array2f[0]*array10[1]*array2f[0]) << " , " << array10[2]*array2f[0] << " +/- " << sqrt(array10[2]*array2f[1]*array10[2]*array2f[1]+array10[3]*array2f[0]*array10[3]*array2f[0]) << endl;
-  cout << array11[0]*array2f[0] << " +/- " << sqrt(array11[0]*array2f[1]*array11[0]*array2f[1]+array11[1]*array2f[0]*array11[1]*array2f[0]) << " , " << array11[2]*array2f[0] << " +/- " << sqrt(array11[2]*array2f[1]*array11[2]*array2f[1]+array11[3]*array2f[0]*array11[3]*array2f[0]) << endl;
-  //cout << array12[0]*array2f[0] << " +/- " << sqrt(array12[0]*array2f[1]*array12[0]*array2f[1]+array12[1]*array2f[0]*array12[1]*array2f[0]) << " , " << array12[2]*array2f[0] << " +/- " << sqrt(array12[2]*array2f[1]*array12[2]*array2f[1]+array12[3]*array2f[0]*array12[3]*array2f[0]) << endl;
-  //cout << array13[0]*array2f[0] << " +/- " << sqrt(array13[0]*array2f[1]*array13[0]*array2f[1]+array13[1]*array2f[0]*array13[1]*array2f[0]) << " , " << array13[2]*array2f[0] << " +/- " << sqrt(array13[2]*array2f[1]*array13[2]*array2f[1]+array13[3]*array2f[0]*array13[3]*array2f[0]) << endl;
-  //cout << array14[0]*array2f[0] << " +/- " << sqrt(array14[0]*array2f[1]*array14[0]*array2f[1]+array14[1]*array2f[0]*array14[1]*array2f[0]) << " , " << array14[2]*array2f[0] << " +/- " << sqrt(array14[2]*array2f[1]*array14[2]*array2f[1]+array14[3]*array2f[0]*array14[3]*array2f[0]) << endl;
-  //cout << array15[0]*array2f[0] << " +/- " << sqrt(array15[0]*array2f[1]*array15[0]*array2f[1]+array15[1]*array2f[0]*array15[1]*array2f[0]) << " , " << array15[2]*array2f[0] << " +/- " << sqrt(array15[2]*array2f[1]*array15[2]*array2f[1]+array15[3]*array2f[0]*array15[3]*array2f[0]) << endl;
-
+  cout << array0[2]*array2f[0] << " +/- " << sqrt(array0[2]*array2f[1]*array0[2]*array2f[1]+array0[3]*array2f[0]*array0[3]*array2f[0]) << endl;
+  cout << array1[2]*array2f[0] << " +/- " << sqrt(array1[2]*array2f[1]*array1[2]*array2f[1]+array1[3]*array2f[0]*array1[3]*array2f[0]) << endl;
+  cout << array2[2]*array2f[0] << " +/- " << sqrt(array2[2]*array2f[1]*array2[2]*array2f[1]+array2[3]*array2f[0]*array2[3]*array2f[0]) << endl;
+  cout << array3[2]*array2f[0] << " +/- " << sqrt(array3[2]*array2f[1]*array3[2]*array2f[1]+array3[3]*array2f[0]*array3[3]*array2f[0]) << endl;
+  cout << array4[2]*array2f[0] << " +/- " << sqrt(array4[2]*array2f[1]*array4[2]*array2f[1]+array4[3]*array2f[0]*array4[3]*array2f[0]) << endl;
+  cout << array5[2]*array2f[0] << " +/- " << sqrt(array5[2]*array2f[1]*array5[2]*array2f[1]+array5[3]*array2f[0]*array5[3]*array2f[0]) << endl;
+  cout << array6[2]*array2f[0] << " +/- " << sqrt(array6[2]*array2f[1]*array6[2]*array2f[1]+array6[3]*array2f[0]*array6[3]*array2f[0]) << endl;
+  cout << array7[2]*array2f[0] << " +/- " << sqrt(array7[2]*array2f[1]*array7[2]*array2f[1]+array7[3]*array2f[0]*array7[3]*array2f[0]) << endl;
+  cout << array8[2]*array2f[0] << " +/- " << sqrt(array8[2]*array2f[1]*array8[2]*array2f[1]+array8[3]*array2f[0]*array8[3]*array2f[0]) << endl;
+  cout << array9[2]*array2f[0] << " +/- " << sqrt(array9[2]*array2f[1]*array9[2]*array2f[1]+array9[3]*array2f[0]*array9[3]*array2f[0]) << endl;
+  cout << array10[2]*array2f[0] << " +/- " << sqrt(array10[2]*array2f[1]*array10[2]*array2f[1]+array10[3]*array2f[0]*array10[3]*array2f[0]) << endl;
+  cout << array11[2]*array2f[0] << " +/- " << sqrt(array11[2]*array2f[1]*array11[2]*array2f[1]+array11[3]*array2f[0]*array11[3]*array2f[0]) << endl;
+ 
  }

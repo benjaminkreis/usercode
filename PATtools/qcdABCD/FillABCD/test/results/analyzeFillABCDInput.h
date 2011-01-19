@@ -8,58 +8,94 @@ TChain* FormChainJosh(TString type){
   bool contamination=true;
   bool SM=true;
   bool signalC =true;
+  bool fall10 = false;
   
   cout << type << endl;
-
-  
-  if(type=="pfpf" && MC) {
-    //InputChain->Add("/cu1/kreis/ABCDtrees/ABCDtree.RA2_PF_pfMEThigh_minDP_NoInclusive_NoTrigger.ge0b.QCD.root");
-    //InputChain->Add("/cu1/kreis/ABCDtrees/22/ABCDtree.RA2_PF_pfMEThigh_minDP_NoMET_NoDeltaPhi.ge0b.QCD.root");
-    //InputChain->Add("/cu1/kreis/ABCDtrees/36/ABCDtree.RA2_PF_pfMEThigh_minDP_NoMET_NoDeltaPhi.ge0b.QCD.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.QCD.root");
-  }
-  else if(type=="pf" && MC) {
-    InputChain->Add("/cu1/kreis/ABCDtrees/ABCDtree.RA2_calo_pfMEThigh_minDP_NoInclusive_NoTrigger.ge0b.QCD.root");
-  }
-  else if(type=="tc" && MC){
-    InputChain->Add("/cu1/kreis/ABCDtrees/ABCDtree.RA2_calo_tcMEThigh_minDP_NoInclusive_NoTrigger.ge0b.QCD.root");
-  }
-  else if(type=="calo" && MC){
-    //InputChain->Add("/cu1/kreis/ABCDtrees/old/ABCDtree.RA2_calo_METhigh_minDP_NoInclusive_NoTrigger.ge0b.QCD.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/ABCDtree.RA2_calo_METhigh_minDP_NoMET_NoDeltaPhi.ge0b.QCD.root"); //QCDb for jetID event-cut
-  }
-  if(MC && contamination && type=="pfpf"){
-    /*if(signalC) InputChain->Add("/cu1/kreis/ABCDtrees/36/ABCDtree.RA2_PF_pfMEThigh_minDP_NoMET_NoDeltaPhi.ge0b.LM13.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/36/ABCDtree.RA2_PF_pfMEThigh_minDP_NoMET_NoDeltaPhi.ge0b.TTbarJets.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/36/ABCDtree.RA2_PF_pfMEThigh_minDP_NoMET_NoDeltaPhi.ge0b.WJets.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/36/ABCDtree.RA2_PF_pfMEThigh_minDP_NoMET_NoDeltaPhi.ge0b.Zinvisible.root");*/
-    if(signalC) InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.LM13.root");
-    if(SM){
-      InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tChannel.root");
-      InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tWChannel.root");
-      InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.TTbarJets.root");
-      InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.WJets.root");
-      InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.ZJets.root");
-      InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.Zinvisible.root");
-    }
-  }
-  if(MC && contamination && type=="calo"){
-    InputChain->Add("/cu1/kreis/ABCDtrees/ABCDtree.RA2_calo_METhigh_minDP_NoInclusive_NoTrigger.ge0b.Zinvisible.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/ABCDtree.RA2_calo_METhigh_minDP_NoInclusive_NoTrigger.ge0b.WJets.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/ABCDtree.RA2_calo_METhigh_minDP_NoInclusive_NoTrigger.ge0b.TTbarJets.root");
-    if(signalC) InputChain->Add("/cu1/kreis/ABCDtrees/ABCDtree.RA2_calo_METhigh_minDP_NoInclusive_NoTrigger.ge0b.LM13.root");
-  }
   
 
-  if(type=="pfpf" && data && !MC){
-    //InputChain->Add("/cu1/kreis/ABCDtrees/ABCDtree.RA2_PF_pfMEThigh_minDP_NoMET_NoDeltaPhi.ge0b.data-0.root");
-    //InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.data-0.root"); 
-    InputChain->Add("ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.data-0.root"); 
- }
+  //Spring10, kRA2
+  if(!fall10){
+    if(type=="pfpf" && MC && !data) {
+      InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.QCD.root");
+      
+      if(contamination){
+	if(signalC) InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.LM13.root");
+	if(SM){
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tChannel.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tWChannel.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.TTbarJets.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.WJets.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.ZJets.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.Zinvisible.root");
+	}
+      }
+    }//end MC
+    if(type=="pfpf" && data && !MC){
+     InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.data-0.root"); 
+     //                              InputChain->Add("ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.data-0.root"); 
+    }//end data
+  }
+  
+  //Fall10, kBaseline0
+  if(fall10){
+    if(type=="pfpf" && MC && !data) {
+      InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.QCD.root");
+      
+      if(contamination){
+	if(signalC) InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.LM13.root");
+	if(SM){
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-sChannel.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tChannel.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tWChannel.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.TTbarJets.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.WJets.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.ZJets.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.Zinvisible.root");
+	}
+      }
+    }//end MC
+    if(type=="pfpf" && data && !MC){
+      InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/");
+    }//end data 
+  }
+    
+    
 
   return InputChain;
 }
 
+
+TChain* FormChainJoshSM(TString type){
+  const TString treedirectory = "ABCDtree";
+  TChain* InputChain = new TChain(treedirectory);
+
+  bool fall10 = false;
+
+  if(!fall10){
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tChannel.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tWChannel.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.TTbarJets.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.WJets.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.ZJets.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Dec15/ABCDtree.RA2_PF_pfMEThigh_RegLep_minDP_NoMET_NoDeltaPhi.ge0b.Zinvisible.root");
+  }
+
+  if(fall10){
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-sChannel.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tChannel.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tWChannel.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.TTbarJets.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.WJets.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.ZJets.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.Zinvisible.root");
+  }
+  
+  return InputChain;
+  
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TChain* FormChain(){
 
