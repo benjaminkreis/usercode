@@ -73,18 +73,14 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   
   const int size = 12;
   const int k = 10;
-  TH1D *hrE = new TH1D("hrE", "hrE", size, -0.5, size-0.5);
   TH1D *hrEb = new TH1D("hrEb", "hrEb", size, -0.5, size-0.5);
 
-  double numE, numE_err, numE_mean=0, numE_sd=0, numE_errT=0;
   double numEb, numEb_err, numEb_mean=0, numEb_sd=0, numEb_errT=0;
   string fill1, fill2, fill3;
 
   int i =0;
-  while(inFile>>numE>>fill1>>numE_err>>fill2>>numEb>>fill3>>numEb_err){
-    //  cout << numE << " " <<numE_err<< " " <<numEb<< " " <<numEb_err<<endl;
-    hrE->Fill(i,numE);
-    hrE->SetBinError(i+1, numE_err);
+  //  while(inFile>>numE>>fill1>>numE_err>>fill2>>numEb>>fill3>>numEb_err){
+  while(inFile>>numEb>>fill3>>numEb_err){
     hrEb->Fill(i,numEb);
     hrEb->SetBinError(i+1, numEb_err);
     i++;
@@ -93,27 +89,21 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   cout << "i: " << i << endl;
   cout << "Use first " << k << " bins for mean calculation. " << endl;
   for(int j=1; j<=k; j++){
-    numE_mean+=hrE->GetBinContent(j);
     numEb_mean+=hrEb->GetBinContent(j);
-    numE_errT+=hrE->GetBinError(j);
     numEb_errT+=hrEb->GetBinError(j);
   }
-  numE_mean=numE_mean/((double)k);
   numEb_mean=numEb_mean/((double)k);
 
   for(int j=1; j<=k; j++){
-    numE_sd+=(hrE->GetBinContent(j)-numE_mean)*(hrE->GetBinContent(j)-numE_mean);
     numEb_sd+=(hrEb->GetBinContent(j)-numEb_mean)*(hrEb->GetBinContent(j)-numEb_mean);
   }
-  numE_sd=sqrt(numE_sd*1./((double)k));
   numEb_sd=sqrt(numEb_sd*1./((double)k));
+  
   //mean and standard deviation
-  // cout << "numE_mean: " << numE_mean << " +- " << numE_sd << endl;
   cout << fileName << ":" << endl;
   cout << "numEb_mean: " << numEb_mean << " +- " << numEb_sd << endl;
   cout << "true: " << trueN << " +- " << trueN_err << endl; 
-   // cout << "error prop" << endl;
-  // cout << "numE_mean: " << numE_mean << " +- " << numE_errT/((double)i) << endl;
+  // cout << "error prop" << endl;
   // cout << "numEb_mean: " << numEb_mean << " +- " << numEb_errT/((double)i) << endl;
   
 
@@ -127,19 +117,14 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   lineB->SetLineColor(kGray);
   
   TAxis *yA;
-  if(exp) yA = hrE->GetYaxis();
-  if(expc) yA =  hrEb->GetYaxis();
+  yA =  hrEb->GetYaxis();
   TAxis *xA; 
-  if(exp) xA = hrE->GetXaxis();
-  if(expc) xA =  hrEb->GetXaxis();
+  xA =  hrEb->GetXaxis();
   yA->SetRangeUser(0,ymax);
   xA->SetRangeUser(-2.0,size+1);
-  hrE->SetLineWidth(2);
-  hrE->SetLineColor(kBlue);
   hrEb->SetLineWidth(2);
   //hrEb->SetLineColor(kRed);
   
-  hrE->SetTitle(type);
   hrEb->SetTitle(type);
   yA->SetTitle("Predicted Number of QCD Events");
   //  yA->SetTitleOffset(1.2);
@@ -159,8 +144,7 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   xA->SetTitle("Fit range min-max, Number of bins");
   
   TLegend *leg = new TLegend(.17,.77,.35,.8);
-  if(exp)  leg->AddEntry(hrE, "a*exp(b*x)", "l");
-  if(expc) leg->AddEntry(hrEb, legEntry, "P");// leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
+  leg->AddEntry(hrEb, legEntry, "P");// leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
   leg->SetFillColor(0);
   leg->SetBorderSize(0);
   leg->SetLineStyle(0);
@@ -187,17 +171,10 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   text2->SetTextFont(42);
   text2->SetTextSizePixels(24);// dflt=28
   
-
-  if(exp && expc){
-    hrEb->Draw();
-    hrE->Draw("SAME");
-  }
-  if(exp && !expc) hrE->Draw();
-  if(expc && !exp) hrEb->Draw();
+  hrEb->Draw();
 
  
-  //if(expc) hrEb->Draw("SAME");
-  
+    
   // text1->Draw();
   text2->Draw();
   leg->Draw();
@@ -210,8 +187,7 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   myC->Print("multiResults/"+fileName+".pdf");
  
   
-  hrE->Clear();
-  hrEb->Clear();
+    hrEb->Clear();
 }
 
 void multi(){
@@ -219,17 +195,20 @@ void multi(){
   
   //doMulti("pfpf", "multi_pfpf_nob_36", 40, "QCD MC", "nob");
   //doMulti("pfpf", "multi_pfpf_nob_contB36", 40, "QCD+SM MC", "nob");
-  doMulti("pfpf", "multi_pfpf_nob_contBS36", 40, "QCD+SM+LM13 MC", "nob");
+  //doMulti("pfpf", "multi_pfpf_nob_contBS36", 40, "QCD+SM+LM13 MC", "nob");
   
   //doMulti("pfpf", "multi_pfpf_36_1", 13, "QCD MC", "ge1"); 
-  // doMulti("pfpf", "multi_pfpf_contB36_1", 13, "QCD+SM MC", "ge1");      
-  doMulti("pfpf", "multi_pfpf_contBS36_1", 13, "QCD+SM+LM13 MC", "ge1");
+  //doMulti("pfpf", "multi_pfpf_contB36_1", 13, "QCD+SM MC", "ge1");      
+  //doMulti("pfpf", "multi_pfpf_contBS36_1", 13, "QCD+SM+LM13 MC", "ge1");
   
   //doMulti("pfpf", "multi_pfpf_36", 2.5, "QCD MC", "ge2"); 
   //doMulti("pfpf", "multi_pfpf_contB36", 2.5, "QCC+SM MC", "ge2:); 
-  doMulti("pfpf", "multi_pfpf_contBS36", 2.5, "QCD+SM+LM13 MC", "ge2"); 
+  //doMulti("pfpf", "multi_pfpf_contBS36", 2.5, "QCD+SM+LM13 MC", "ge2"); 
   
   // doMulti("pfpf", "multi_pfpf_nob_data", 70, "Data", "data"); 
   // doMulti("pfpf", "multi_pfpf_data_1", 18, "Data", "data");
   // doMulti("pfpf", "multi_pfpf_data", 2.5, "Data", "data"); 
+
+  doMulti("pfpf", "test", 40, "Data", "data");
+
 }
