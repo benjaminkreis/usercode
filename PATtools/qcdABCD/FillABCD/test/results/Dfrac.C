@@ -13,6 +13,7 @@
 #include <cmath> 
 #include <iomanip>
 
+
 //#include "analyzeFillABCDInput.h"
 
 using namespace std;
@@ -51,9 +52,11 @@ double *Dfrac(TString joshType = "calo", int nbcut = 2){
   cout << endl;
   
   double pi=4*atan(1.0);
-  const int nbin_wide = 12;
+  //const int nbin_wide = 12;
   //  Double_t wideBinArray[nbin_wide+1]={0., 0.3, 0.6, 0.9, 1.2, 2., pi};
-  Double_t wideBinArray[nbin_wide+1]={0., 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.9, 1.2, 2., pi};
+  // Double_t wideBinArray[nbin_wide+1]={0., 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.9, 1.2, 2., pi};
+  const int nbin_wide = 5;
+  Double_t wideBinArray[nbin_wide+1]={0., 0.3, 0.6, 0.9, 1.5, pi};
   
   //TH2D* h2D = new TH2D("h2D_minDPhi", "h2D_minDPhi", nbin_wide, 0.0, pi, 2, -.5, 1.5);
   TH2D* h2D = new TH2D("h2D_minDPhi", "h2D_minDPhi", nbin_wide, wideBinArray, 2, -.5, 1.5);
@@ -84,7 +87,6 @@ double *Dfrac(TString joshType = "calo", int nbcut = 2){
   
   double x, y, MG=0., weightJosh=0.;
   int nbtags, nbjets;
- 
   TString xTitle = "MET";
   // InputChain->SetBranchAddress("minDPhi",&y);
   // InputChain->SetBranchAddress("MHT",&x);
@@ -111,6 +113,7 @@ double *Dfrac(TString joshType = "calo", int nbcut = 2){
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
     
+        
     //GET WEIGHT
     int bin = Hweight.FindBin(MG);
     double weight=Hweight.GetBinContent(bin);
@@ -118,7 +121,7 @@ double *Dfrac(TString joshType = "calo", int nbcut = 2){
 
     int pass = 0;
     if(nbtags>=nbcut)pass =1;
-  
+    
     //if(true){
     if(x>=150.0){
       //if(weight>0.0001) cout << "pass: " << pass <<  ", weight: " << weight <<", minDPhi: " << y << endl;
