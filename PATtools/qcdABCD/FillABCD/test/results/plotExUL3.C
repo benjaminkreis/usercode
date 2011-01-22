@@ -21,34 +21,34 @@ void doExtrapPlot(TString noCName = "multi_calo_nob", TString yesCName = "multi_
   gROOT->SetStyle("CMS");
 
   TFile *noCont=TFile::Open(noCName+".root","READ");
-  TH1D* grNC=(TH1D*)noCont->Get("histUL");
-  grNC->SetName("noC");
-  grNC->UseCurrentStyle();
+  TH1D* gr1=(TH1D*)noCont->Get("histUL");
+  gr1->SetName("noC");
+  gr1->UseCurrentStyle();
   
   TFile *yesCont=TFile::Open(yesCName+".root","READ");
-  TH1D* grC=(TH1D*)yesCont->Get("histUL");
-  grC->SetName("yesC");
-  grC->UseCurrentStyle();
+  TH1D* gr2=(TH1D*)yesCont->Get("histUL");
+  gr2->SetName("yesC");
+  gr2->UseCurrentStyle();
 
   TFile *Cont3=TFile::Open(Cont3Name+".root","READ");
-  TH1D* grC3=(TH1D*)Cont3->Get("histUL");
-  grC3->SetName("Cont3");
-  grC3->UseCurrentStyle();
+  TH1D* gr3=(TH1D*)Cont3->Get("histUL");
+  gr3->SetName("Cont3");
+  gr3->UseCurrentStyle();
 
-  grNC->SetMarkerColor(kRed);
-  grNC->SetLineColor(kRed);
-  grNC->SetMarkerStyle(20);
-  grNC->SetLineWidth(2);
+  gr1->SetMarkerColor(kRed);
+  gr1->SetLineColor(kRed);
+  gr1->SetMarkerStyle(20);
+  gr1->SetLineWidth(2);
 
-  grC->SetMarkerColor(kBlack);
-  grC->SetLineColor(kBlack);
-  grC->SetMarkerStyle(21);
-  grC->SetLineWidth(2);
+  gr2->SetMarkerColor(kBlack);
+  gr2->SetLineColor(kBlack);
+  gr2->SetMarkerStyle(21);
+  gr2->SetLineWidth(2);
   
-  grC3->SetMarkerColor(kBlue);
-  grC3->SetLineColor(kBlue);
-  grC3->SetMarkerStyle(22);
-  grC3->SetLineWidth(2);
+  gr3->SetMarkerColor(kBlue);
+  gr3->SetLineColor(kBlue);
+  gr3->SetMarkerStyle(22);
+  gr3->SetLineWidth(2);
 
 
   //  TCanvas *myC = new TCanvas("myC", "myC", 640, 480);                                                                                                   
@@ -56,9 +56,12 @@ void doExtrapPlot(TString noCName = "multi_calo_nob", TString yesCName = "multi_
   myC->cd();
   
   TLegend *leg = new TLegend(.19,.15,.3,.3);
-  leg->AddEntry(grNC, "QCD MC", "P");
-  leg->AddEntry(grC3, "QCD+SM MC", "P");
-  leg->AddEntry(grC, "QCD+SM+LM13 MC", "P");
+  /*  leg->AddEntry(gr1, "QCD MC", "P");
+  leg->AddEntry(gr3, "QCD+SM MC", "P");
+  leg->AddEntry(gr2, "QCD+SM+LM13 MC", "P");*/
+  leg->AddEntry(gr1, "1", "P");
+  leg->AddEntry(gr2, "2", "P");
+  leg->AddEntry(gr3, "3", "P"); 
   leg->SetFillColor(0);
   leg->SetBorderSize(0);
   leg->SetLineStyle(0);
@@ -84,22 +87,22 @@ void doExtrapPlot(TString noCName = "multi_calo_nob", TString yesCName = "multi_
   text2->SetTextFont(42);
   text2->SetTextSizePixels(24);// dflt=28 
 
-  //grNC->GetYaxis()->SetRangeUser(0.005, 1.6);
-  grNC->GetYaxis()->SetTitle("f(E_{T}^{miss})");
-  grNC->GetXaxis()->SetTitle("E_{T}^{miss} [GeV]");
-  // grNC->GetXaxis()->SetRangeUser(0,200);
-  grNC->Draw();
+  gr1->GetYaxis()->SetRangeUser(0.001, 40);
+  gr1->GetYaxis()->SetTitle("r(E_{T}^{miss})");
+  gr1->GetXaxis()->SetTitle("E_{T}^{miss} [GeV]");
+  // gr1->GetXaxis()->SetRangeUser(0,200);
+  gr1->Draw();
  
-  grC3->Draw("SAME");
-   grC->Draw("SAME");
- //text1->Draw();
+  gr3->Draw("SAME");
+  gr2->Draw("SAME");
+  //text1->Draw();
   text2->Draw();
   gPad->SetRightMargin(0.05);
   myC->SetLogy(1);
   myC->Modified();
 
-  //  grC->Draw("AP");
-  // grNC->Draw("SAME P");
+  //  gr2->Draw("AP");
+  // gr1->Draw("SAME P");
   leg->Draw();
   
   myC->Print(yesCName+".pdf");
@@ -113,8 +116,11 @@ void plotExUL3(){
   // doExtrapPlot( "plots_calo_nC", "plots_calo_yC");
   // doExtrapPlot( "plots_calo_nC", "plots_calo_yCB");
   
-  doExtrapPlot("plots_QCD", "plots_QCDBS","plots_QCDB");
+  //doExtrapPlot("plots_QCD", "plots_QCDBS","plots_QCDB");
   //doExtrapPlot("plots_QCD", "plots_QCDb");
   //doExtrapPlot("plots_data22", "plots_MC22");
   //doExtrapPlot("plots_UHH", "plots_J");
+
+  //  doExtrapPlot("plots3", "plotsAll", "plots30All");
+  doExtrapPlot("plots0", "plots5", "plots11");
 }
