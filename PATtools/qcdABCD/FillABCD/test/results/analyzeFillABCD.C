@@ -50,6 +50,23 @@ int passbtagcut(int nbtags){
   }
 }
 
+double abError(double a, double aE, double b, double bE){
+
+  double Err = 0;
+  Err = sqrt( a*a*bE*bE + b*b*aE*aE);
+
+  return Err;
+}
+
+
+double aObError(double a, double aE, double b, double bE){
+
+  double Err = 0;
+  Err = a/b*sqrt( aE*aE/(a*a)+bE*bE/(b*b) );
+
+  return Err;
+}
+
 double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv1a = 50, double borderv1b = 150, int fitNum = 6, bool verbose = false, TString fName = ""){
   cout << endl;
   if(verbose)cout << "Begin analyzeFillABCD" << endl;
@@ -62,7 +79,12 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
   bool josh=true;
   bool subtractSM =true;
+  double SMfactor = 1.0;
+  bool useHTcut = false; //assumes HT>300 has already been applied (important for extrapolation aka points in D)
+  double HTcut = 600.;
   bool drawLines=false;
+  
+  
   // int fitNum = 10; //number of bins in xL region, used to fit ratio
   int extendedNum = 21; //number of bins in xR region, used in extrapolation
   TString xLabel = "MET";
@@ -88,8 +110,9 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //double pi=4*atan(1.0);
   double pi = 3.142;
 
-  // double borderv1a=80.0;
-  // double borderv1b=140.0;
+
+  //double borderv1a=80.0;
+  //double  borderv1b=90.0;
   double borderv2a=150.0;
   double borderv2b=1000000.;
   double borderv2b_plot=450;
@@ -97,10 +120,13 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   double borderh1b=0.3;
   double borderh2a=0.3;
   double borderh2b=pi;
-  
-  double nA=0, nB=0, nC=0, nD=0, nCextra=0;
-  double nA_e=0, nB_e=0, nC_e=0, nD_e=0, nCextra_e=0; 
-  double nOutside=0;
+
+  double ConstMETCut = 250.;
+  double ConstU = 0., ConstU_e=0., ConstL=0., ConstL_e=0.;
+ 
+  double nA=0., nB=0., nC=0., nD=0., nCextra=0.;
+  double nA_e=0., nB_e=0., nC_e=0., nD_e=0., nCextra_e=0.; 
+  double nOutside=0.;
   ///////////////////
   //    CANVAS     //
   ///////////////////
@@ -128,6 +154,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_x->cd();
   TCanvas *C_temp = new TCanvas("C_temp", "C_temp", 640, 480);
   C_temp->cd();
+  TCanvas *C_temp2 = new TCanvas("C_temp2", "C_temp2", 640, 480);
+  C_temp2->cd();
   TCanvas *C_hpy = new TCanvas("C_hpy", "C_hpy", 640, 480);
   C_hpy->cd();
   TCanvas *C_hpx = new TCanvas("C_hpx", "C_hpx", 640, 480);
@@ -155,13 +183,13 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   }
   cout << endl;
   
-  double xWidthU = (borderv2b_plot-borderv2a)/(double)extendedNum;
-  //double xWidthU = (borderv2b_plot-borderv1b)/(double)extendedNum;
-  Double_t xBinsU[extendedNum+1]; 
+  //double xWidthU = (borderv2b_plot-borderv2a)/(double)extendedNum;
+  double xWidthU = (borderv2b_plot-borderv1b)/(double)extendedNum;
+  Double_t xBinsU[extendedNum+1];
   if(verbose)cout << "xBinsU: ";
   for(int i = 0; i<=extendedNum; i++){
-    xBinsU[i]=borderv2a+i*xWidthU;
-    //xBinsU[i]=borderv1b+i*xWidthU;
+    //xBinsU[i]=borderv2a+i*xWidthU;
+    xBinsU[i]=borderv1b+i*xWidthU;
     if(verbose)cout << xBinsU[i] << " ";
   }
   cout << endl;
@@ -276,6 +304,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   double x,y, MG=1, weightJosh;
   int nbtags=0;
   if(josh){
+    if(useHTcut) InputChain->SetBranchAddress("HT",&myHT);
     InputChain->SetBranchAddress("MET",&x);
     InputChain->SetBranchAddress("minDeltaPhiMET",&y);
     InputChain->SetBranchAddress("weight",&weightJosh);
@@ -296,7 +325,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
     //btag requirement
     bool bcontinueNow = bcontinue(nbtags, bcont);
-
+   
     if(bcontinueNow){
       
       //get weight
@@ -304,7 +333,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
       int bin = Hweight.FindBin(MG);
       double weight=Hweight.GetBinContent(bin);
       if(josh) weight=weightJosh;
-     
+      
       //histPtHat->Fill(pthat,weight);
       histPtHat->Fill(MG,weight);
       histPtHat_noW->Fill(MG);
@@ -350,16 +379,26 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	//assert(0);
       }
 
+      
+      if( (x>=ConstMETCut) && (y>=borderh2a) && (y<borderh2b) ){
+	ConstU += weight;
+	ConstU_e += weight*weight;
+      }
+      if( (x>=ConstMETCut) && (y>=borderh1a) && (y<borderh1b) ){
+	ConstL += weight;
+	ConstL_e += weight*weight;
+      }
+
 
       if( (x>=borderv2a) && (y>=borderh2a) && !Cnow ){
 	nCextra+=weight;
 	nCextra_e += weight*weight;
 	if(!Cnow && verbose) cout << "nCextra with weight = " << weight << endl;
       }
+
       if(y>=borderh1a && y<borderh1b) histL->Fill(x,weight);
       if(y>=borderh2a && y<borderh2b) histU->Fill(x,weight);
-
-
+      
       //Fill histogram A, B, C, D
       hist1->Fill(x,y, weight);
       hist2->Fill(x,y, weight);
@@ -368,27 +407,31 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
       histD->Fill(x,y, weight);
       if(Cnow) histCx->Fill(x,weight);
       if(Dnow) histDx->Fill(x,weight);
-
-      //could check ht here
-      //histA->Fill(x,y, weight);
-      //histB->Fill(x,y, weight);
-      //histAm->Fill(x,y,x*weight);
-      histAs->Fill(x,y, weight);
-      histBs->Fill(x,y, weight);
-      histAms->Fill(x,y,x*weight);
-      histAd->Fill(x,y, weight);
-      histBd->Fill(x,y, weight);
-      histAmd->Fill(x,y,x*weight);
+      
+      if(!useHTcut || myHT>HTcut){
+	//histA->Fill(x,y, weight);
+	//histB->Fill(x,y, weight);
+	//histAm->Fill(x,y,x*weight);
+	histAs->Fill(x,y, weight);
+	histBs->Fill(x,y, weight);
+	histAms->Fill(x,y,x*weight);
+	histAd->Fill(x,y, weight);
+	histBd->Fill(x,y, weight);
+	histAmd->Fill(x,y,x*weight);
+      }
       
       histDm->Fill(x,y,x*weight);
       
     }//end bcontinue
   }//end loop tree
-  
-  
+  ConstU_e = sqrt(ConstU_e);
+  ConstL_e = sqrt(ConstL_e);
+ 
+
   //SM LOOP///////////////////////////////////////
   //double xSM, ySM, weightSM;
-  if(subtractSM){
+ 
+ if(subtractSM){
     if(josh){
       InputChainSM->SetBranchAddress("MET",&x);
       InputChainSM->SetBranchAddress("minDeltaPhiMET",&y);
@@ -405,6 +448,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
       if(bcontinueNow){
 	
 	double weight = weightJosh;
+	weight=weight*SMfactor;
 	histAs->Fill(x,y, -weight);
 	histBs->Fill(x,y, -weight);
 	histAms->Fill(x,y,-x*weight);
@@ -416,7 +460,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
       }//bcontinue
       
     }
-    if(verbose)cout << "histA: " << histA->GetBinContent(3,1) << " +- "<< histA->GetBinError(3,1)<< endl;
+    if(verbose)cout << "histAd: " << histAd->GetBinContent(3,1) << " +- "<< histAd->GetBinError(3,1)<< endl;
     if(verbose)cout << "histAs: " << histAs->GetBinContent(3,1) << " +- "<< histAs->GetBinError(3,1)<< endl;
     if(verbose)cout << "histASM: " << histASM->GetBinContent(3,1)  << " +- "<< histASM->GetBinError(3,1)<< endl;
     histA=histAs;
@@ -429,6 +473,66 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
     histB=histBd;
     histAm=histAmd;
   }
+  C_temp->cd();
+  gPad->SetLogy(1);
+  TH1D* histAd_p = histAd->ProjectionX("histAd_p", 1,1,"e");
+  TH1D* histAs_p = histAs->ProjectionX("histAs_p", 1,1,"e");
+  TH1D* histASM_p = histASM->ProjectionX("histASM_p", 1,1,"e");
+  histAd_p->SetMarkerColor(kBlack);
+  histAs_p->SetMarkerColor(kBlue);
+  histASM_p->SetMarkerColor(kRed);
+  histAd_p->SetMarkerStyle(21);
+  histAs_p->SetMarkerStyle(22);
+  histASM_p->SetMarkerStyle(20);
+  histAd_p->GetYaxis()->SetRangeUser(1, 550000);
+  histAd_p->GetYaxis()->SetTitle("Events");
+  histAd_p->GetXaxis()->SetTitle(xTitle);
+  histAd_p->Draw();
+  histAs_p->Draw("SAME");
+  histASM_p->Draw("SAME");
+ 
+  TLegend *legSM = new TLegend(.58,.77,.8,.88);
+  legSM->AddEntry(histAd_p,"Data", "P");
+  legSM->AddEntry(histAs_p,"Data-SM MC", "P");
+  legSM->AddEntry(histASM_p,"SM MC", "P");
+  legSM->SetFillColor(0);
+  legSM->SetBorderSize(0);
+  legSM->SetLineStyle(0);
+  legSM->SetTextFont(42);
+  legSM->SetFillStyle(0);
+  legSM->SetTextSize(0.04);
+  legSM->Draw();
+
+  C_temp2->cd();
+  gPad->SetLogy(1);
+  TH1D* histBd_p = histBd->ProjectionX("histBd_p", 1,1,"e");
+  TH1D* histBs_p = histBs->ProjectionX("histBs_p", 1,1,"e");
+  TH1D* histBSM_p = histBSM->ProjectionX("histBSM_p", 1,1,"e");
+  histBd_p->SetMarkerColor(kBlack);
+  histBs_p->SetMarkerColor(kBlue);
+  histBSM_p->SetMarkerColor(kRed);
+  histBd_p->SetMarkerStyle(21);
+  histBs_p->SetMarkerStyle(22);
+  histBSM_p->SetMarkerStyle(20);
+  histBd_p->GetYaxis()->SetRangeUser(1, 550000);
+  histBd_p->GetYaxis()->SetTitle("Events");
+  histBd_p->GetXaxis()->SetTitle(xTitle);
+  histBd_p->Draw();
+  histBs_p->Draw("SAME");
+  histBSM_p->Draw("SAME");
+ 
+  TLegend *legSM2 = new TLegend(.58,.77,.8,.88);
+  legSM2->AddEntry(histBd_p,"Data", "P");
+  legSM2->AddEntry(histBs_p,"Data-SM MC", "P");
+  legSM2->AddEntry(histBSM_p,"SM MC", "P");
+  legSM2->SetFillColor(0);
+  legSM2->SetBorderSize(0);
+  legSM2->SetLineStyle(0);
+  legSM2->SetTextFont(42);
+  legSM2->SetFillStyle(0);
+  legSM2->SetTextSize(0.04);
+  legSM2->Draw();
+
 
 
   ////////////////////////////////////////////////////////////////////
@@ -723,14 +827,17 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   yaxG0->SetTitleOffset(1.15);
   //  xaxG0->SetRangeUser(0.001,borderv2b_plot);
   xaxG0->SetLimits(0.,borderv2b_plot);
-  yaxG0->SetRangeUser(1.e-3,2);
+  yaxG0->SetRangeUser(1.e-3,10);
   gr0->SetMarkerStyle(4);  
   gr0->Draw("AP");
   C_extrap->SetLogy(1);
   C_extrap->Modified();
+  gPad->SetRightMargin(.18);
+  gPad->Modified();
   
-  TLine* line_gr0a = new TLine(borderv1a,yaxG0->GetXmin(),borderv1a, 2); // can replace 1 with yaxG0->GetXmax()
-  TLine* line_gr0b = new TLine(borderv1b,yaxG0->GetXmin(),borderv1b, 2);
+
+  TLine* line_gr0a = new TLine(borderv1a,yaxG0->GetXmin(),borderv1a, 10); // can replace 1 with yaxG0->GetXmax()
+  TLine* line_gr0b = new TLine(borderv1b,yaxG0->GetXmin(),borderv1b, 10);
   line_gr0a->SetLineColor(kBlack);
   line_gr0b->SetLineColor(kBlack);
   line_gr0a->SetLineWidth(3);
@@ -775,7 +882,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   TAxis* yaxG = gr1->GetYaxis();
   xaxG->SetTitle(xTitle);
   yaxG->SetTitle(yTitle_ratio);
-  yaxG->SetRangeUser(.2,2.5);
+  yaxG->SetRangeUser(.1,10);
   gr1->SetMarkerStyle(4);
   gr1->Draw("AP");
 
@@ -820,10 +927,18 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp1->SetParameters(3.0, -1.0/30.0);
   fexp1->SetParLimits(1,-1000.0,0.);
   
+  bool fixConstant = false;
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
   fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
-  fexp2->SetParLimits(2,0.,1000);
-  
+    if(!fixConstant){
+    fexp2->SetParLimits(2,0.,1000);
+  }
+  else{
+    //fexp2->FixParameter(2, ConstU/ConstL);
+    fexp2->FixParameter(2,0.0728706);
+    //fexp2->SetParError(2,0.0424232);
+  }
+
   //TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv1b);
   //fexp3->SetParameters(4.0, -1.0/20.0, 4.0, -1.0/200.0);  
   //fexp3->SetParLimits(1,-1000,0);
@@ -839,7 +954,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp3->SetLineColor(kRed);
   
   //FIT Exponential////////////////////////////////////////////////////////////
-  assert(!( gr1->Fit("fexp1", "R0") ));
+   assert(!( gr1->Fit("fexp1", "R0") ));
   cout << endl;
   cout << endl;
   //fexp1->Draw("SAME");   
@@ -847,7 +962,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //if(gr1->Fit("fexp2", "R0")) secondFitFail = "FAILED!";
   
   //FIT Exponential+c//////////////////////////////////////////////////////////
-  assert(!( gr1->Fit("fexp2", "R0") ));
+   assert(!( gr1->Fit("fexp2", "R0") ));
   cout << "Chisquare: " << fexp2->GetChisquare() << endl;
   cout << "NDF: " << fexp2->GetNDF() << endl;
   cout << "Chisquare/NDF: " <<  fexp2->GetChisquare()/fexp2->GetNDF() << endl;
@@ -986,8 +1101,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
   for(int i = 1; i<=numEntries; i++){
     InputChain->GetEvent(i);
-       
-    //btag requirement
+    
+//btag requirement
     bool bcontinueNow = bcontinue(nbtags, bcont);
     
     if(bcontinueNow){
@@ -1005,7 +1120,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	double xvalue = x;
 	//double  xvalue = 90;
 	double xError=0.;
-	double eventError = weight;
+	double eventError = sqrt(weight*weight);
 	
 	unbinnedEstimate+=weight*(par_exp[0]*exp(par_exp[1]*xvalue));
 	unbinnedEstimate2+=weight*(par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2]);
@@ -1025,6 +1140,56 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
       
     }//end bcontinueNow
   }//end loop
+
+
+  if(subtractSM){
+    for(int i = 1; i<=numEntriesSM; i++){
+      InputChainSM->GetEvent(i);
+      
+      //btag requirement
+      bool bcontinueNow = bcontinue(nbtags, bcont);
+      
+      if(bcontinueNow){
+	
+	//get weight -- NEGATIVE FOR SUBTRACTION!!!
+	//int bin = Hweight.FindBin(pthat);
+	int bin = Hweight.FindBin(MG);
+	double weight=-Hweight.GetBinContent(bin);
+	if(josh) weight=-weightJosh;
+	weight=weight*SMfactor;
+	
+	
+	//if in Region D
+	if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b)){
+	  
+	  double xvalue = x;
+	  //double  xvalue = 90;
+	  double xError=0.;
+	  double eventError = sqrt(weight*weight);
+	  
+	  unbinnedEstimate+=weight*(par_exp[0]*exp(par_exp[1]*xvalue));
+	  unbinnedEstimate2+=weight*(par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2]);
+	  
+	  //correct exp error
+	  ext_serror_exp_p0 += exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(0)) ; 
+	  ext_serror_exp_p1 += par_exp[0]*xvalue*exp(par_exp[1]*xvalue)*(weight)*(fexp1->GetParError(1)) ; 
+	  ext_serror_exp_w  += par_exp[0]*exp(par_exp[1]*xvalue)*(eventError) *  par_exp[0]*exp(par_exp[1]*xvalue)*(eventError); 
+	  
+	  //correct exp+c error
+	  ext_serror_exp2_p0 += exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(0));
+	  ext_serror_exp2_p1 += par_exp2[0]*xvalue*exp(par_exp2[1]*xvalue)*(weight)*(fexp2->GetParError(1));
+	  ext_serror_exp2_p2 += weight*(fexp2->GetParError(2));
+	  ext_serror_exp2_w  += (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError) *  (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError);
+	}
+	
+	
+      }//end bcontinueNow
+    }//end loop
+
+  }
+  
+  
+
   double ext_error_unBinexp;
   double ext_error_unBinexp2;
   ext_error_unBinexp2 = sqrt(ext_serror_exp2_p0*ext_serror_exp2_p0 + ext_serror_exp2_p1*ext_serror_exp2_p1 + ext_serror_exp2_p2*ext_serror_exp2_p2 + ext_serror_exp2_w);
@@ -1060,6 +1225,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //cout <<   "Binned exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
   //cout << "beforeAngular: " << beforeAngular;
   cout << "Dfrac: " << Dfrac/nD << endl;
+  cout << "Constant: " << ConstU/ConstL << " +- " << aObError(ConstU, ConstU_e, ConstL, ConstL_e) << endl;
   cout << endl;
 
 
@@ -1106,6 +1272,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_x->Write();
   C_dp->Write();
   C_temp->Write();
+  C_temp2->Write();
   C_hpy->Write();
   C_hpx->Write();
 
@@ -1118,6 +1285,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_x->Close();
   C_dp->Close();
   C_temp->Close();
+  C_temp2->Close();
   C_hpy->Close();
   C_hpx->Close();
   
@@ -1130,9 +1298,11 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 void analyzeFillABCD(){
   
   TString type = "pfpf";
+  
 
   double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "0");
-  double *array1 = doAnalyzeFillABCD(type, 0, 10, 90, 10, false, "1");
+
+  /*double *array1 = doAnalyzeFillABCD(type, 0, 10, 90, 10, false, "1");
   double *array2 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false, "2");
   double *array3 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false, "3");
   double *array4 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "4");
@@ -1151,7 +1321,7 @@ void analyzeFillABCD(){
   cout << "dfrac 1tag: " << array1f[0] << " " << array1f[1] << endl;
   cout << "dfrac 2tag: " << array2f[0] << " " << array2f[1] << endl;
 
-  cout << endl;
+   cout << endl;
   cout << "nob" << endl;
   cout << array0[2] << " +/- " << array0[3] << endl;
   cout << array1[2] << " +/- " << array1[3] << endl;
@@ -1165,6 +1335,8 @@ void analyzeFillABCD(){
   cout << array9[2] << " +/- " << array9[3] << endl;
   cout << array10[2] << " +/- " << array10[3] << endl;
   cout << array11[2] << " +/- " << array11[3] << endl;
+
+
 
   cout << endl;
   cout << "btagging 1 tag" << endl;
@@ -1195,5 +1367,7 @@ void analyzeFillABCD(){
   cout << array9[2]*array2f[0] << " +/- " << sqrt(array9[2]*array2f[1]*array9[2]*array2f[1]+array9[3]*array2f[0]*array9[3]*array2f[0]) << endl;
   cout << array10[2]*array2f[0] << " +/- " << sqrt(array10[2]*array2f[1]*array10[2]*array2f[1]+array10[3]*array2f[0]*array10[3]*array2f[0]) << endl;
   cout << array11[2]*array2f[0] << " +/- " << sqrt(array11[2]*array2f[1]*array11[2]*array2f[1]+array11[3]*array2f[0]*array11[3]*array2f[0]) << endl;
- 
+  */  
+
+
  }
