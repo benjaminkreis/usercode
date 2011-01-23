@@ -23,6 +23,9 @@ void studyHT(){
   TH1D* histU2 = new TH1D("histU2", "histU2", 20, borderv1a, borderv2b_plot);
   TH1D* histL2 = new TH1D("histL2", "histL2", 20, borderv1a, borderv2b_plot);
   TH1D* histUL2 = new TH1D("histUL2", "histUL2", 20, borderv1a, borderv2b_plot);
+  TH1D* histU3 = new TH1D("histU3", "histU3", 20, borderv1a, borderv2b_plot);
+  TH1D* histL3 = new TH1D("histL3", "histL3", 20, borderv1a, borderv2b_plot);
+  TH1D* histUL3 = new TH1D("histUL3", "histUL3", 20, borderv1a, borderv2b_plot);
 
   h2d->Sumw2();
   ht_met1->Sumw2();
@@ -34,7 +37,10 @@ void studyHT(){
   histU2->Sumw2();
   histL2->Sumw2();
   histUL2->Sumw2();
-  
+  histU3->Sumw2();
+  histL3->Sumw2();
+  histUL3->Sumw2();
+
   ht_met1->SetLineWidth(2);
   ht_met1->SetLineWidth(2);
   ht_met1->SetLineWidth(2);
@@ -44,15 +50,17 @@ void studyHT(){
 
   histUL1->SetLineWidth(2);
   histUL2->SetLineWidth(2);
-  histUL1->SetLineColor(kBlack);
+  histUL3->SetLineWidth(2);
+  histUL1->SetLineColor(kOrange-3);
   histUL2->SetLineColor(kRed);
+  histUL3->SetLineColor(kViolet);
 
   TChain* InputChain = new TChain("ABCDtree");
   InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan22/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoHT_NoDeltaPhi.ge0b.QCD.root");
 
   double myHT, x, y, weight;
   int nbtags;
-  InputChain->SetBranchAddress("HT",&myHT);                                                                                                                                                                                    
+  InputChain->SetBranchAddress("HT",&myHT);                                                                                                                     
   InputChain->SetBranchAddress("MET",&x);
   InputChain->SetBranchAddress("minDeltaPhiMET",&y);
   InputChain->SetBranchAddress("weight",&weight);
@@ -77,10 +85,15 @@ void studyHT(){
       if(y<0.3) histL2->Fill(x,weight);
       if(y>=0.3) histU2->Fill(x,weight);
     }
+    if(myHT>900){
+      if(y<0.3) histL3->Fill(x,weight);
+      if(y>=0.3) histU3->Fill(x,weight);
+    }
 
   }
   histUL1->Divide(histU1, histL1, 1., 1.,"");
   histUL2->Divide(histU2, histL2, 1., 1.,"");
+  histUL3->Divide(histU3, histL3, 1., 1.,"");
 
   h2d->Draw();
   
@@ -90,4 +103,5 @@ void studyHT(){
 
   histUL1->Draw();
   histUL2->Draw("SAME");
+  histUL3->Draw("SAME");
 }
