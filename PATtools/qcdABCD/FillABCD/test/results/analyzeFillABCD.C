@@ -74,14 +74,14 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //gStyle->SetPalette(1);
   //gStyle->SetOptStat("nemruo");
   //gStyle->SetOptStat("");
-  gROOT->SetStyle("CMS");
+  //gROOT->SetStyle("CMS");
   gStyle->SetOptFit(1);
 
   bool josh=true;
-  bool subtractSM =true;
+  bool subtractSM =false;
   double SMfactor = 1.0;
   bool useHTcut = false; //assumes HT>300 has already been applied (important for extrapolation aka points in D)
-  double HTcut = 600.;
+  double HTcut = 300.;
   bool drawLines=false;
   
   
@@ -215,9 +215,13 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   
   TH2D* histC = new TH2D("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2D* histD = new TH2D("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
-  TH1D* histU = new TH1D("histU", "histU", 30, borderv1a, borderv2b_plot);
-  TH1D* histL = new TH1D("histL", "histL", 30, borderv1a, borderv2b_plot);
-  TH1D* histUL = new TH1D("histUL", "histUL", 30, borderv1a, borderv2b_plot);
+  //TH1D* histU = new TH1D("histU", "histU", 30, borderv1a, borderv2b_plot);
+  //TH1D* histL = new TH1D("histL", "histL", 30, borderv1a, borderv2b_plot);
+  //TH1D* histUL = new TH1D("histUL", "histUL", 30, borderv1a, borderv2b_plot);
+  TH1D* histU = new TH1D("histU", "histU", 100, 0,500);
+    TH1D* histL = new TH1D("histL", "histL", 100, 0,500);
+    TH1D* histUL = new TH1D("histUL", "histUL", 100, 0,500);
+
   TH2D* histDm = new TH2D("H_Dm", "Region Dm", extendedNum, xBinsU, 1, yBinsL);
   TH1D* histCx = new TH1D("H_Cx", "Region C - "+xLabel, extendedNum, borderv2a, borderv2b_plot);
   TH1D* histDx = new TH1D("H_Dx", "Region D - "+xLabel, extendedNum, borderv2a, borderv2b_plot);
@@ -243,6 +247,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   histx->Sumw2();
   histU->Sumw2();
   histL->Sumw2();
+  histUL->Sumw2();
   TAxis *xaxA = histA->GetXaxis();
   TAxis *xaxB = histB->GetXaxis();
   TAxis *xaxC = histC->GetXaxis();
@@ -292,6 +297,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
     InputChain = FormChain();
   }
   
+  int firstEntry = 0; 
   int numEntries = InputChain->GetEntries();
   int numEntriesSM = 0;
   if(subtractSM) numEntriesSM = InputChainSM->GetEntries();
@@ -319,7 +325,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   }
 
   double beforeAngular = 0;
-  for(int i = 0; i<numEntries; i++){
+  for(int i = firstEntry; i<numEntries; i++){
     InputChain->GetEvent(i);
     bool Anow=0, Bnow=0, Cnow=0, Dnow=0;
 
@@ -1099,7 +1105,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   double ext_serror_exp2_p1 = 0.;
   double ext_serror_exp2_p2 = 0.;
 
-  for(int i = 1; i<=numEntries; i++){
+  for(int i = firstEntry; i<numEntries; i++){
     InputChain->GetEvent(i);
     
 //btag requirement
@@ -1143,7 +1149,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
 
   if(subtractSM){
-    for(int i = 1; i<=numEntriesSM; i++){
+    for(int i = 0; i<numEntriesSM; i++){
       InputChainSM->GetEvent(i);
       
       //btag requirement
@@ -1249,6 +1255,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   hist3->Write();
   histDm->Write();
   histUL->Write();
+  histU->Write();
+  histL->Write();
 
   histA->Write();
   histB->Write();
@@ -1299,10 +1307,11 @@ void analyzeFillABCD(){
   
   TString type = "pfpf";
   
+  double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 10, true, "0");
 
-  double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "0");
-
-  /*double *array1 = doAnalyzeFillABCD(type, 0, 10, 90, 10, false, "1");
+  //double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "0");
+  /*
+  double *array1 = doAnalyzeFillABCD(type, 0, 10, 90, 10, false, "1");
   double *array2 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false, "2");
   double *array3 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false, "3");
   double *array4 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "4");
@@ -1367,7 +1376,7 @@ void analyzeFillABCD(){
   cout << array9[2]*array2f[0] << " +/- " << sqrt(array9[2]*array2f[1]*array9[2]*array2f[1]+array9[3]*array2f[0]*array9[3]*array2f[0]) << endl;
   cout << array10[2]*array2f[0] << " +/- " << sqrt(array10[2]*array2f[1]*array10[2]*array2f[1]+array10[3]*array2f[0]*array10[3]*array2f[0]) << endl;
   cout << array11[2]*array2f[0] << " +/- " << sqrt(array11[2]*array2f[1]*array11[2]*array2f[1]+array11[3]*array2f[0]*array11[3]*array2f[0]) << endl;
-  */  
+    
 
-
+  */
  }

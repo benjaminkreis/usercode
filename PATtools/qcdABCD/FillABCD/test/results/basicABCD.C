@@ -115,7 +115,7 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
   double ext_serror_exp2_p1 = 0.;
   double ext_serror_exp2_p2 = 0.;
 
-  for(int i = 1; i<=numEntries; i++){
+  for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
     
     //if in Region D
