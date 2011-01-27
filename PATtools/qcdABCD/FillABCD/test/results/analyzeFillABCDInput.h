@@ -1,14 +1,13 @@
-
 TChain* FormChainJosh(TString type){
   const TString treedirectory = "ABCDtree";
   TChain* InputChain = new TChain(treedirectory);
 
   bool data =false;
   bool MC =true;
-  bool contamination=true;
-  bool SM=true;
+  bool contamination=false;
+  bool SM=false;
   bool signalC =true;
-  bool fall10 = false;
+  bool fall10 = true;
   
   cout << type << endl;
   
@@ -39,23 +38,26 @@ TChain* FormChainJosh(TString type){
   //Fall10, kBaseline0
   if(fall10){
     if(type=="pfpf" && MC && !data) {
-      InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.QCD.root");
-      
+      InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan25/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_MuonCleaning_NoMET_NoDeltaPhi.ge0b.QCD.root");
+      //InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan24/Fall10/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.QCD.root"); //reg+working mht
+      //InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan24/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.QCD.root"); //reg+working mht, spring10
+      //InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.QCD.root"); //reg
+      //InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan22/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoHT_NoDeltaPhi.ge0b.QCD.root"); //no HT
       if(contamination){
-	if(signalC) InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.LM13.root");
+	if(signalC)InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan25/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_MuonCleaning_NoMET_NoDeltaPhi.ge0b.LM13.root");
 	if(SM){
-	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-sChannel.root");
-	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tChannel.root");
-	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tWChannel.root");
-	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.TTbarJets.root");
-	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.WJets.root");
-	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.ZJets.root");
-	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.Zinvisible.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-sChannel.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tChannel.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tWChannel.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.TTbarJets.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.WJets.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.ZJets.root");
+	  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.Zinvisible.root");
 	}
       }
     }//end MC
     if(type=="pfpf" && data && !MC){
-      InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/");
+      InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.data-0.root");
     }//end data 
   }
     
@@ -81,13 +83,13 @@ TChain* FormChainJoshSM(TString type){
   }
 
   if(fall10){
-    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-sChannel.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tChannel.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tWChannel.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.TTbarJets.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.WJets.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.ZJets.root");
-    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan17/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.Zinvisible.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-sChannel.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tChannel.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.SingleTop-tWChannel.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.TTbarJets.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.WJets.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.ZJets.root");
+    InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan20/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoDeltaPhi.ge0b.Zinvisible.root");
   }
   
   return InputChain;
