@@ -74,7 +74,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //gStyle->SetPalette(1);
   //gStyle->SetOptStat("nemruo");
   //gStyle->SetOptStat("");
-  //gROOT->SetStyle("CMS");
+  gROOT->SetStyle("CMS");
   gStyle->SetOptFit(1);
 
   bool josh=true;
@@ -121,7 +121,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   double borderh2a=0.3;
   double borderh2b=pi;
 
-  double ConstMETCut = 250.;
+  double ConstMETCut = 150.;
   double ConstU = 0., ConstU_e=0., ConstL=0., ConstL_e=0.;
  
   double nA=0., nB=0., nC=0., nD=0., nCextra=0.;
@@ -297,8 +297,9 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
     InputChain = FormChain();
   }
   
-  int firstEntry = 0; 
-  int numEntries = InputChain->GetEntries();
+  const int firstEntry = 0; 
+  //const int numEntries = 1500000;
+  const int numEntries = InputChain->GetEntries();
   int numEntriesSM = 0;
   if(subtractSM) numEntriesSM = InputChainSM->GetEntries();
   if(verbose)cout <<"numEntries: " << numEntries << endl;
@@ -919,7 +920,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   text2F->SetTextFont(42);
   text2F->SetTextSizePixels(24);// dflt=28   
   text2F->Draw();
-  legF->Draw();
+  //legF->Draw();
 
   for(int i =0; i<fitNum; i++){
     cout << gr0x[i] << " " << gr1x[i] << endl;
@@ -1147,8 +1148,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
     }//end bcontinueNow
   }//end loop
 
-
-  if(subtractSM){
+  bool dSubtract = true;
+  if(subtractSM && dSubtract){
     for(int i = 0; i<numEntriesSM; i++){
       InputChainSM->GetEvent(i);
       
