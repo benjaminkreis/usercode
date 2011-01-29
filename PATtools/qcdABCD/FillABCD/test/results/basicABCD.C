@@ -17,11 +17,26 @@
 
 using namespace std;
 
+//make sure the following things are set: cut passb function, subtractSM bool, 
+
+
+bool passb(int nbtags){
+  if(nbtags>=2){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
 
 
 double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
   bool verbose = true;
-  double pi=4*atan(1.0);
+  bool subtractSM = true;
+
+  double SMfactor = 1.0; 
+  double pi=4*atan(1.0)+.0001;
   double borderv2a=150.0;
   double borderv2b=1e10;
   double borderh1a=0.0;
@@ -51,25 +66,46 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
  
 
   TChain* InputChain = FormChainJosh("pfpf");
+  TChain* InputChainSM = 0;
+  if(subtractSM) InputChainSM = FormChainJoshSM("pfpf");
   int numEntries = InputChain->GetEntries();
+  int numEntriesSM = InputChainSM->GetEntries(); 
   if(verbose)cout <<"numEntries: " << numEntries << endl;
+  if(verbose)cout <<"numEntriesSM: " << numEntriesSM << endl;
 
   double x, y, weight;
+  double xSM, ySM, weightSM;
   int nbtags;
+  int nbtagsSM;
   InputChain->SetBranchAddress("MET",&x);
   InputChain->SetBranchAddress("minDeltaPhiMET",&y);
   InputChain->SetBranchAddress("weight",&weight);
   InputChain->SetBranchAddress("nbSSVM",&nbtags);
+  InputChainSM->SetBranchAddress("MET",&xSM);
+  InputChainSM->SetBranchAddress("minDeltaPhiMET",&ySM);
+  InputChainSM->SetBranchAddress("weight",&weightSM);
+  InputChainSM->SetBranchAddress("nbSSVM",&nbtagsSM);
 
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
+    if(!passb(nbtags)) continue;
 
     histA->Fill(x,y, weight);
     histB->Fill(x,y, weight);
     histAm->Fill(x,y,x*weight);
   }//end loop over InputChain
+ 
+  if(subtractSM){
+    for(int i = 0; i<numEntriesSM; i++){
+      InputChainSM->GetEvent(i);
+      if(!passb(nbtagsSM)) continue;
 
-  
+      histA->Fill(xSM,ySM, -weightSM*SMfactor);
+      histB->Fill(xSM,ySM, -weightSM*SMfactor);
+      histAm->Fill(xSM,ySM,-xSM*weightSM*SMfactor);
+    }
+  }
+
   ////////////////////
   //Graph to fit
   ///////////////////
@@ -117,7 +153,8 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
 
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
-    
+    if(!passb(nbtags)) continue;
+
     //if in Region D
     if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b)){
       double xvalue = x;
@@ -133,8 +170,33 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
       ext_serror_exp2_w  += (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError) *  (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError);
       
     }//end if in Region D
+    assert(x<borderv2b);
   }//end loop over InputChain
   
+  for(int i = 0; i<numEntriesSM; i++){
+    InputChainSM->GetEvent(i);
+    if(!passb(nbtagsSM)) continue;
+   
+    //if in Region D 
+    if( (xSM>=borderv2a) && (xSM<borderv2b) && (ySM>=borderh1a) && (ySM<borderh1b)){
+      double xvalue = xSM;
+      double xError=0.;
+      double eventError = weightSM*SMfactor;
+
+      unbinnedEstimate2+=-weightSM*SMfactor*(par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2]);
+
+      //terms for error prop 
+      ext_serror_exp2_p0 += exp(par_exp2[1]*xvalue)*(-weightSM*SMfactor)*(fexp2->GetParError(0));
+      ext_serror_exp2_p1 += par_exp2[0]*xvalue*exp(par_exp2[1]*xvalue)*(-weightSM*SMfactor)*(fexp2->GetParError(1));
+      ext_serror_exp2_p2 += -weightSM*SMfactor*(fexp2->GetParError(2));
+      ext_serror_exp2_w  += (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError) *  (par_exp2[0]*exp(par_exp2[1]*xvalue)+par_exp2[2])*(eventError);
+
+    }//end if in Region D 
+    assert(x<borderv2b);
+  }//end loop over InputChain      
+  
+
+
   double ext_error_unBinexp2;
   ext_error_unBinexp2 = sqrt(ext_serror_exp2_p0*ext_serror_exp2_p0 + ext_serror_exp2_p1*ext_serror_exp2_p1 + ext_serror_exp2_p2*ext_serror_exp2_p2 + ext_serror_exp2_w);  
   
