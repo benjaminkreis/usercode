@@ -17,11 +17,11 @@
 
 using namespace std;
 
-//make sure the following things are set: cut passb function, subtractSM bool, 
+//make sure the following things are set: cut passb function, subtractSM bool, SMfactor,  
 
 
 bool passb(int nbtags){
-  if(nbtags>=2){
+  if(nbtags>=0){
     return true;
   }
   else{
@@ -33,9 +33,9 @@ bool passb(int nbtags){
 
 double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
   bool verbose = true;
-  bool subtractSM = true;
-
+  bool subtractSM = false;
   double SMfactor = 1.0; 
+
   double pi=4*atan(1.0)+.0001;
   double borderv2a=150.0;
   double borderv2b=1e10;
@@ -69,7 +69,8 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
   TChain* InputChainSM = 0;
   if(subtractSM) InputChainSM = FormChainJoshSM("pfpf");
   int numEntries = InputChain->GetEntries();
-  int numEntriesSM = InputChainSM->GetEntries(); 
+  int numEntriesSM = 0;
+  if(subtractSM) numEntriesSM = InputChainSM->GetEntries(); 
   if(verbose)cout <<"numEntries: " << numEntries << endl;
   if(verbose)cout <<"numEntriesSM: " << numEntriesSM << endl;
 
@@ -81,10 +82,12 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
   InputChain->SetBranchAddress("minDeltaPhiMET",&y);
   InputChain->SetBranchAddress("weight",&weight);
   InputChain->SetBranchAddress("nbSSVM",&nbtags);
-  InputChainSM->SetBranchAddress("MET",&xSM);
-  InputChainSM->SetBranchAddress("minDeltaPhiMET",&ySM);
-  InputChainSM->SetBranchAddress("weight",&weightSM);
-  InputChainSM->SetBranchAddress("nbSSVM",&nbtagsSM);
+  if(subtractSM){
+    InputChainSM->SetBranchAddress("MET",&xSM);
+    InputChainSM->SetBranchAddress("minDeltaPhiMET",&ySM);
+    InputChainSM->SetBranchAddress("weight",&weightSM);
+    InputChainSM->SetBranchAddress("nbSSVM",&nbtagsSM);
+  }
 
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
@@ -225,12 +228,13 @@ void basicABCD(){
   double *a3 = doBasicABCD(30.,90.,10);
   double *a4 = doBasicABCD(40.,90.,10);
   double *a5 = doBasicABCD(50.,90.,10);
-  double *a6 = doBasicABCD(10.,70.,10);
-  double *a7 = doBasicABCD(10.,80.,10);
-  double *a8 = doBasicABCD(10.,100.,10);
-  double *a9 = doBasicABCD(10.,110.,10);
-  double *a10 = doBasicABCD(10.,90.,5);
-  double *a11 = doBasicABCD(10.,90.,20);
+
+  double *a6 = doBasicABCD(0.,70.,10);
+  double *a7 = doBasicABCD(0.,80.,10);
+  double *a8 = doBasicABCD(0.,100.,10);
+  double *a9 = doBasicABCD(0.,110.,10);
+  double *a10 = doBasicABCD(0.,90.,10);
+  double *a11 = doBasicABCD(0.,90.,10);
   
   cout << endl;
   cout << endl;
