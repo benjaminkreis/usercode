@@ -20,12 +20,9 @@ using namespace std;
 void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TString legEntry = "", TString tagType = ""){
   gROOT->SetStyle("CMS");
 
-  bool exp=false;
-  bool expc=true;
-  
   TString dataSet = "";
-  dataSet = "Spring10_kRA2";
-  //dataSet = "Fall10_kBaseline0";
+  //dataSet = "s10";
+  dataSet = "f10";
   
   assert(type=="pfpf");
   
@@ -34,30 +31,59 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   double trueN_factor = 1.;
   
   bool drawLines = true;
+ 
   //tagType should be nob, e1, ge1, ge2, data (no lines)
-  if(tagType=="nob"){
-    trueN =8.79075;
-    trueN_err =2.22547;
-  }
-  else if(tagType=="e1"){
-    cout << "need nums" << endl;
-  }
-  else if(tagType=="ge1"){
+  if(dataSet == "s10"){
+    if(tagType=="nob"){
+      trueN =8.79075;
+      trueN_err =2.22547;
+    }
+    else if(tagType=="e1"){
+      cout << "need nums" << endl;
+    }
+    else if(tagType=="ge1"){
       trueN = 2.35149;
       trueN_err = 1.27487;
- 
-  }
-  else if(tagType=="ge2"){
-    trueN =0.19454;
-    trueN_err =0.0775882;
-  }
-  else  if(tagType=="data"){
-    drawLines=false;
-  }
-  else{
+    }
+    else if(tagType=="ge2"){
+      trueN =0.19454;
+      trueN_err =0.0775882;
+    }
+    else  if(tagType=="data"){
+      drawLines=false;
+    }
+    else{
     cout << "invalid tagType!" << endl;
     assert(0);
+    }
   }
+  else if(dataSet == "f10"){
+    if(tagType=="nob"){
+      trueN = 5.08044;
+      trueN_err = 1.37063;
+    }
+    else if(tagType=="e1"){
+      cout << "need nums" << endl;
+    }
+    else if(tagType=="ge1"){
+     cout << "need nums" << endl;
+    }
+    else if(tagType=="ge2"){
+      cout << "need nums" << endl;
+    }
+    else  if(tagType=="data"){
+      drawLines=false;
+    }
+    else{
+      cout << "invalid tagType!" << endl;
+      assert(0);
+    }
+  }
+  else{
+    cout << "invalid dataset!" << endl;
+    assert(0);
+  }
+
   trueN = trueN*trueN_factor;
   trueN_err = trueN_err*trueN_factor;
   
@@ -79,7 +105,6 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   string fill1, fill2, fill3;
 
   int i =0;
-  //  while(inFile>>numE>>fill1>>numE_err>>fill2>>numEb>>fill3>>numEb_err){
   while(inFile>>numEb>>fill3>>numEb_err){
     hrEb->Fill(i,numEb);
     hrEb->SetBinError(i+1, numEb_err);
@@ -185,13 +210,13 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
     lineB->Draw();
   }
   myC->Print("multiResults/"+fileName+".pdf");
- 
   
-    hrEb->Clear();
+  
+  hrEb->Clear();
 }
 
 void multi(){
-
+  
   
   //doMulti("pfpf", "multi_pfpf_nob_36", 40, "QCD MC", "nob");
   //doMulti("pfpf", "multi_pfpf_nob_contB36", 40, "QCD+SM MC", "nob");
@@ -209,6 +234,19 @@ void multi(){
   // doMulti("pfpf", "multi_pfpf_data_1", 18, "Data", "data");
   // doMulti("pfpf", "multi_pfpf_data", 2.5, "Data", "data"); 
 
-  doMulti("pfpf", "test", 40, "Data", "data");
 
+  // fall10
+  //doMulti("pfpf", "multi_pfpf_nob_36", 30, "QCD MC", "nob");
+  // doMulti("pfpf", "multi_pfpf_nob_contB36", 30, "QCD+SM MC", "nob");
+  //doMulti("pfpf", "multi_pfpf_nob_contBS36", 30, "QCD+SM+LM13 MC", "nob");
+  //doMulti("pfpf", "multi_pfpf_nob_contB36sub", 30, "QCD+SM MC (w/ SM sub)", "nob");
+  //  doMulti("pfpf", "multi_pfpf_nob_contBS36sub", 30, "QCD+SM+LM13 MC (w/ SM sub)", "nob");
+
+  //doMulti("pfpf", "multi_pfpf_nob_data", 50, "Data", "data");
+  //doMulti("pfpf", "multi_pfpf_nob_datasub", 50, "Data (w/ SM sub)", "data");
+
+  //doMulti("pfpf", "multi_pfpf_nob_36fix", 20, "QCD MC (w/ fixed c)", "nob");
+  //doMulti("pfpf", "multi_pfpf_nob_contB36fix", 20, "QCD+SM MC (w/ fixed c)", "nob");
+  //doMulti("pfpf", "multi_pfpf_nob_contBS36fix", 20, "QCD+SM+LM13 MC (w/ fixed c)", "nob");
+  doMulti("pfpf", "multi_pfpf_nob_datafix",20,"Data (w/ fixed c)", "data");
 }
