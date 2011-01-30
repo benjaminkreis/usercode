@@ -215,12 +215,12 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   
   TH2D* histC = new TH2D("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2D* histD = new TH2D("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
-  //TH1D* histU = new TH1D("histU", "histU", 30, borderv1a, borderv2b_plot);
-  //TH1D* histL = new TH1D("histL", "histL", 30, borderv1a, borderv2b_plot);
-  //TH1D* histUL = new TH1D("histUL", "histUL", 30, borderv1a, borderv2b_plot);
-  TH1D* histU = new TH1D("histU", "histU", 100, 0,500);
-    TH1D* histL = new TH1D("histL", "histL", 100, 0,500);
-    TH1D* histUL = new TH1D("histUL", "histUL", 100, 0,500);
+  TH1D* histU = new TH1D("histU", "histU", 30, borderv1a, borderv2b_plot);
+  TH1D* histL = new TH1D("histL", "histL", 30, borderv1a, borderv2b_plot);
+  TH1D* histUL = new TH1D("histUL", "histUL", 30, borderv1a, borderv2b_plot);
+  //TH1D* histU = new TH1D("histU", "histU", 100, 0,500);
+  //TH1D* histL = new TH1D("histL", "histL", 100, 0,500);
+  //TH1D* histUL = new TH1D("histUL", "histUL", 100, 0,500);
 
   TH2D* histDm = new TH2D("H_Dm", "Region Dm", extendedNum, xBinsU, 1, yBinsL);
   TH1D* histCx = new TH1D("H_Cx", "Region C - "+xLabel, extendedNum, borderv2a, borderv2b_plot);
@@ -587,7 +587,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   text2->SetTextSizePixels(24);// dflt=28                  
 
   TLegend *leg = new TLegend(.58,.77,.8,.8);
-  leg->AddEntry(hist1, "QCD MC", "P");// leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
+  leg->AddEntry(hist1, "LM13 MC", "P");// leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
   leg->SetFillColor(0);
   leg->SetBorderSize(0);
   leg->SetLineStyle(0);
@@ -849,8 +849,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   line_gr0b->SetLineColor(kBlack);
   line_gr0a->SetLineWidth(3);
   line_gr0b->SetLineWidth(3);
-  line_gr0a->Draw();
-  line_gr0b->Draw();
+  //line_gr0a->Draw();
+  //line_gr0b->Draw();
   
   
   ////////////////////////
@@ -1031,7 +1031,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //add fit(s) to C_extrap///////
   C_extrap->cd();
   //fexp1b->Draw("SAME");
-  fexp2b->Draw("SAME");
+  // fexp2b->Draw("SAME");
   //fexp3b->Draw("SAME");
  
 
@@ -1308,10 +1308,9 @@ void analyzeFillABCD(){
   
   TString type = "pfpf";
   
-  double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 10, true, "0");
+  double *array00 = doAnalyzeFillABCD(type, 0, 0, 90, 10, true, "0");
 
-  //double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "0");
-  /*
+  double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "0");
   double *array1 = doAnalyzeFillABCD(type, 0, 10, 90, 10, false, "1");
   double *array2 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false, "2");
   double *array3 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false, "3");
@@ -1379,5 +1378,5 @@ void analyzeFillABCD(){
   cout << array11[2]*array2f[0] << " +/- " << sqrt(array11[2]*array2f[1]*array11[2]*array2f[1]+array11[3]*array2f[0]*array11[3]*array2f[0]) << endl;
     
 
-  */
+ 
  }
