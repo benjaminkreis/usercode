@@ -7,6 +7,8 @@
 #include "TROOT.h"
 #include "TStyle.h"
 
+#include "TMinuit.h"
+
 #include "TChain.h"
 #include "TH1D.h"
 #include "TH2D.h"
@@ -21,7 +23,7 @@ using namespace std;
 
 
 bool passb(int nbtags){
-  if(nbtags>=0){
+  if(nbtags>=1){
     return true;
   }
   else{
@@ -137,9 +139,10 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
   //////////////////
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
   fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
-  fexp2->SetParLimits(2,0.,1000);
-  assert(!( gr1->Fit("fexp2", "R0") ));
- 
+  fexp2->SetParLimits(2,-5,20);
+  assert(!( gr1->Fit("fexp2", "R0 E") ));
+  cout<<"Is at limit? "<< gMinuit->fLimset<<endl;
+
   Double_t par_exp2[3];  
   fexp2->GetParameters(par_exp2);
   
