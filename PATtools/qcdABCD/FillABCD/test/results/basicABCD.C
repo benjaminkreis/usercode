@@ -23,7 +23,7 @@ using namespace std;
 
 
 bool passb(int nbtags){
-  if(nbtags>=1){
+  if(nbtags>=2){
     return true;
   }
   else{
@@ -35,9 +35,9 @@ bool passb(int nbtags){
 
 double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
   bool verbose = true;
-  bool subtractSM = true;
-  double SMfactor = 1.5; 
-
+  bool subtractSM = false;
+  double SMfactor = 1.0; 
+  
   double pi=4*atan(1.0)+.0001;
   double borderv2a=150.0;
   double borderv2b=1e10;
@@ -222,21 +222,18 @@ void basicABCD(){
   gStyle->SetOptFit(1);
   cout << "begin basicABCD" << endl;
 
-  double *a0 = doBasicABCD(0.,80.,10);
-  double *a1 = doBasicABCD(10.,80.,10);
-  double *a2 = doBasicABCD(20.,80.,10);
-  double *a3 = doBasicABCD(30.,80.,10);
-  double *a4 = doBasicABCD(40.,80.,10);
- 
-  double *a5 = doBasicABCD(0.,60.,10);
-  double *a6 = doBasicABCD(0.,70.,10);
-  double *a7 = doBasicABCD(0.,90.,10);
-  double *a8 = doBasicABCD(0.,100.,10);
-  double *a9 = doBasicABCD(0.,110.,10);
-
-  double *a10 = doBasicABCD(20.,70.,10);
-  double *a11 = doBasicABCD(40.,90.,10);
+  double *a0 = doBasicABCD(0.,70.,10);
+  double *a1 = doBasicABCD(0.,80.,10);
+  double *a2 = doBasicABCD(0.,90.,10);
   
+  double *a3 = doBasicABCD(10.,70.,10);
+  double *a4 = doBasicABCD(10.,80.,10);
+  double *a5 = doBasicABCD(10.,90.,10);
+ 
+  double *a6 = doBasicABCD(20.,70.,10);
+  double *a7 = doBasicABCD(20.,80.,10);
+  double *a8 = doBasicABCD(20.,90.,10);
+   
   cout << endl;
   cout << endl;
   cout << "nob" << endl;
@@ -249,8 +246,4 @@ void basicABCD(){
   cout << a6[0] << " +/- " << a6[1] << endl;
   cout << a7[0] << " +/- " << a7[1] << endl;
   cout << a8[0] << " +/- " << a8[1] << endl;
-  cout << a9[0] << " +/- " << a9[1] << endl;
-  cout << a10[0] << " +/- " << a10[1] << endl;
-  cout << a11[0] << " +/- " << a11[1] << endl;
-
 }
