@@ -35,8 +35,8 @@ bool passb(int nbtags){
 
 double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
   bool verbose = true;
-  bool subtractSM = false;
-  double SMfactor = 1.0; 
+  bool subtractSM = true;
+  double SMfactor = 1.5; 
 
   double pi=4*atan(1.0)+.0001;
   double borderv2a=150.0;
@@ -200,12 +200,9 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
     }//end if in Region D 
     assert(x<borderv2b);
   }//end loop over InputChain      
-  
-
-
+    
   double ext_error_unBinexp2;
   ext_error_unBinexp2 = sqrt(ext_serror_exp2_p0*ext_serror_exp2_p0 + ext_serror_exp2_p1*ext_serror_exp2_p1 + ext_serror_exp2_p2*ext_serror_exp2_p2 + ext_serror_exp2_w);  
-  
   cout << "Unbinned exponential+constant extended estimate for nC: " << unbinnedEstimate2 << " +- " << ext_error_unBinexp2 << endl;
   
   histA->Clear();
@@ -225,19 +222,20 @@ void basicABCD(){
   gStyle->SetOptFit(1);
   cout << "begin basicABCD" << endl;
 
-  double *a0 = doBasicABCD(0.,90.,10);
-  double *a1 = doBasicABCD(10.,90.,10);
-  double *a2 = doBasicABCD(20.,90.,10);
-  double *a3 = doBasicABCD(30.,90.,10);
-  double *a4 = doBasicABCD(40.,90.,10);
-  double *a5 = doBasicABCD(50.,90.,10);
-
+  double *a0 = doBasicABCD(0.,80.,10);
+  double *a1 = doBasicABCD(10.,80.,10);
+  double *a2 = doBasicABCD(20.,80.,10);
+  double *a3 = doBasicABCD(30.,80.,10);
+  double *a4 = doBasicABCD(40.,80.,10);
+ 
+  double *a5 = doBasicABCD(0.,60.,10);
   double *a6 = doBasicABCD(0.,70.,10);
-  double *a7 = doBasicABCD(0.,80.,10);
+  double *a7 = doBasicABCD(0.,90.,10);
   double *a8 = doBasicABCD(0.,100.,10);
   double *a9 = doBasicABCD(0.,110.,10);
-  double *a10 = doBasicABCD(0.,90.,10);
-  double *a11 = doBasicABCD(0.,90.,10);
+
+  double *a10 = doBasicABCD(20.,70.,10);
+  double *a11 = doBasicABCD(40.,90.,10);
   
   cout << endl;
   cout << endl;
