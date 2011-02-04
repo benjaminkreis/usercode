@@ -78,8 +78,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   gStyle->SetOptFit(1);
 
   bool josh=true;
-  bool subtractSM =false;
-  double SMfactor = 1.0;
+  bool subtractSM =true;
+  double SMfactor = 0.7;
   bool useHTcut = false; //assumes HT>300 has already been applied (important for extrapolation aka points in D)
   double HTcut = 300.;
   bool drawLines=false;
@@ -156,10 +156,13 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_temp->cd();
   TCanvas *C_temp2 = new TCanvas("C_temp2", "C_temp2", 640, 480);
   C_temp2->cd();
+  TCanvas *C_UL = new TCanvas("C_UL", "C_UL");
+  C_UL->cd();
   TCanvas *C_hpy = new TCanvas("C_hpy", "C_hpy", 640, 480);
   C_hpy->cd();
   TCanvas *C_hpx = new TCanvas("C_hpx", "C_hpx", 640, 480);
   C_hpx->cd();
+
 
   /////////////////////////////
   //        HISTOGRAMS       //
@@ -215,12 +218,15 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   
   TH2D* histC = new TH2D("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2D* histD = new TH2D("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
-  TH1D* histU = new TH1D("histU", "histU", 30, borderv1a, borderv2b_plot);
-  TH1D* histL = new TH1D("histL", "histL", 30, borderv1a, borderv2b_plot);
-  TH1D* histUL = new TH1D("histUL", "histUL", 30, borderv1a, borderv2b_plot);
-  //TH1D* histU = new TH1D("histU", "histU", 100, 0,500);
-  //TH1D* histL = new TH1D("histL", "histL", 100, 0,500);
-  //TH1D* histUL = new TH1D("histUL", "histUL", 100, 0,500);
+  //TH1D* histU = new TH1D("histU", "histU", 30, borderv1a, borderv2b_plot);
+  //TH1D* histL = new TH1D("histL", "histL", 30, borderv1a, borderv2b_plot);
+  //TH1D* histUL = new TH1D("histUL", "histUL", 30, borderv1a, borderv2b_plot);
+  TH1D* histU = new TH1D("histU", "histU", 60,borderv1a, borderv2b_plot); 
+  TH1D* histL = new TH1D("histL", "histL", 60,borderv1a, borderv2b_plot); 
+  TH1D* histUL = new TH1D("histUL", "histUL", 60,borderv1a, borderv2b_plot); 
+  TH1D* histUSM = new TH1D("histUSM", "histUSM", 60,borderv1a, borderv2b_plot); 
+  TH1D* histLSM = new TH1D("histLSM", "histLSM", 60,borderv1a, borderv2b_plot); 
+  TH1D* histULSM = new TH1D("histULSM", "histULSM", 60,borderv1a, borderv2b_plot); 
 
   TH2D* histDm = new TH2D("H_Dm", "Region Dm", extendedNum, xBinsU, 1, yBinsL);
   TH1D* histCx = new TH1D("H_Cx", "Region C - "+xLabel, extendedNum, borderv2a, borderv2b_plot);
@@ -248,6 +254,9 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   histU->Sumw2();
   histL->Sumw2();
   histUL->Sumw2();
+  histUSM->Sumw2();
+  histLSM->Sumw2();
+  histULSM->Sumw2();
   TAxis *xaxA = histA->GetXaxis();
   TAxis *xaxB = histB->GetXaxis();
   TAxis *xaxC = histC->GetXaxis();
@@ -405,7 +414,9 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
       if(y>=borderh1a && y<borderh1b) histL->Fill(x,weight);
       if(y>=borderh2a && y<borderh2b) histU->Fill(x,weight);
-      
+      if(y>=borderh1a && y<borderh1b) histLSM->Fill(x,weight);
+      if(y>=borderh2a && y<borderh2b) histUSM->Fill(x,weight);      
+
       //Fill histogram A, B, C, D
       hist1->Fill(x,y, weight);
       hist2->Fill(x,y, weight);
@@ -463,6 +474,9 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	histASM->Fill(x,y, weight);
 	histBSM->Fill(x,y, weight);
 	histAmSM->Fill(x,y,x*weight);
+
+	if(y>=borderh1a && y<borderh1b) histLSM->Fill(x,-weight);
+	if(y>=borderh2a && y<borderh2b) histUSM->Fill(x,-weight); 
 	
       }//bcontinue
       
@@ -547,6 +561,11 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   ////////////////////////////////////////////////////////////////////
 
   histUL->Divide(histU, histL, 1., 1.,"");
+  histULSM->Divide(histUSM, histLSM, 1., 1.,"");
+  
+  C_UL->cd();
+  histUL->Draw();
+  histULSM->Draw("SAME");
   
   C_x->cd();
   histx->Draw();
@@ -894,7 +913,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   gr1->Draw("AP");
 
   TLegend *legF = new TLegend(.19,.15,.3,.3);
-  legF->AddEntry(gr1, "Data", "P");
+  legF->AddEntry(gr1, "Data - non-QCD SM MC", "P");
   legF->SetFillColor(0);
   legF->SetBorderSize(0);
   legF->SetLineStyle(0);
@@ -920,7 +939,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   text2F->SetTextFont(42);
   text2F->SetTextSizePixels(24);// dflt=28   
   text2F->Draw();
-  //legF->Draw();
+  legF->Draw();
 
   for(int i =0; i<fitNum; i++){
     cout << gr0x[i] << " " << gr1x[i] << endl;
@@ -934,7 +953,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp1->SetParameters(3.0, -1.0/30.0);
   fexp1->SetParLimits(1,-1000.0,0.);
   
-  bool fixConstant = false;
+  bool fixConstant =false;
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
   fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
     if(!fixConstant){
@@ -942,8 +961,10 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   }
   else{
     //fexp2->FixParameter(2, ConstU/ConstL);
-    fexp2->FixParameter(2,0.0728706);
+    //fexp2->FixParameter(2,0.0728706);
+    fexp2->FixParameter(2,0.);
     //fexp2->SetParError(2,0.0424232);
+  
   }
 
   //TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv1b);
@@ -1031,7 +1052,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //add fit(s) to C_extrap///////
   C_extrap->cd();
   //fexp1b->Draw("SAME");
-  // fexp2b->Draw("SAME");
+  fexp2b->Draw("SAME");
   //fexp3b->Draw("SAME");
  
 
@@ -1256,6 +1277,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   hist3->Write();
   histDm->Write();
   histUL->Write();
+  histULSM->Write();
   histU->Write();
   histL->Write();
 
@@ -1284,6 +1306,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_temp2->Write();
   C_hpy->Write();
   C_hpx->Write();
+  C_UL->Write();
 
   C_ABCD->Close();
   C_hist1->Close();
@@ -1297,7 +1320,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_temp2->Close();
   C_hpy->Close();
   C_hpx->Close();
-  
+  C_UL->Close();
+
   fout.Close();
 
   return result;
@@ -1308,20 +1332,20 @@ void analyzeFillABCD(){
   
   TString type = "pfpf";
   
-  double *array00 = doAnalyzeFillABCD(type, 0, 0, 90, 10, true, "0");
-
-  double *array0 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "0");
-  double *array1 = doAnalyzeFillABCD(type, 0, 10, 90, 10, false, "1");
-  double *array2 = doAnalyzeFillABCD(type, 0, 20, 90, 10, false, "2");
-  double *array3 = doAnalyzeFillABCD(type, 0, 30, 90, 10, false, "3");
-  double *array4 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "4");
-  double *array5 = doAnalyzeFillABCD(type, 0, 50, 90, 10, false, "5");
-  double *array6 = doAnalyzeFillABCD(type, 0, 10, 70, 10, false, "6");
-  double *array7 = doAnalyzeFillABCD(type, 0, 10, 80, 10, false, "7");
-  double *array8 = doAnalyzeFillABCD(type, 0, 10, 100, 10, false, "8");
-  double *array9 = doAnalyzeFillABCD(type, 0, 10, 110, 10, false, "9");
-  double *array10 = doAnalyzeFillABCD(type, 0, 10, 90, 5, false, "10");
-  double *array11 = doAnalyzeFillABCD(type, 0, 10, 90, 20, false, "11");
+  double *array00 = doAnalyzeFillABCD(type, 2, 10, 80, 10, true, "0");
+  return;
+  double *array0 = doAnalyzeFillABCD(type, 0, 0, 80, 10, false, "0");
+  double *array1 = doAnalyzeFillABCD(type, 0, 10, 80, 10, false, "1");
+  double *array2 = doAnalyzeFillABCD(type, 0, 20, 80, 10, false, "2");
+  double *array3 = doAnalyzeFillABCD(type, 0, 30, 80, 10, false, "3");
+  double *array4 = doAnalyzeFillABCD(type, 0, 40, 80, 10, false, "4");
+  double *array5 = doAnalyzeFillABCD(type, 0, 0, 60, 10, false, "5");
+  double *array6 = doAnalyzeFillABCD(type, 0, 0, 70, 10, false, "6");
+  double *array7 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "7");
+  double *array8 = doAnalyzeFillABCD(type, 0, 0, 100, 10, false, "8");
+  double *array9 = doAnalyzeFillABCD(type, 0, 0, 110, 10, false, "9");
+  double *array10 = doAnalyzeFillABCD(type, 0, 20, 70, 10, false, "10");
+  double *array11 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "11");
 
   double *array1f = Dfrac(type,1);
   double *array2f = Dfrac(type,2);
