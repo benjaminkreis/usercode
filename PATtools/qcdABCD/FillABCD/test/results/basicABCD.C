@@ -19,7 +19,7 @@
 
 using namespace std;
 
-//make sure the following things are set: cut passb function, subtractSM bool, SMfactor,  
+//make sure the following things are set: cut passb function, subtractSM bool, SMfactor,  and fixpar?
 
 
 bool passb(int nbtags){
@@ -35,7 +35,7 @@ bool passb(int nbtags){
 
 double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
   bool verbose = true;
-  bool subtractSM = false;
+  bool subtractSM = true;
   double SMfactor = 1.0; 
   
   double pi=4*atan(1.0)+.0001;
@@ -140,6 +140,7 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
   fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
   fexp2->SetParLimits(2,-5,20);
+  //fexp2->FixParameter(2,0.0);
   assert(!( gr1->Fit("fexp2", "R0 E") ));
   cout<<"Is at limit? "<< gMinuit->fLimset<<endl;
 
