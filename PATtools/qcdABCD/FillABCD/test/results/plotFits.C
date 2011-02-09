@@ -17,32 +17,44 @@
 using namespace std;
 
 void plotFits(){
-  gROOT->SetStyle("Plain");
-  gStyle->SetPalette(1);
-  gStyle->SetOptStat("");
-  
+  // gROOT->SetStyle("Plain");
+  // gStyle->SetPalette(1);
+  // gStyle->SetOptStat("");
+  gROOT->SetStyle("CMS");
+
+
   TCanvas *myC = new TCanvas("myC", "myC", 640,480);
 
   TFile *fileQCD=TFile::Open("plotsQCD.root","READ");
   TH1D* hQCD=(TH1D*)fileQCD->Get("histUL");
   TF1* f1=(TF1*)fileQCD->Get("fexp2b"); 
+  hQCD->UseCurrentStyle();
   hQCD->SetName("hQCD");
   hQCD->SetTitle("");
   hQCD->SetLineColor(kRed);
+  hQCD->SetMarkerColor(kRed);
   hQCD->SetLineWidth(2);
   f1->SetName("f1");
   myC->cd();
+  hQCD->GetYaxis()->SetRangeUser(1.e-3,30);
+  hQCD->GetYaxis()->SetTitle("minDPhi ratio");
+  hQCD->GetXaxis()->SetTitle("MET [GeV]");
+
   hQCD->Draw();
+  gPad->SetRightMargin(0.05);
+  myC->SetLogy(1);
+  myC->Modified();
+
 
   TFile *file1=TFile::Open("plots0.root","READ");
   TH1D* h1=(TH1D*)file1->Get("histUL");
+  h1->UseCurrentStyle();
   h1->SetLineWidth(2);
   h1->SetLineColor(kBlack);
   h1->Draw("SAME");
+ 
 
-  
-
-  const int totalN=16;
+  const int totalN=12;
   TF1* fA[totalN];
   TFile* fF[totalN];
 
@@ -60,11 +72,7 @@ void plotFits(){
  
   //  f1->Draw("SAME");
 
-  hQCD->GetYaxis()->SetRangeUser(1.e-3,30);
-  hQCD->GetYaxis()->SetTitle("minDPhi ratio");
-  hQCD->GetXaxis()->SetTitle("MET [GeV]");
-  myC->SetLogy(1);
-  myC->Modified();
+
   myC->Print("extrap16.pdf");
   
 

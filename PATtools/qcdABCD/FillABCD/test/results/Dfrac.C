@@ -58,14 +58,15 @@ double *Dfrac(TString joshType = "calo", int nbcut = 2){
   const int nbin_wide = 5;
   Double_t wideBinArray[nbin_wide+1]={0., 0.3, 0.6, 0.9, 1.5, pi};
   
+  double ymax = 0.3;
   //TH2D* h2D = new TH2D("h2D_minDPhi", "h2D_minDPhi", nbin_wide, 0.0, pi, 2, -.5, 1.5);
   TH2D* h2D = new TH2D("h2D_minDPhi", "h2D_minDPhi", nbin_wide, wideBinArray, 2, -.5, 1.5);
-  TH1D* hDpass = new TH1D("hDpass", "hDpass", 1, 0.0, .3);
-  TH1D* hDall = new TH1D("hDall", "hDall", 1, 0.0, .3);
-  TH1D* hDeff = new TH1D("hDeff", "hDeff", 1, 0.0, .3);
-  TH1D* hCpass = new TH1D("hCpass", "hCpass", 1, 0.3, pi);
-  TH1D* hCall = new TH1D("hCall", "hCall", 1, 0.3, pi);
-  TH1D* hCeff = new TH1D("hCeff", "hCeff", 1, 0.3, pi);
+  TH1D* hDpass = new TH1D("hDpass", "hDpass", 1, 0.0, ymax);
+  TH1D* hDall = new TH1D("hDall", "hDall", 1, 0.0, ymax);
+  TH1D* hDeff = new TH1D("hDeff", "hDeff", 1, 0.0, ymax);
+  TH1D* hCpass = new TH1D("hCpass", "hCpass", 1, ymax, pi);
+  TH1D* hCall = new TH1D("hCall", "hCall", 1, ymax, pi);
+  TH1D* hCeff = new TH1D("hCeff", "hCeff", 1, ymax, pi);
   // TH1D* h1pass_wide = new TH1D("h1pass_wide", "h1pass_wide", nbin_wide, 0.0, pi);
   // TH1D* h1all_wide = new TH1D("h1all_wide", "h1all_wide", nbin_wide, 0.0, pi);
   // TH1D* h1eff_wide = new TH1D("h1eff_wide", "h1eff_wide", nbin_wide, 0.0, pi);
@@ -163,7 +164,7 @@ double *Dfrac(TString joshType = "calo", int nbcut = 2){
   h1eff_wide->GetYaxis()->SetTitleOffset(1.2);
   h1eff_wide->SetTitle("b-tag cut rate after all cuts except angular cut");
   h1eff_wide->SetLineWidth(2);
-  h1eff_wide->GetYaxis()->SetRangeUser(0,.5);
+  h1eff_wide->GetYaxis()->SetRangeUser(0,.1);
   h1eff_wide->Draw();
   TLine* line1 = new TLine(0, Dfrac, pi, Dfrac);
   line1->SetLineWidth(1);

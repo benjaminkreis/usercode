@@ -1,12 +1,17 @@
 
 #include "TH2D.h"
 #include "TChain.h"
-
+#include "TROOT.h"
+#include "TStyle.h"
+#include "TCanvas.h"
+#include "TLegend.h"
 
 #include <iostream>
 using namespace std;
 
 void studyHT(){
+  gROOT->SetStyle("CMS");
+
 
   double borderv1a = 0;
   double borderv2b_plot = 500;
@@ -44,16 +49,42 @@ void studyHT(){
   ht_met1->SetLineWidth(2);
   ht_met1->SetLineWidth(2);
   ht_met1->SetLineWidth(2);
-  ht_met1->SetLineColor(kOrange-3);
-  ht_met2->SetLineColor(kRed);
-  ht_met3->SetLineColor(kViolet);
+  ht_met1->SetLineColor(kBlack);
+  ht_met2->SetLineColor(kBlue+1);
+  ht_met3->SetLineColor(kBlue-9);
+  ht_met1->SetMarkerColor(kBlack);
+  ht_met2->SetMarkerColor(kBlue+1);
+  ht_met3->SetMarkerColor(kBlue-9);
+  ht_met1->GetXaxis()->SetTitle("HT");
+  ht_met1->GetYaxis()->SetTitle("Events");
+  TLegend *legOne = new TLegend(.65,.75,.89,.89);
+  legOne->SetFillStyle(0);
+  legOne->SetFillColor(0);
+  legOne->SetBorderSize(0);
+  legOne->SetLineStyle(0);
+  legOne->AddEntry(ht_met1,"MET<120 GeV","P");
+  legOne->AddEntry(ht_met2,"150<MET<170 GeV","P");
+  legOne->AddEntry(ht_met3,"MET>200 GeV","P");
 
   histUL1->SetLineWidth(2);
   histUL2->SetLineWidth(2);
   histUL3->SetLineWidth(2);
-  histUL1->SetLineColor(kOrange-3);
-  histUL2->SetLineColor(kRed);
-  histUL3->SetLineColor(kViolet);
+  histUL1->SetLineColor(kBlack);
+  histUL2->SetLineColor(kBlue+1);
+  histUL3->SetLineColor(kBlue-9);
+  histUL1->SetMarkerColor(kBlack);
+  histUL2->SetMarkerColor(kBlue+1);
+  histUL3->SetMarkerColor(kBlue-9);
+  histUL1->GetXaxis()->SetTitle("MET");
+  histUL1->GetYaxis()->SetTitle("r(MET)");
+  TLegend *legR = new TLegend(.65,.75,.89,.89);
+  legR->SetFillStyle(0);
+  legR->SetFillColor(0);
+  legR->SetBorderSize(0);
+  legR->SetLineStyle(0);
+  legR->AddEntry(histUL1, "HT>300 GeV", "P");
+  legR->AddEntry(histUL2, "HT>600 GeV", "P");
+  legR->AddEntry(histUL3, "HT>900 GeV", "P");
 
   TChain* InputChain = new TChain("ABCDtree");
   InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan22/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoHT_NoDeltaPhi.ge0b.QCD.root");
@@ -95,13 +126,30 @@ void studyHT(){
   histUL2->Divide(histU2, histL2, 1., 1.,"");
   histUL3->Divide(histU3, histL3, 1., 1.,"");
 
-  h2d->Draw();
+  //h2d->Draw();
   
-  ht_met1->DrawNormalized();
+  TCanvas * canvasOne = new TCanvas("canvasOne", "canvasOne", 640, 480);
+  canvasOne->cd();
+  /* ht_met1->DrawNormalized();
   ht_met2->DrawNormalized("SAME");
-  ht_met3->DrawNormalized("SAME");
+  ht_met3->DrawNormalized("SAME");*/
+  ht_met1->Draw();
+  ht_met2->Draw("SAME");
+  ht_met3->Draw("SAME");
+  legOne->Draw();
+  gPad->SetRightMargin(0.05);
+  gPad->SetLogy(1);
+  gPad->Modified();
+  canvasOne->Print("HTdist_unN.pdf");
 
+  TCanvas * rCanvas = new TCanvas("rCanvas", "rCanvas", 640, 480);
+  rCanvas->cd();
   histUL1->Draw();
   histUL2->Draw("SAME");
   histUL3->Draw("SAME");
+  gPad->SetRightMargin(0.05);
+  gPad->SetLogy(1);
+  gPad->Modified();
+  legR->Draw();
+  rCanvas->Print("rMET_HT.pdf");
 }
