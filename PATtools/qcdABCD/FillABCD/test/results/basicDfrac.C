@@ -10,7 +10,7 @@ using namespace std;
 //remember to set subtractSM, SMfactor
 
 void doBasicDfrac(int nbcut = 0, TString cutType = ""){
-  bool subtractSM = true;
+  bool subtractSM = false;
   double SMfactor = 1.0;
 
   cout << "nbcut: " << cutType << nbcut << endl;

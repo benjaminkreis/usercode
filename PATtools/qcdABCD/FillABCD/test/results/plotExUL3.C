@@ -14,23 +14,23 @@
 #include <iostream>
 #include <fstream>
 
-void doExtrapPlot(TString noCName = "multi_calo_nob", TString yesCName = "multi_calo_nob_contB", TString Cont3Name="plots"){
+void doExtrapPlot(TString name1 = "multi_calo_nob", TString name2 = "multi_calo_nob_contB", TString name3="plots"){
   // gROOT->SetStyle("Plain");
   // gStyle->SetPalette(1);
   // gStyle->SetOptStat("");
   gROOT->SetStyle("CMS");
 
-  TFile *noCont=TFile::Open(noCName+".root","READ");
+  TFile *noCont=TFile::Open(name1+".root","READ");
   TH1D* gr1=(TH1D*)noCont->Get("histUL");
   gr1->SetName("noC");
   gr1->UseCurrentStyle();
   
-  TFile *yesCont=TFile::Open(yesCName+".root","READ");
+  TFile *yesCont=TFile::Open(name2+".root","READ");
   TH1D* gr2=(TH1D*)yesCont->Get("histUL");
   gr2->SetName("yesC");
   gr2->UseCurrentStyle();
 
-  TFile *Cont3=TFile::Open(Cont3Name+".root","READ");
+  TFile *Cont3=TFile::Open(name3+".root","READ");
   TH1D* gr3=(TH1D*)Cont3->Get("histUL");
   gr3->SetName("Cont3");
   gr3->UseCurrentStyle();
@@ -56,12 +56,12 @@ void doExtrapPlot(TString noCName = "multi_calo_nob", TString yesCName = "multi_
   myC->cd();
   
   TLegend *leg = new TLegend(.19,.15,.3,.3);
-  /*  leg->AddEntry(gr1, "QCD MC", "P");
-  leg->AddEntry(gr3, "QCD+SM MC", "P");
-  leg->AddEntry(gr2, "QCD+SM+LM13 MC", "P");*/
-  leg->AddEntry(gr1, "1", "P");
-  leg->AddEntry(gr2, "2", "P");
-  leg->AddEntry(gr3, "3", "P"); 
+  leg->AddEntry(gr1, "QCD MC", "P");
+  leg->AddEntry(gr2, "QCD+SM MC", "P");
+  leg->AddEntry(gr3, "QCD+SM+LM13 MC", "P");
+  //leg->AddEntry(gr1, "minDeltaPhiMET30_eta5", "P");
+  //leg->AddEntry(gr2, "minDeltaPhiMET30_eta5, idVeto", "P");
+  //leg->AddEntry(gr3, "3", "P"); 
   leg->SetFillColor(0);
   leg->SetBorderSize(0);
   leg->SetLineStyle(0);
@@ -93,19 +93,17 @@ void doExtrapPlot(TString noCName = "multi_calo_nob", TString yesCName = "multi_
   // gr1->GetXaxis()->SetRangeUser(0,200);
   gr1->Draw();
  
-  gr3->Draw("SAME");
+
   gr2->Draw("SAME");
+  gr3->Draw("SAME");
   //text1->Draw();
   text2->Draw();
   gPad->SetRightMargin(0.05);
   myC->SetLogy(1);
   myC->Modified();
-
-  //  gr2->Draw("AP");
-  // gr1->Draw("SAME P");
   leg->Draw();
   
-  myC->Print(yesCName+".pdf");
+  myC->Print(name1+".pdf");
 
 }
 
@@ -122,5 +120,13 @@ void plotExUL3(){
   //doExtrapPlot("plots_UHH", "plots_J");
 
   //  doExtrapPlot("plots3", "plotsAll", "plots30All");
-  doExtrapPlot("plots0", "plots5", "plots11");
+  // doExtrapPlot("plots0", "plots5", "plots11");
+  //doExtrapPlot("plots_jan24_30_eta5All", "plots_jan24_30_eta5All_idVeto", "plots0");
+
+  //note jan30 
+  //doExtrapPlot("plotsQCDpre", "plotsQCDSMpre", "plotsQCDSMLM13pre");
+  // doExtrapPlot("plotsQCDe1", "plotsQCDSMe1", "plotsQCDSMLM13e1");
+  //doExtrapPlot("plotsQCDge1", "plotsQCDSMge1", "plotsQCDSMLM13ge1");
+  doExtrapPlot("plotsQCDge2", "plotsQCDSMge2", "plotsQCDSMLM13ge2");
+
 }

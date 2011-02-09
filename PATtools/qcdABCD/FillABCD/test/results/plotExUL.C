@@ -12,12 +12,16 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include "tdrstyle.C"
+
 
 void doExtrapPlot(TString noCName = "multi_calo_nob", TString yesCName = "multi_calo_nob_contB"){
-  gROOT->SetStyle("Plain");
-  gStyle->SetPalette(1);
-  gStyle->SetOptStat("");
-  
+  //gROOT->SetStyle("Plain");
+  //gStyle->SetPalette(1);
+  //gStyle->SetOptStat("");
+  setTDRStyle();
+
+
   TFile *noCont=TFile::Open(noCName+".root","READ");
   TH1D* grNC=(TH1D*)noCont->Get("histUL");
   grNC->SetName("noC");
@@ -36,7 +40,8 @@ void doExtrapPlot(TString noCName = "multi_calo_nob", TString yesCName = "multi_
   leg->SetLineColor(0);
   leg->SetTextSize(0.04);
 
-  TCanvas *myC = new TCanvas("myC", "myC", 640, 480);
+  //  TCanvas *myC = new TCanvas("myC", "myC", 640, 480);
+  TCanvas *myC = new TCanvas("myC", "myC");
   myC->cd();
 
 
