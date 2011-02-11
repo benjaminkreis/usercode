@@ -9,6 +9,7 @@
 
 #include "TMinuit.h"
 
+#include "TString.h"
 #include "TChain.h"
 #include "TH1D.h"
 #include "TH2D.h"
@@ -23,7 +24,7 @@ using namespace std;
 
 
 bool passb(int nbtags){
-  if(nbtags>=2){
+  if(nbtags==1){
     return true;
   }
   else{
@@ -33,11 +34,12 @@ bool passb(int nbtags){
 
 
 
-double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
+TString *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
   bool verbose = true;
-  bool subtractSM = true;
-  double SMfactor = 1.0; 
-  
+  bool subtractSM =true;
+  double SMfactor = 1.3;
+  bool floatC =true;
+
   double pi=4*atan(1.0)+.0001;
   double borderv2a=150.0;
   double borderv2b=1e10;
@@ -111,8 +113,11 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
     }
   }
 
+
+
+
   ////////////////////
-  //Graph to fit
+  //TGraph to fit
   ///////////////////
   double gr1x[fitNum];
   double gr1y[fitNum];
@@ -134,19 +139,31 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
   TGraphErrors * gr1 = new TGraphErrors(fitNum, gr1x, gr1y, gr1x_error, gr1y_error);  
 
 
+
+
   ///////////////////
   //Fit
   //////////////////
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
   fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
-  fexp2->SetParLimits(2,-5,20);
-  //fexp2->FixParameter(2,0.0);
+  if(floatC){
+    fexp2->SetParLimits(2,-5,20);
+  }
+  else{
+    fexp2->FixParameter(2,0.0);
+  }
   assert(!( gr1->Fit("fexp2", "R0 E") ));
-  cout<<"Is at limit? "<< gMinuit->fLimset<<endl;
-
   Double_t par_exp2[3];  
   fexp2->GetParameters(par_exp2);
-  
+  TString goodFit = " problem!";
+  if(floatC){
+    if(gMinuit->fLimset==0 && gMinuit->fCstatu.Contains("SUCCESSFUL") && par_exp2[2]>0.) goodFit= "";
+  }
+  else{
+    if(gMinuit->fLimset==0 && gMinuit->fCstatu.Contains("SUCCESSFUL")) goodFit= "";
+  }
+
+
 
   ///////////////////
   //Extrap
@@ -210,9 +227,14 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
   histAm->Clear();
   histB->Clear();
 
-  double *result = new double[2];
-  result[0] = unbinnedEstimate2;
-  result[1] = ext_error_unBinexp2;
+  TString *result = new TString[3];
+  result[0] = "";
+  result[1] = "";
+  result[0] += unbinnedEstimate2;
+  result[1] += ext_error_unBinexp2;
+  result[2] = goodFit;
+  return result;
+  
 }//end doBasicABCD
 
 
@@ -223,28 +245,49 @@ void basicABCD(){
   gStyle->SetOptFit(1);
   cout << "begin basicABCD" << endl;
 
-  double *a0 = doBasicABCD(0.,70.,10);
-  double *a1 = doBasicABCD(0.,80.,10);
-  double *a2 = doBasicABCD(0.,90.,10);
+  TString *a0 = doBasicABCD(0.,70.,10);
+  TString *a1 = doBasicABCD(0.,80.,10);
+  TString *a2 = doBasicABCD(0.,90.,10);
   
-  double *a3 = doBasicABCD(10.,70.,10);
-  double *a4 = doBasicABCD(10.,80.,10);
-  double *a5 = doBasicABCD(10.,90.,10);
+  TString *a3 = doBasicABCD(10.,70.,10);
+  TString *a4 = doBasicABCD(10.,80.,10);
+  TString *a5 = doBasicABCD(10.,90.,10);
  
-  double *a6 = doBasicABCD(20.,70.,10);
-  double *a7 = doBasicABCD(20.,80.,10);
-  double *a8 = doBasicABCD(20.,90.,10);
+  TString *a6 = doBasicABCD(20.,70.,10);
+  TString *a7 = doBasicABCD(20.,80.,10);
+  TString *a8 = doBasicABCD(20.,90.,10);
    
   cout << endl;
   cout << endl;
-  cout << "nob" << endl;
-  cout << a0[0] << " +/- " << a0[1] << endl;
-  cout << a1[0] << " +/- " << a1[1] << endl;
-  cout << a2[0] << " +/- " << a2[1] << endl;
-  cout << a3[0] << " +/- " << a3[1] << endl;
-  cout << a4[0] << " +/- " << a4[1] << endl;
-  cout << a5[0] << " +/- " << a5[1] << endl;
-  cout << a6[0] << " +/- " << a6[1] << endl;
-  cout << a7[0] << " +/- " << a7[1] << endl;
-  cout << a8[0] << " +/- " << a8[1] << endl;
+  /*  cout << a0[0] << " +/- " << a0[1] << " " << a0[2] << endl; 
+  cout << a1[0] << " +/- " << a1[1] << " " << a1[2] << endl;
+  cout << a2[0] << " +/- " << a2[1] << " " << a2[2] << endl;
+  cout << a3[0] << " +/- " << a3[1] << " " << a3[2] << endl;
+  cout << a4[0] << " +/- " << a4[1] << " " << a4[2] << endl;
+  cout << a5[0] << " +/- " << a5[1] << " " << a5[2] << endl;
+  cout << a6[0] << " +/- " << a6[1] << " " << a6[2] << endl;
+  cout << a7[0] << " +/- " << a7[1] << " " << a7[2] << endl;
+  cout << a8[0] << " +/- " << a8[1] << " " << a8[2] << endl;*/
+  cout << endl;
+  cout << a0[0] << a0[2] << endl; 
+  cout << a1[0] << a1[2] << endl; 
+  cout << a2[0] << a2[2] << endl; 
+  cout << a3[0] << a3[2] << endl; 
+  cout << a4[0] << a4[2] << endl; 
+  cout << a5[0] << a5[2] << endl; 
+  cout << a6[0] << a6[2] << endl; 
+  cout << a7[0] << a7[2] << endl; 
+  cout << a8[0] << a8[2] << endl; 
+  cout << endl;
+  cout << a0[1] << a0[2] << endl; 
+  cout << a1[1] << a1[2] << endl; 
+  cout << a2[1] << a2[2] << endl; 
+  cout << a3[1] << a3[2] << endl; 
+  cout << a4[1] << a4[2] << endl; 
+  cout << a5[1] << a5[2] << endl; 
+  cout << a6[1] << a6[2] << endl; 
+  cout << a7[1] << a7[2] << endl; 
+  cout << a8[1] << a8[2] << endl; 
+
+ 
 }
