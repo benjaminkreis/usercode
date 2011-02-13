@@ -19,6 +19,7 @@
 #include "TGraphErrors.h"
 #include "TROOT.h"
 #include "TFitter.h"
+#include "TMultiGraph.h"
 #include <iostream>
 #include <vector>
 #include <exception>
@@ -33,7 +34,7 @@ using namespace std;
 
 bool bcontinue(int nbtags, int min){
   
-  if(nbtags>=min){
+  if(nbtags==min){
     return true;
   }
   else{
@@ -79,7 +80,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
   bool josh=true;
   bool subtractSM =true;
-  double SMfactor = 0.7;
+  double SMfactor =1.0;
   bool useHTcut = false; //assumes HT>300 has already been applied (important for extrapolation aka points in D)
   double HTcut = 300.;
   bool drawLines=false;
@@ -136,6 +137,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   TCanvas * C_contribute = new TCanvas("C_contribute", "Canvas contributions", 2*640, 2*480);
   C_contribute->Divide(2,2);
   C_contribute->cd(1);
+  TCanvas * C_Data = new TCanvas("C_Data", "Canvas Data");
+  C_Data->cd();
   TCanvas * C_extrap = new TCanvas("C_extrap", "Canvas ratio", 800, 700);
   C_extrap->Divide(1,1);
   C_extrap->cd(1);
@@ -448,7 +451,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
   //SM LOOP///////////////////////////////////////
   //double xSM, ySM, weightSM;
- 
+  double subtractFromD = 0;
  if(subtractSM){
     if(josh){
       InputChainSM->SetBranchAddress("MET",&x);
@@ -474,6 +477,10 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	histASM->Fill(x,y, weight);
 	histBSM->Fill(x,y, weight);
 	histAmSM->Fill(x,y,x*weight);
+	if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
+	  subtractFromD +=weight;
+	}
+
 
 	if(y>=borderh1a && y<borderh1b) histLSM->Fill(x,-weight);
 	if(y>=borderh2a && y<borderh2b) histUSM->Fill(x,-weight); 
@@ -861,6 +868,15 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   gPad->SetRightMargin(.18);
   gPad->Modified();
   
+  TLegend *legFE = new TLegend(.19,.15,.3,.3);
+  legFE->AddEntry(gr0, "QCD MC", "P");
+  legFE->SetFillColor(0);
+  legFE->SetBorderSize(0);
+  legFE->SetLineStyle(0);
+  legFE->SetTextFont(42);
+  legFE->SetFillStyle(0);
+  legFE->SetTextSize(0.04);
+  legFE->Draw();
 
   TLine* line_gr0a = new TLine(borderv1a,yaxG0->GetXmin(),borderv1a, 10); // can replace 1 with yaxG0->GetXmax()
   TLine* line_gr0b = new TLine(borderv1b,yaxG0->GetXmin(),borderv1b, 10);
@@ -877,8 +893,6 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   ////////////////////////
   cout << endl;
   if(verbose)cout << "Points for fit region:" << endl;
-  C_fit->cd();
-  C_fit->SetLogy();
   double gr1x[fitNum];
   double gr1y[fitNum];
   double gr1x_error[fitNum];
@@ -901,7 +915,32 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
     if(verbose)cout << "ratio: (" << gr1x[i] << " +- " << gr1x_error[i] <<", " << gr1y[i] << " +- " << gr1y_error[i] << ")" << endl;
   }
   cout << endl;
-  cout << endl;
+  double gr1x_raw[fitNum];
+  double gr1y_raw[fitNum];
+  double gr1x_error_raw[fitNum];
+  double gr1y_error_raw[fitNum];
+  for(int i =0; i<fitNum; i++){
+    if( histBd->GetBinContent(i+1,1)==0 || histAd->GetBinContent(i+1,1)==0 ){
+      assert(0);
+      fitmax =  xaxA->GetBinCenter(i+1);
+    }
+
+    gr1x_raw[i] = (histAmd->GetBinContent(i+1,1))/(histAd->GetBinContent(i+1,1)+histBd->GetBinContent(i+1,1));
+    gr1x_error_raw[i] = 0.;
+
+    gr1y_raw[i] = histBd->GetBinContent(i+1,1)/histAd->GetBinContent(i+1,1);
+    gr1y_error_raw[i] = gr1y[i]*sqrt((histBd->GetBinError(i+1,1)/histBd->GetBinContent(i+1,1))*(histBd->GetBinError(i+1,1)/histBd->GetBinContent(i+1,1))+
+                                 (histAd->GetBinError(i+1,1)/histAd->GetBinContent(i+1,1))*(histAd->GetBinError(i+1,1)/histAd->GetBinContent(i+1,1)));
+
+    if(verbose)cout << "ratio: (" << gr1x_raw[i] << " +- " << gr1x_error_raw[i] <<", " << gr1y_raw[i] << " +- " << gr1y_error_raw[i] << ")" << endl;
+  }
+
+
+
+
+
+
+
   TGraphErrors * gr1 = new TGraphErrors(fitNum, gr1x, gr1y, gr1x_error, gr1y_error);
   gr1->SetTitle("Fit of N_B(x)/N_A(x)");
   TAxis* xaxG = gr1->GetXaxis();
@@ -909,11 +948,34 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   xaxG->SetTitle(xTitle);
   yaxG->SetTitle(yTitle_ratio);
   yaxG->SetRangeUser(.1,10);
-  gr1->SetMarkerStyle(4);
-  gr1->Draw("AP");
+  gr1->SetMarkerStyle(22);//was 4
+  gr1->SetMarkerSize(1.2);
+
+  TGraphErrors * gr1_raw = new TGraphErrors(fitNum, gr1x_raw, gr1y_raw, gr1x_error_raw, gr1y_error_raw);
+  gr1_raw->SetMarkerStyle(21);
+  gr1_raw->SetMarkerColor(kBlue);
+  gr1_raw->SetMarkerSize(1.2);
+  
+  TMultiGraph *mg = new TMultiGraph();
+  mg->Add(gr1_raw, "P");
+  mg->Add(gr1, "P");
+  TLegend *legFR = new TLegend(.19,.15,.3,.3);
+  legFR->AddEntry(gr1_raw, "Data", "P");
+  legFR->AddEntry(gr1, "Data after MC subtraction", "P");
+  legFR->SetFillColor(0);
+  legFR->SetBorderSize(0);
+  legFR->SetLineStyle(0);
+  legFR->SetTextFont(42);
+  legFR->SetFillStyle(0);
+  legFR->SetTextSize(0.04);
+  
+  C_fit->cd();
+  C_fit->SetLogy();
+   gr1->Draw("AP");
+
 
   TLegend *legF = new TLegend(.19,.15,.3,.3);
-  legF->AddEntry(gr1, "Data - non-QCD SM MC", "P");
+  legF->AddEntry(gr1, "Data after MC subtraction", "P");
   legF->SetFillColor(0);
   legF->SetBorderSize(0);
   legF->SetLineStyle(0);
@@ -940,11 +1002,11 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   text2F->SetTextSizePixels(24);// dflt=28   
   text2F->Draw();
   legF->Draw();
-
+ 
   for(int i =0; i<fitNum; i++){
     cout << gr0x[i] << " " << gr1x[i] << endl;
   }
-  
+
   ////////////////////////////////////////////////////////////////////////////////////////
   // FIT /////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
@@ -997,11 +1059,22 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   cout << endl;
   cout << endl;
   fexp2->Draw("SAME");
-
+  C_fit->Print("fit.pdf");
   //FIT another one///////////////////////////////////////////////////////////
   //gr1->Fit("fexp3", "R0");
   //fexp3->Draw("SAME"); 
- 
+
+
+  C_Data->cd();
+  gPad->SetLogy(1);
+  mg->Draw("A");
+  mg->GetXaxis()->SetLimits(0,81);
+  mg->GetYaxis()->SetLimits(0.1,10);
+  mg->GetYaxis()->SetTitle(yTitle_ratio);
+  mg->GetXaxis()->SetTitle(xTitle);
+  fexp2->Draw("SAME");
+  legFR->Draw();
+
   Double_t par_exp[2];
   fexp1->GetParameters(par_exp);
   Double_t par_exp2[3];  
@@ -1054,7 +1127,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //fexp1b->Draw("SAME");
   fexp2b->Draw("SAME");
   //fexp3b->Draw("SAME");
- 
+  C_extrap->Print("extrap.pdf");
 
 
   ////////////////////////////////////////////////
@@ -1254,6 +1327,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //cout << "beforeAngular: " << beforeAngular;
   cout << "Dfrac: " << Dfrac/nD << endl;
   cout << "Constant: " << ConstU/ConstL << " +- " << aObError(ConstU, ConstU_e, ConstL, ConstL_e) << endl;
+  cout << "Subtract from D: " << subtractFromD << endl;
   cout << endl;
 
 
@@ -1298,6 +1372,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_hist1->Write();
   C_fit->Write();
   C_extrap->Write();
+  C_Data->Write();
   C_reweight->Write();
   C_contribute->Write();
   C_x->Write();
@@ -1312,6 +1387,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_hist1->Close();
   C_fit->Close();
   C_extrap->Close();
+  C_Data->Close();
   C_reweight->Close();
   C_contribute->Close();
   C_x->Close();
@@ -1332,7 +1408,7 @@ void analyzeFillABCD(){
   
   TString type = "pfpf";
   
-  double *array00 = doAnalyzeFillABCD(type, 2, 10, 80, 10, true, "0");
+  double *array00 = doAnalyzeFillABCD(type, 1, 0, 80, 10, true, "0");
   return;
   double *array0 = doAnalyzeFillABCD(type, 0, 0, 80, 10, false, "0");
   double *array1 = doAnalyzeFillABCD(type, 0, 10, 80, 10, false, "1");
