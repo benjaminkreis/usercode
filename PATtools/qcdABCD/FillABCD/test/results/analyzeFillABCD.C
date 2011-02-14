@@ -34,7 +34,7 @@ using namespace std;
 
 bool bcontinue(int nbtags, int min){
   
-  if(nbtags==min){
+  if(nbtags>=min){
     return true;
   }
   else{
@@ -79,10 +79,10 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   gStyle->SetOptFit(1);
 
   bool josh=true;
-  bool subtractSM =true;
+  bool subtractSM =false;
   double SMfactor =1.0;
   bool useHTcut = false; //assumes HT>300 has already been applied (important for extrapolation aka points in D)
-  double HTcut = 300.;
+  double HTcut = 500.;
   bool drawLines=false;
   
   
@@ -470,18 +470,21 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	
 	double weight = weightJosh;
 	weight=weight*SMfactor;
-	histAs->Fill(x,y, -weight);
-	histBs->Fill(x,y, -weight);
-	histAms->Fill(x,y,-x*weight);
-	
-	histASM->Fill(x,y, weight);
-	histBSM->Fill(x,y, weight);
-	histAmSM->Fill(x,y,x*weight);
+
+	if(!useHTcut || myHT>HTcut){
+	  histAs->Fill(x,y, -weight);
+	  histBs->Fill(x,y, -weight);
+	  histAms->Fill(x,y,-x*weight);
+	  
+	  histASM->Fill(x,y, weight);
+	  histBSM->Fill(x,y, weight);
+	  histAmSM->Fill(x,y,x*weight);
+	}
 	if( (x>=borderv2a) && (x<borderv2b) && (y>=borderh1a) && (y<borderh1b) ){
 	  subtractFromD +=weight;
 	}
-
-
+	
+	
 	if(y>=borderh1a && y<borderh1b) histLSM->Fill(x,-weight);
 	if(y>=borderh2a && y<borderh2b) histUSM->Fill(x,-weight); 
 	
@@ -949,12 +952,14 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   yaxG->SetTitle(yTitle_ratio);
   yaxG->SetRangeUser(.1,10);
   gr1->SetMarkerStyle(22);//was 4
-  gr1->SetMarkerSize(1.2);
+  gr1->SetMarkerSize(2);
 
   TGraphErrors * gr1_raw = new TGraphErrors(fitNum, gr1x_raw, gr1y_raw, gr1x_error_raw, gr1y_error_raw);
   gr1_raw->SetMarkerStyle(21);
   gr1_raw->SetMarkerColor(kBlue);
-  gr1_raw->SetMarkerSize(1.2);
+  gr1_raw->SetLineColor(kBlue);
+  gr1_raw->SetLineWidth(2);
+  gr1_raw->SetMarkerSize(2);
   
   TMultiGraph *mg = new TMultiGraph();
   mg->Add(gr1_raw, "P");
@@ -1019,7 +1024,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
   fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
     if(!fixConstant){
-    fexp2->SetParLimits(2,0.,1000);
+    fexp2->SetParLimits(2,-5,20);
   }
   else{
     //fexp2->FixParameter(2, ConstU/ConstL);
@@ -1052,7 +1057,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //if(gr1->Fit("fexp2", "R0")) secondFitFail = "FAILED!";
   
   //FIT Exponential+c//////////////////////////////////////////////////////////
-   assert(!( gr1->Fit("fexp2", "R0") ));
+   assert(!( gr1->Fit("fexp2", "R0 E") ));
   cout << "Chisquare: " << fexp2->GetChisquare() << endl;
   cout << "NDF: " << fexp2->GetNDF() << endl;
   cout << "Chisquare/NDF: " <<  fexp2->GetChisquare()/fexp2->GetNDF() << endl;
@@ -1067,6 +1072,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 
   C_Data->cd();
   gPad->SetLogy(1);
+  gr1->SetLineWidth(2);
+  fexp2->SetLineWidth(2);
   mg->Draw("A");
   mg->GetXaxis()->SetLimits(0,81);
   mg->GetYaxis()->SetLimits(0.1,10);
