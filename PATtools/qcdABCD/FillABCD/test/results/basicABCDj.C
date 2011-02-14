@@ -25,7 +25,7 @@ using namespace std;
 
 //make sure the following things are set: cut passb function, subtractSM bool, SMfactor,  
 
-const TString bcut = "ge1b";
+const TString bcut = "eq1b";
 
 bool passb(int nbtags){
   if (bcut == "eq1b") {
@@ -49,6 +49,7 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
   bool verbose = true;
   bool subtractSM =false;
   bool doPicture=true;
+  double HTcut = 300.0;
   //  double SMfactor = 1.0; 
 
   double NregionD = 0;
@@ -102,24 +103,27 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
   if(verbose)cout <<"numEntries: " << numEntries << endl;
   if(verbose)cout <<"numEntriesSM: " << numEntriesSM << endl;
 
-  double x, y, weight;
-  double xSM, ySM, weightSM;
+  double x, y, weight, HT;
+  double xSM, ySM, weightSM, HTSM;
   int nbtags;
   int nbtagsSM;
   InputChain->SetBranchAddress("MET",&x);
   InputChain->SetBranchAddress("minDeltaPhiMET",&y);
   InputChain->SetBranchAddress("weight",&weight);
   InputChain->SetBranchAddress("nbSSVM",&nbtags);
+  InputChain->SetBranchAddress("HT",&HT);
   if(subtractSM){
     InputChainSM->SetBranchAddress("MET",&xSM);
     InputChainSM->SetBranchAddress("minDeltaPhiMET",&ySM);
     InputChainSM->SetBranchAddress("weight",&weightSM);
     InputChainSM->SetBranchAddress("nbSSVM",&nbtagsSM);
+    InputChain->SetBranchAddress("HT",&HT);
   }
 
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
     if(!passb(nbtags)) continue;
+    if(!(HT>HTcut)) continue;
 
     histA->Fill(x,y, weight);
     histB->Fill(x,y, weight);
@@ -133,6 +137,7 @@ double *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0
     for(int i = 0; i<numEntriesSM; i++){
       InputChainSM->GetEvent(i);
       if(!passb(nbtagsSM)) continue;
+      if(!(HT>HTcut)) continue;
 
       histA->Fill(xSM,ySM, -weightSM*SMfactor);
       histB->Fill(xSM,ySM, -weightSM*SMfactor);
