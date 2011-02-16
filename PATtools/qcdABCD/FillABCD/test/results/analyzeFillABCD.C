@@ -1,3 +1,4 @@
+#include "TMinuit.h"
 #include "TLatex.h"
 #include "TFile.h"
 #include "TChain.h"
@@ -377,7 +378,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	nD+=weight;
 	nD_e+=weight*weight;
 	histWD->Fill(bin);
-	Dfrac += passbtagcut(nbtags)*weight;
+	Dfrac +=((double)passbtagcut(nbtags))*weight;
 	//if(weight>1.0) cout << "large weight: " << weight << " at x=" << x << endl;
       }
       else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
@@ -1015,15 +1016,15 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   ////////////////////////////////////////////////////////////////////////////////////////
   // FIT /////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
-
+  
   TF1 *fexp1 = new TF1("fexp1", "[0]*exp([1]*x)", borderv1a, borderv1b);
   fexp1->SetParameters(3.0, -1.0/30.0);
   fexp1->SetParLimits(1,-1000.0,0.);
   
-  bool fixConstant =false;
+  bool fixConstant =true;
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
   fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
-    if(!fixConstant){
+  if(!fixConstant){
     fexp2->SetParLimits(2,-5,20);
   }
   else{
@@ -1031,25 +1032,27 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
     //fexp2->FixParameter(2,0.0728706);
     fexp2->FixParameter(2,0.);
     //fexp2->SetParError(2,0.0424232);
-  
+    
   }
-
+  
   //TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv1b);
   //fexp3->SetParameters(4.0, -1.0/20.0, 4.0, -1.0/200.0);  
   //fexp3->SetParLimits(1,-1000,0);
   //fexp3->SetParLimits(3,-1000,0);
- 
-  TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]+[3]*x", borderv1a, borderv1b);
-  fexp3->SetParameters(10.0, -1.0/30.0, 0.001,0.);  
-  fexp3->SetParLimits(2,0.,1000);
+  
+  //TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x)+[2]+[3]*x", borderv1a, borderv1b);
+  //fexp3->SetParameters(10.0, -1.0/30.0, 0.001,0.);  
+  //fexp3->SetParLimits(2,0.,1000);
   //fexp3->SetParLimits(3,0.,1000);
+  
+  TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x*x)+[2]", borderv1a, borderv1b);
   
   fexp1->SetLineColor(kBlue);
   fexp2->SetLineColor(kBlack);
   fexp3->SetLineColor(kRed);
   
   //FIT Exponential////////////////////////////////////////////////////////////
-   assert(!( gr1->Fit("fexp1", "R0") ));
+  assert(!( gr1->Fit("fexp1", "R0") ));
   cout << endl;
   cout << endl;
   //fexp1->Draw("SAME");   
@@ -1057,7 +1060,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //if(gr1->Fit("fexp2", "R0")) secondFitFail = "FAILED!";
   
   //FIT Exponential+c//////////////////////////////////////////////////////////
-   assert(!( gr1->Fit("fexp2", "R0 E") ));
+  assert(!( gr1->Fit("fexp2", "R0 E") ));
   cout << "Chisquare: " << fexp2->GetChisquare() << endl;
   cout << "NDF: " << fexp2->GetNDF() << endl;
   cout << "Chisquare/NDF: " <<  fexp2->GetChisquare()/fexp2->GetNDF() << endl;
@@ -1086,16 +1089,19 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp1->GetParameters(par_exp);
   Double_t par_exp2[3];  
   fexp2->GetParameters(par_exp2);
-  Double_t par_exp3[4];  
+  Double_t par_exp3[3];  
   fexp3->GetParameters(par_exp3);
  
+  TString goodFit = "PROBLEM";
+  if(gMinuit->fLimset==0 && gMinuit->fCstatu.Contains("SUCCESSFUL") && par_exp2[2]>0.) goodFit= "";
+
   TF1 *fexp1b = new TF1("fexp1b", "[0]*exp([1]*x)", borderv1a, borderv2b);
   fexp1b->SetParameters(par_exp[0], par_exp[1]);
   TF1 *fexp2b = new TF1("fexp2b", "[0]*exp([1]*x)+[2]", borderv1a, borderv2b);
   fexp2b->SetParameters(par_exp2[0], par_exp2[1],par_exp2[2]);
   //TF1 *fexp3b = new TF1("fexp3b", "[0]*exp([1]*x)+[2]*exp([3]*x)", borderv1a, borderv2b);
-  TF1 *fexp3b = new TF1("fexp3b", "[0]*exp([1]*x)+[2]+[3]*x", borderv1a, borderv2b);
-  fexp3b->SetParameters(par_exp3[0], par_exp3[1], par_exp3[2], par_exp3[3]);
+  TF1 *fexp3b = new TF1("fexp3b", "[0]*exp([1]*x*x)+[2]", borderv1a, borderv2b);
+  fexp3b->SetParameters(par_exp3[0], par_exp3[1], par_exp3[2]);
  
   fexp1b->SetLineColor(kBlue);
   fexp2b->SetLineColor(kBlack);
@@ -1133,7 +1139,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_extrap->cd();
   //fexp1b->Draw("SAME");
   fexp2b->Draw("SAME");
-  //fexp3b->Draw("SAME");
+  fexp3b->Draw("SAME");
   C_extrap->Print("extrap.pdf");
 
 
@@ -1335,6 +1341,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   cout << "Dfrac: " << Dfrac/nD << endl;
   cout << "Constant: " << ConstU/ConstL << " +- " << aObError(ConstU, ConstU_e, ConstL, ConstL_e) << endl;
   cout << "Subtract from D: " << subtractFromD << endl;
+  cout << goodFit << endl;
   cout << endl;
 
 
@@ -1414,28 +1421,37 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 void analyzeFillABCD(){
   
   TString type = "pfpf";
-  
-  double *array00 = doAnalyzeFillABCD(type, 1, 0, 80, 10, true, "0");
-  return;
-  double *array0 = doAnalyzeFillABCD(type, 0, 0, 80, 10, false, "0");
-  double *array1 = doAnalyzeFillABCD(type, 0, 10, 80, 10, false, "1");
-  double *array2 = doAnalyzeFillABCD(type, 0, 20, 80, 10, false, "2");
-  double *array3 = doAnalyzeFillABCD(type, 0, 30, 80, 10, false, "3");
-  double *array4 = doAnalyzeFillABCD(type, 0, 40, 80, 10, false, "4");
-  double *array5 = doAnalyzeFillABCD(type, 0, 0, 60, 10, false, "5");
-  double *array6 = doAnalyzeFillABCD(type, 0, 0, 70, 10, false, "6");
-  double *array7 = doAnalyzeFillABCD(type, 0, 0, 90, 10, false, "7");
-  double *array8 = doAnalyzeFillABCD(type, 0, 0, 100, 10, false, "8");
-  double *array9 = doAnalyzeFillABCD(type, 0, 0, 110, 10, false, "9");
-  double *array10 = doAnalyzeFillABCD(type, 0, 20, 70, 10, false, "10");
-  double *array11 = doAnalyzeFillABCD(type, 0, 40, 90, 10, false, "11");
 
+  double *array1c = doAnalyzeFillABCD(type, 1, 0, 120, 10, false, "0");
+  return;
+
+  // double *array00 = doAnalyzeFillABCD(type, 1, 0, 100, 10, true, "0");
+ 
+  double *array0 = doAnalyzeFillABCD(type, 1, 0, 60, 10, false, "0");
+  double *array1 = doAnalyzeFillABCD(type, 1, 0, 70, 10, false, "1");
+  double *array2 = doAnalyzeFillABCD(type, 1, 0, 80, 10, false, "2");
+  double *array3 = doAnalyzeFillABCD(type, 1, 0, 90, 10, false, "3");
+  double *array4 = doAnalyzeFillABCD(type, 1, 0, 100, 10, false, "4");
+  double *array5 = doAnalyzeFillABCD(type, 1, 0, 110, 10, false, "5");
+  double *array6 = doAnalyzeFillABCD(type, 1, 0, 120, 10, false, "6");
+  double *array7 = doAnalyzeFillABCD(type, 1, 0, 130, 10, false, "7");
+  double *array8 = doAnalyzeFillABCD(type, 1, 0, 140, 10, false, "8");
+  double *array9 = doAnalyzeFillABCD(type, 1, 0, 150, 10, false, "9");
+  double *array10 = doAnalyzeFillABCD(type, 1, 0, 160, 10, false, "10");
+  double *array11 = doAnalyzeFillABCD(type, 1, 0, 170, 10, false, "11");
+ double *array12 = doAnalyzeFillABCD(type, 1, 0, 180, 10, false, "11");
+ double *array13 = doAnalyzeFillABCD(type, 1, 0, 190, 10, false, "11");
+ double *array14 = doAnalyzeFillABCD(type, 1, 0, 210, 10, false, "11");
+  
+
+ 
   double *array1f = Dfrac(type,1);
   double *array2f = Dfrac(type,2);
   
   cout << endl;
   cout << "dfrac 1tag: " << array1f[0] << " " << array1f[1] << endl;
   cout << "dfrac 2tag: " << array2f[0] << " " << array2f[1] << endl;
+ 
 
    cout << endl;
   cout << "nob" << endl;
@@ -1451,6 +1467,10 @@ void analyzeFillABCD(){
   cout << array9[2] << " +/- " << array9[3] << endl;
   cout << array10[2] << " +/- " << array10[3] << endl;
   cout << array11[2] << " +/- " << array11[3] << endl;
+  cout << array12[2] << " +/- " << array12[3] << endl;
+  cout << array13[2] << " +/- " << array13[3] << endl;
+  cout << array14[2] << " +/- " << array14[3] << endl;
+   return;
 
 
 
