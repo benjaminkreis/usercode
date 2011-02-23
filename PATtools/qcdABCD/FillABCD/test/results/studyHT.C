@@ -87,7 +87,11 @@ void studyHT(){
   legR->AddEntry(histUL3, "HT>900 GeV", "P");
 
   TChain* InputChain = new TChain("ABCDtree");
-  InputChain->Add("/cu1/kreis/ABCDtrees/36_Jan22/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_NoMET_NoHT_NoDeltaPhi.ge0b.QCD.root");
+  InputChain->Add("/afs/cern.ch/user/k/kreis/scratch0/ABCDtrees/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_MuonCleaning_NoMET_NoDeltaPhi.ge0b.QCD100.root");
+  InputChain->Add("/afs/cern.ch/user/k/kreis/scratch0/ABCDtrees/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_MuonCleaning_NoMET_NoDeltaPhi.ge0b.QCD250.root");
+  InputChain->Add("/afs/cern.ch/user/k/kreis/scratch0/ABCDtrees/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_MuonCleaning_NoMET_NoDeltaPhi.ge0b.QCD500.root");
+  InputChain->Add("/afs/cern.ch/user/k/kreis/scratch0/ABCDtrees/ABCDtree.Baseline0_PF_pfMEThigh_PFLep0e0mu_minDP_MuonCleaning_NoMET_NoDeltaPhi.ge0b.QCD1000.root");
+
 
   double myHT, x, y, weight;
   int nbtags;
@@ -102,26 +106,28 @@ void studyHT(){
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
 
-    h2d->Fill(x,myHT,weight);
+    if(nbtags>=2){
 
-    if(x<120.) ht_met1->Fill(myHT,weight);
-    if(x>150. && x<170.) ht_met2->Fill(myHT,weight);
-    if(x>200.) ht_met3->Fill(myHT,weight);
-
-    if(myHT>300){
-      if(y<0.3) histL1->Fill(x,weight);
-      if(y>=0.3) histU1->Fill(x,weight);
-    }
-    if(myHT>600){
-      if(y<0.3) histL2->Fill(x,weight);
-      if(y>=0.3) histU2->Fill(x,weight);
-    }
-    if(myHT>900){
-      if(y<0.3) histL3->Fill(x,weight);
-      if(y>=0.3) histU3->Fill(x,weight);
-    }
-
-  }
+      h2d->Fill(x,myHT,weight);
+      
+      if(x<120.) ht_met1->Fill(myHT,weight);
+      if(x>150. && x<170.) ht_met2->Fill(myHT,weight);
+      if(x>200.) ht_met3->Fill(myHT,weight);
+      
+      if(myHT>300){
+	if(y<0.3) histL1->Fill(x,weight);
+	if(y>=0.3) histU1->Fill(x,weight);
+      }
+      if(myHT>600){
+	if(y<0.3) histL2->Fill(x,weight);
+	if(y>=0.3) histU2->Fill(x,weight);
+      }
+      if(myHT>900){
+	if(y<0.3) histL3->Fill(x,weight);
+	if(y>=0.3) histU3->Fill(x,weight);
+      }
+    }//btag cut
+  }//end loop over events
   histUL1->Divide(histU1, histL1, 1., 1.,"");
   histUL2->Divide(histU2, histL2, 1., 1.,"");
   histUL3->Divide(histU3, histL3, 1., 1.,"");
@@ -130,9 +136,9 @@ void studyHT(){
   
   TCanvas * canvasOne = new TCanvas("canvasOne", "canvasOne", 640, 480);
   canvasOne->cd();
-  /* ht_met1->DrawNormalized();
-  ht_met2->DrawNormalized("SAME");
-  ht_met3->DrawNormalized("SAME");*/
+  //ht_met1->DrawNormalized();
+  //ht_met2->DrawNormalized("SAME");
+  //ht_met3->DrawNormalized("SAME");
   ht_met1->Draw();
   ht_met2->Draw("SAME");
   ht_met3->Draw("SAME");
@@ -140,7 +146,7 @@ void studyHT(){
   gPad->SetRightMargin(0.05);
   gPad->SetLogy(1);
   gPad->Modified();
-  canvasOne->Print("HTdist_unN.pdf");
+  canvasOne->Print("HTdist_Norm.pdf");
 
   TCanvas * rCanvas = new TCanvas("rCanvas", "rCanvas", 640, 480);
   rCanvas->cd();
