@@ -7,6 +7,7 @@
 
 #include "TMinuit.h"
 
+#include "TCanvas.h"
 #include "TFile.h"
 #include "TLegend.h"
 #include "TString.h"
@@ -29,7 +30,7 @@ bool passb(int nbtags){
 }
 
 bool passmdp(double mdp){
-  if(mdp>0.0){
+  if(mdp>0.3){
     return true;
   }
   else{
@@ -59,6 +60,7 @@ void simpleABCD(){
   TH2D* histC;
   TH2D* histD;
 
+  /*
   // MET - minDeltaPhiMET ////////////////////
   xName="MET";
   yName="minDeltaPhiMET";
@@ -76,7 +78,7 @@ void simpleABCD(){
   histB = new TH2D("histB", "histB", 1, borderv1a, borderv1b, 1, borderh2a, borderh2b);
   histC = new TH2D("histC", "histC", 1, borderv2a, borderv2b, 1, borderh2a, borderh2b);
   histD = new TH2D("histD", "histD", 1, borderv2a, borderv2b, 1, borderh1a, borderh1b);
-  
+  */
 
   // MET - jet1eta ///////////////////////
   xName="MET";
@@ -95,7 +97,8 @@ void simpleABCD(){
   histA = new TH2D("histA", "histA", 1, borderv1a, borderv1b, 1, borderh2a, borderh2b);
   histD = new TH2D("histD", "histD", 1, borderv2a, borderv2b, 1, borderh2a, borderh2b);
   histC = new TH2D("histC", "histC", 1, borderv2a, borderv2b, 1, borderh1a, borderh1b);
-  
+  TH2D* histABCD = new TH2D("histABCD", "histABCD", 100,0,500,50,0,3);
+
   TH1D*  histMET1 = new TH1D("histMET1", "histMET1", 20, -3,3);
   TH1D*  histMET2 = new TH1D("histMET2", "histMET2", 20, -3,3);
   TH1D*  histMET3 = new TH1D("histMET3", "histMET3", 20, -3,3);
@@ -132,8 +135,8 @@ void simpleABCD(){
     if(!passb(nbtags)) continue;   
     if(x>150) nMETTagMdp+=weight;
 
-    if(x<50) histMET1->Fill(y,weight);
-    if(50<x<100) histMET2->Fill(y,weight);
+    if(x>50 && x<100) histMET1->Fill(y,weight);
+    if(100<x && x<150) histMET2->Fill(y,weight);
     if(x>150) histMET3->Fill(y,weight);
 
     y=fabs(y);
@@ -141,6 +144,7 @@ void simpleABCD(){
     histB->Fill(x,y,weight);
     histC->Fill(x,y,weight);
     histD->Fill(x,y,weight);
+    histABCD->Fill(x,y,weight);
     
   }//end loop over InputChain                                      
 
@@ -152,19 +156,22 @@ void simpleABCD(){
 			   );
 
 
+  TCanvas * C1 = new TCanvas("myC", "myC");
+  C1->cd();
   histMET1->SetLineColor(kBlack);
   histMET2->SetLineColor(kBlue);
   histMET3->SetLineColor(kRed);
   histMET1->SetLineWidth(2);
   histMET2->SetLineWidth(2);
   histMET3->SetLineWidth(2);
+  histMET3->GetXaxis()->SetTitle("lead jet eta");
   histMET3->DrawNormalized();
   histMET1->DrawNormalized("SAME");
   histMET2->DrawNormalized("SAME");
   TLegend *leg = new TLegend(.14,.75,.23,.89);
-  leg->AddEntry(histMET1, "MET<50 GeV", "l");
-  leg->AddEntry(histMET2, "50 GeV < MET < 100 GeV", "l");
-  leg->AddEntry(histMET3, "MET>150 GeV ", "l");
+  leg->AddEntry(histMET1, "50 GeV < MET < 100 GeV", "l");
+  leg->AddEntry(histMET2, "100 GeV < MET < 150 GeV", "l");
+  leg->AddEntry(histMET3, "MET > 150 GeV ", "l");
   leg->SetFillColor(0);
   leg->SetBorderSize(0);
   leg->SetLineStyle(0);
@@ -172,6 +179,15 @@ void simpleABCD(){
   leg->SetFillStyle(0);
   leg->SetTextSize(0.04);
   leg->Draw();
+
+  TCanvas *C2 = new TCanvas("myC2", "myC2");
+  C2->cd();
+  histABCD->GetXaxis()->SetTitle("MET [GeV]");
+  histABCD->GetYaxis()->SetTitle("abs(lead jet eta)");
+  histABCD->Draw("COLZ");
+  gPad->SetRightMargin(.18);
+  gPad->Modified();
+  C2->Print("h1.pdf");
 
 
   cout << "n after MET cut: " << nMET << endl;
@@ -184,6 +200,8 @@ void simpleABCD(){
   cout << "nD true: " << histD->GetBinContent(1,1) << " +- " << histD->GetBinError(1,1) << endl;
   cout << "ABCD: " << nC << " +- " << nC_err << endl;
   
+  C1->Write();
+  C2->Write();
   histMET1->Write();
   histMET2->Write();
   histMET3->Write();
@@ -191,6 +209,7 @@ void simpleABCD(){
   histB->Write();
   histC->Write();
   histD->Write();
+  histABCD->Write();
   fout.Close();
   
 }
