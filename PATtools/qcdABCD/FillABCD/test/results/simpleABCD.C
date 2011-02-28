@@ -21,7 +21,7 @@
 
 
 bool passb(int nbtags){
-  if(nbtags>=1){
+  if(nbtags>=0){
     return true;
   }
   else{
@@ -80,6 +80,8 @@ void simpleABCD(){
   histD = new TH2D("histD", "histD", 1, borderv2a, borderv2b, 1, borderh1a, borderh1b);
   */
 
+
+  /*
   // MET - jet1eta ///////////////////////
   xName="MET";
   yName="jet1eta";
@@ -97,11 +99,37 @@ void simpleABCD(){
   histA = new TH2D("histA", "histA", 1, borderv1a, borderv1b, 1, borderh2a, borderh2b);
   histD = new TH2D("histD", "histD", 1, borderv2a, borderv2b, 1, borderh2a, borderh2b);
   histC = new TH2D("histC", "histC", 1, borderv2a, borderv2b, 1, borderh1a, borderh1b);
-  TH2D* histABCD = new TH2D("histABCD", "histABCD", 100,0,500,50,0,3);
+  */
 
-  TH1D*  histMET1 = new TH1D("histMET1", "histMET1", 20, -3,3);
-  TH1D*  histMET2 = new TH1D("histMET2", "histMET2", 20, -3,3);
-  TH1D*  histMET3 = new TH1D("histMET3", "histMET3", 20, -3,3);
+
+  // MET - determinant_transverseSphericity /////////////////
+  xName = "MET";
+  yName = "determinant_transverseSphericity";
+  //x
+  borderv1a = 0.0;
+  borderv1b = 150.0;
+  borderv2a=150.0;
+  borderv2b=1e10;
+  //y
+  borderh1a=0.0;
+  borderh1b=0.1;
+  borderh2a=0.1;
+  borderh2b=0.3;
+  histA = new TH2D("histA", "histA", 1, borderv1a, borderv1b, 1, borderh1a, borderh1b);
+  histB = new TH2D("histB", "histB", 1, borderv1a, borderv1b, 1, borderh2a, borderh2b);
+  histC = new TH2D("histC", "histC", 1, borderv2a, borderv2b, 1, borderh2a, borderh2b);
+  histD = new TH2D("histD", "histD", 1, borderv2a, borderv2b, 1, borderh1a, borderh1b);
+  TH1D* histU = new TH1D("histU", "histU", 20, borderv1a, 500);
+  TH1D* histL = new TH1D("histL", "histL", 20, borderv1a, 500);
+  TH1D* histUL = new TH1D("histUL", "histUL", 20, borderv1a, 500);
+
+
+  TH2D* histABCD = new TH2D("histABCD", "histABCD", 100,0,500,50,0, 0.3);
+
+
+  TH1D*  histMET1 = new TH1D("histMET1", "histMET1", 20, 0, .3);
+  TH1D*  histMET2 = new TH1D("histMET2", "histMET2", 20, 0, .3);
+  TH1D*  histMET3 = new TH1D("histMET3", "histMET3", 20, 0, .3);
   histMET1->Sumw2();
   histMET2->Sumw2();
   histMET3->Sumw2();
@@ -110,7 +138,9 @@ void simpleABCD(){
   histB->Sumw2();
   histC->Sumw2();
   histD->Sumw2();
-
+  histU->Sumw2();
+  histL->Sumw2();
+  histUL->Sumw2();
 
   TChain* InputChain = FormChainJosh("pfpf");
   int numEntries = InputChain->GetEntries();
@@ -139,15 +169,20 @@ void simpleABCD(){
     if(100<x && x<150) histMET2->Fill(y,weight);
     if(x>150) histMET3->Fill(y,weight);
 
-    y=fabs(y);
+    //y=fabs(y);
     histA->Fill(x,y,weight);
     histB->Fill(x,y,weight);
     histC->Fill(x,y,weight);
     histD->Fill(x,y,weight);
+   
+    if(y<0.1) histL->Fill(x,weight);
+    if(y>=0.1) histU->Fill(x,weight);
+    
     histABCD->Fill(x,y,weight);
     
   }//end loop over InputChain                                      
 
+  histUL->Divide(histU, histL, 1., 1., "");
   
   double nC = histD->GetBinContent(1,1)*histB->GetBinContent(1,1)/histA->GetBinContent(1,1);
   double nC_err = nC*sqrt( histD->GetBinError(1,1)*histD->GetBinError(1,1)/histD->GetBinContent(1,1)/histD->GetBinContent(1,1)
@@ -164,7 +199,7 @@ void simpleABCD(){
   histMET1->SetLineWidth(2);
   histMET2->SetLineWidth(2);
   histMET3->SetLineWidth(2);
-  histMET3->GetXaxis()->SetTitle("lead jet eta");
+  histMET3->GetXaxis()->SetTitle("");
   histMET3->DrawNormalized();
   histMET1->DrawNormalized("SAME");
   histMET2->DrawNormalized("SAME");
@@ -183,7 +218,7 @@ void simpleABCD(){
   TCanvas *C2 = new TCanvas("myC2", "myC2");
   C2->cd();
   histABCD->GetXaxis()->SetTitle("MET [GeV]");
-  histABCD->GetYaxis()->SetTitle("abs(lead jet eta)");
+  histABCD->GetYaxis()->SetTitle("");
   histABCD->Draw("COLZ");
   gPad->SetRightMargin(.18);
   gPad->Modified();
@@ -209,6 +244,7 @@ void simpleABCD(){
   histB->Write();
   histC->Write();
   histD->Write();
+  histUL->Write();
   histABCD->Write();
   fout.Close();
   
