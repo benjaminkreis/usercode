@@ -36,6 +36,7 @@ using namespace std;
 bool bcontinue(int nbtags, int min){
   
   if(nbtags>=min){
+    //if(nbtags==0){
     return true;
   }
   else{
@@ -85,10 +86,11 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   bool useHTcut = false; //assumes HT>300 has already been applied (important for extrapolation aka points in D)
   double HTcut = 500.;
   bool drawLines=false;
-  
+  double singleLow=85;
+  double singleHigh=135;
   
   // int fitNum = 10; //number of bins in xL region, used to fit ratio
-  int extendedNum = 21; //number of bins in xR region, used in extrapolation
+  int extendedNum = 11; //number of bins in xR region, used in extrapolation
   TString xLabel = "MET";
   
   //LOAD WEIGHTS
@@ -222,6 +224,9 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   
   TH2D* histC = new TH2D("H_C", "Region C", extendedNum, xBinsU, 1, yBinsU);
   TH2D* histD = new TH2D("H_D", "Region D", extendedNum, xBinsU, 1, yBinsL);
+  
+  TH2D*  histSU = new TH2D("histSU", "histSU", 1, singleLow, singleHigh, 1, borderh2a, borderh2b);
+  TH2D*  histSL = new TH2D("histSL", "histSL", 1, singleLow, singleHigh, 1, borderh1a, borderh1b);
   //TH1D* histU = new TH1D("histU", "histU", 30, borderv1a, borderv2b_plot);
   //TH1D* histL = new TH1D("histL", "histL", 30, borderv1a, borderv2b_plot);
   //TH1D* histUL = new TH1D("histUL", "histUL", 30, borderv1a, borderv2b_plot);
@@ -255,6 +260,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   histDx->Sumw2();
   histdp->Sumw2();
   histx->Sumw2();
+  histSL->Sumw2();
+  histSU->Sumw2();
   histU->Sumw2();
   histL->Sumw2();
   histUL->Sumw2();
@@ -338,6 +345,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
     InputChain->SetBranchAddress("btag", &nbtags);
   }
 
+  double maxWeight = 0;
   double beforeAngular = 0;
   for(int i = firstEntry; i<numEntries; i++){
     InputChain->GetEvent(i);
@@ -353,7 +361,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
       int bin = Hweight.FindBin(MG);
       double weight=Hweight.GetBinContent(bin);
       if(josh) weight=weightJosh;
-      
+     
+ 
       //histPtHat->Fill(pthat,weight);
       histPtHat->Fill(MG,weight);
       histPtHat_noW->Fill(MG);
@@ -380,6 +389,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	histWD->Fill(bin);
 	Dfrac +=((double)passbtagcut(nbtags))*weight;
 	//if(weight>1.0) cout << "large weight: " << weight << " at x=" << x << endl;
+
       }
       else if( (x>=borderv1a) && (x<borderv1b) && (y>=borderh2a) && (y<borderh2b) ){
 	Bnow=1;
@@ -392,6 +402,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
 	nC+=weight;
 	nC_e +=weight*weight;
 	histWC->Fill(bin);
+	if(weight>maxWeight) maxWeight=weight;
       }
       else {
 	//cout << "EVENT " << i << " with x = " << x << " and y = " << y << " not in A, B, C, or D." << endl;
@@ -429,6 +440,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
       histD->Fill(x,y, weight);
       if(Cnow) histCx->Fill(x,weight);
       if(Dnow) histDx->Fill(x,weight);
+      histSU->Fill(x,y, weight);
+      histSL->Fill(x,y, weight);
       
       if(!useHTcut || myHT>HTcut){
 	//histA->Fill(x,y, weight);
@@ -449,6 +462,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   ConstU_e = sqrt(ConstU_e);
   ConstL_e = sqrt(ConstL_e);
  
+  double single = histSU->GetBinContent(1,1)/histSL->GetBinContent(1,1);
+  double single_err = aObError( histSU->GetBinContent(1,1), histSU->GetBinError(1,1), histSL->GetBinContent(1,1), histSL->GetBinError(1,1) );
 
   //SM LOOP///////////////////////////////////////
   //double xSM, ySM, weightSM;
@@ -1021,7 +1036,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   fexp1->SetParameters(3.0, -1.0/30.0);
   fexp1->SetParLimits(1,-1000.0,0.);
   
-  bool fixConstant =true;
+  bool fixConstant =false;
   TF1 *fexp2 = new TF1("fexp2", "[0]*exp([1]*x)+[2]", borderv1a, borderv1b);
   fexp2->SetParameters(10.0, -1.0/30.0, 0.001);  
   if(!fixConstant){
@@ -1045,8 +1060,12 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   //fexp3->SetParLimits(2,0.,1000);
   //fexp3->SetParLimits(3,0.,1000);
   
-  TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x*x)+[2]", borderv1a, borderv1b);
+  // TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x*x)+[2]", borderv1a, borderv1b);
+  // fexp3->SetParameters(2., -0.0003, -.26);
+  TF1 *fexp3 = new TF1("fexp3", "[0]*exp([1]*x/(1+[2]*x))", borderv1a, borderv1b);
+  fexp3->SetParameters(3.,-.0004,.04);
   
+
   fexp1->SetLineColor(kBlue);
   fexp2->SetLineColor(kBlack);
   fexp3->SetLineColor(kRed);
@@ -1139,7 +1158,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   C_extrap->cd();
   //fexp1b->Draw("SAME");
   fexp2b->Draw("SAME");
-  fexp3b->Draw("SAME");
+  //fexp3b->Draw("SAME");
   C_extrap->Print("extrap.pdf");
 
 
@@ -1334,6 +1353,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   cout << "hD integral: " << histD->Integral() << endl; 
   cout << "nD: " << nD << " +- " << nD_error << endl;
   cout << "nC: " << nC << " +- " << nC_error << endl;
+  cout << "single: " << nD*single << " +- " << abError(nD, nD_error, single, single_err) << endl;
   cout << "Unbinned exponential+constant extended estimate for nC: " << unbinnedEstimate2 << " +- " << ext_error_unBinexp2 << " " << secondFitFail << endl; 
   //cout << "Unbinned exponential extended estimate for nC: " << unbinnedEstimate << " +- " << ext_error_unBinexp << endl; 
   //cout <<   "Binned exponential extended estimate for nC: " << extendedEstimate_exp << " +- " << ext_error_exp << endl;
@@ -1341,6 +1361,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   cout << "Dfrac: " << Dfrac/nD << endl;
   cout << "Constant: " << ConstU/ConstL << " +- " << aObError(ConstU, ConstU_e, ConstL, ConstL_e) << endl;
   cout << "Subtract from D: " << subtractFromD << endl;
+  cout << "maxWeight: " << maxWeight << endl;
   cout << goodFit << endl;
   cout << endl;
 
@@ -1422,28 +1443,27 @@ void analyzeFillABCD(){
   
   TString type = "pfpf";
 
-  double *array1c = doAnalyzeFillABCD(type, 1, 0, 120, 10, false, "0");
+  double *array00 = doAnalyzeFillABCD(type, 2, 0, 150, 15, true, "0");
   return;
 
-  // double *array00 = doAnalyzeFillABCD(type, 1, 0, 100, 10, true, "0");
- 
-  double *array0 = doAnalyzeFillABCD(type, 1, 0, 60, 10, false, "0");
-  double *array1 = doAnalyzeFillABCD(type, 1, 0, 70, 10, false, "1");
-  double *array2 = doAnalyzeFillABCD(type, 1, 0, 80, 10, false, "2");
-  double *array3 = doAnalyzeFillABCD(type, 1, 0, 90, 10, false, "3");
-  double *array4 = doAnalyzeFillABCD(type, 1, 0, 100, 10, false, "4");
-  double *array5 = doAnalyzeFillABCD(type, 1, 0, 110, 10, false, "5");
-  double *array6 = doAnalyzeFillABCD(type, 1, 0, 120, 10, false, "6");
-  double *array7 = doAnalyzeFillABCD(type, 1, 0, 130, 10, false, "7");
-  double *array8 = doAnalyzeFillABCD(type, 1, 0, 140, 10, false, "8");
-  double *array9 = doAnalyzeFillABCD(type, 1, 0, 150, 10, false, "9");
-  double *array10 = doAnalyzeFillABCD(type, 1, 0, 160, 10, false, "10");
-  double *array11 = doAnalyzeFillABCD(type, 1, 0, 170, 10, false, "11");
- double *array12 = doAnalyzeFillABCD(type, 1, 0, 180, 10, false, "11");
- double *array13 = doAnalyzeFillABCD(type, 1, 0, 190, 10, false, "11");
- double *array14 = doAnalyzeFillABCD(type, 1, 0, 210, 10, false, "11");
+  int binNumScale = 2;
+  int nbs = 1;
+  double *array0 = doAnalyzeFillABCD(type, nbs, 0, 60, binNumScale*6, false, "0");
+  double *array1 = doAnalyzeFillABCD(type, nbs, 0, 70, binNumScale*7, false, "1");
+  double *array2 = doAnalyzeFillABCD(type, nbs, 0, 80, binNumScale*8, false, "2");
+  double *array3 = doAnalyzeFillABCD(type, nbs, 0, 90, binNumScale*9, false, "3");
+  double *array4 = doAnalyzeFillABCD(type, nbs, 0, 100, binNumScale*10, false, "4");
+  double *array5 = doAnalyzeFillABCD(type, nbs, 0, 110, binNumScale*11, false, "5");
+  double *array6 = doAnalyzeFillABCD(type, nbs, 0, 120, binNumScale*12, false, "6");
+  double *array7 = doAnalyzeFillABCD(type, nbs, 0, 130, binNumScale*13, false, "7");
+  double *array8 = doAnalyzeFillABCD(type, nbs, 0, 140, binNumScale*14, false, "8");
+  double *array9 = doAnalyzeFillABCD(type, nbs, 0, 150, binNumScale*15, false, "9");
+  double *array10 = doAnalyzeFillABCD(type, nbs, 0, 160, binNumScale*16, false, "10");
+  double *array11 = doAnalyzeFillABCD(type, nbs, 0, 170, binNumScale*17, false, "11");
+  double *array12 = doAnalyzeFillABCD(type, nbs, 0, 180, binNumScale*18, false, "11");
+  double *array13 = doAnalyzeFillABCD(type, nbs, 0, 190, binNumScale*19, false, "11");
+  double *array14 = doAnalyzeFillABCD(type, nbs, 0, 200, binNumScale*20, false, "11");
   
-
  
   double *array1f = Dfrac(type,1);
   double *array2f = Dfrac(type,2);
