@@ -32,44 +32,21 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   
   bool drawLines = true;
  
-  //tagType should be nob, e1, ge1, ge2, data (no lines)
-  if(dataSet == "s10"){
-    if(tagType=="nob"){
-      trueN =8.79075;
-      trueN_err =2.22547;
-    }
-    else if(tagType=="e1"){
+  if(dataSet == "f10"){
+    if(tagType=="pre"){
       cout << "need nums" << endl;
     }
+    else if(tagType=="eq1"){
+      trueN  = 3.53319;
+      trueN_err = 1.37855;
+    } 
     else if(tagType=="ge1"){
-      trueN = 2.35149;
-      trueN_err = 1.27487;
+      trueN = 4.03775;
+      trueN_err = 1.39968;
     }
     else if(tagType=="ge2"){
-      trueN =0.19454;
-      trueN_err =0.0775882;
-    }
-    else  if(tagType=="data"){
-      drawLines=false;
-    }
-    else{
-    cout << "invalid tagType!" << endl;
-    assert(0);
-    }
-  }
-  else if(dataSet == "f10"){
-    if(tagType=="nob"){
-      trueN = 5.08044;
-      trueN_err = 1.37063;
-    }
-    else if(tagType=="e1"){
-      cout << "need nums" << endl;
-    }
-    else if(tagType=="ge1"){
-     cout << "need nums" << endl;
-    }
-    else if(tagType=="ge2"){
-      cout << "need nums" << endl;
+      trueN = 0.504563;
+      trueN_err = 0.242294;
     }
     else  if(tagType=="data"){
       drawLines=false;
@@ -97,8 +74,8 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   TCanvas *myC = new TCanvas("myC", "myC");
   myC->cd();
   
-  const int size = 12;
-  const int k = 10;
+  const int size = 9;
+  const int k = 9;
   TH1D *hrEb = new TH1D("hrEb", "hrEb", size, -0.5, size-0.5);
 
   double numEb, numEb_err, numEb_mean=0, numEb_sd=0, numEb_errT=0;
@@ -137,9 +114,9 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   TLine *lineB = new TLine(-0.5, trueN+trueN_err, size-0.5, trueN+trueN_err);
   TBox *box = new TBox();
   line0->SetLineWidth(3);
-  line0->SetLineColor(kGray);
-  lineA->SetLineColor(kGray);
-  lineB->SetLineColor(kGray);
+  line0->SetLineColor(kAzure);
+  lineA->SetLineColor(kAzure);
+  lineB->SetLineColor(kAzure);
   
   TAxis *yA;
   yA =  hrEb->GetYaxis();
@@ -153,21 +130,37 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   hrEb->SetTitle(type);
   yA->SetTitle("Predicted Number of QCD Events");
   //  yA->SetTitleOffset(1.2);
-  xA->SetBinLabel(1,"0-90,10");
-  xA->SetBinLabel(2,"10-90,10");
-  xA->SetBinLabel(3,"20-90,10"); 
-  xA->SetBinLabel(4,"30-90,10"); 
-  xA->SetBinLabel(5,"40-90,10"); 
-  xA->SetBinLabel(6,"50-90,10"); 
-  xA->SetBinLabel(7,"10-70,10"); 
-  xA->SetBinLabel(8,"10-80,10"); 
-  xA->SetBinLabel(9,"10-100,10"); 
-  xA->SetBinLabel(10,"10-110,10"); 
-  xA->SetBinLabel(11,"10-90,5"); 
-  xA->SetBinLabel(12,"10-90,20"); 
-  xA->SetLabelSize(0.03);
-  xA->SetTitle("Fit range min-max, Number of bins");
-  
+  /*
+  xA->SetBinLabel(1,"60");
+  xA->SetBinLabel(2,"70");
+  xA->SetBinLabel(3,"80"); 
+  xA->SetBinLabel(4,"90"); 
+  xA->SetBinLabel(5,"100"); 
+  xA->SetBinLabel(6,"110"); 
+  xA->SetBinLabel(7,"120"); 
+  xA->SetBinLabel(8,"130"); 
+  xA->SetBinLabel(9,"140"); 
+  xA->SetBinLabel(10,"150"); 
+  xA->SetBinLabel(11,"160"); 
+  xA->SetBinLabel(12,"170"); 
+  xA->SetBinLabel(13,"180"); 
+  xA->SetBinLabel(14,"190"); 
+  xA->SetBinLabel(15,"200"); 
+  xA->SetLabelSize(0.04);
+  xA->SetTitle("Fit range max [MET in GeV]");
+  */
+  xA->SetBinLabel(1,"110");
+  xA->SetBinLabel(2,"115");
+  xA->SetBinLabel(3,"120");
+  xA->SetBinLabel(4,"125");
+  xA->SetBinLabel(5,"130");
+  xA->SetBinLabel(6,"135");
+  xA->SetBinLabel(7,"140");
+  xA->SetBinLabel(8,"145");
+  xA->SetBinLabel(9,"150");
+  xA->SetLabelSize(0.04);                                                                                                                                                                                                                                          
+  xA->SetTitle("control region max [MET in GeV]");
+
   TLegend *leg = new TLegend(.17,.77,.35,.8);
   leg->AddEntry(hrEb, legEntry, "P");// leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
   leg->SetFillColor(0);
@@ -248,5 +241,55 @@ void multi(){
   //doMulti("pfpf", "multi_pfpf_nob_36fix", 20, "QCD MC (w/ fixed c)", "nob");
   //doMulti("pfpf", "multi_pfpf_nob_contB36fix", 20, "QCD+SM MC (w/ fixed c)", "nob");
   //doMulti("pfpf", "multi_pfpf_nob_contBS36fix", 20, "QCD+SM+LM13 MC (w/ fixed c)", "nob");
-  doMulti("pfpf", "multi_pfpf_nob_datafix",20,"Data (w/ fixed c)", "data");
+  //doMulti("pfpf", "multi_pfpf_nob_datafix",20,"Data (w/ fixed c)", "data");
+ 
+  //doMulti("pfpf", "ge1_Q_start0", 6, "madgraph QCD MC, >= 1 b-tags", "ge1");
+  //doMulti("pfpf", "ge1_Q_start10", 6, "QCD MC", "ge1");
+  //doMulti("pfpf", "ge1_Q_start20", 6, "QCD MC", "ge1");
+  //doMulti("pfpf", "ge2_Q_start0", .6, "madgraph QCD MC, >= 2 b-tags", "ge2");
+  //doMulti("pfpf", "ge2_Q_start10", 1, "QCD MC", "ge2");
+  //doMulti("pfpf", "ge2_Q_start20", 1, "QCD MC", "ge2");
+  //doMulti("pfpf", "ge1_QLM13_start0", 6, "QCD+LM13 MC", "ge1");
+  //doMulti("pfpf", "ge2_QLM13_start0", 2, "QCD+LM13 MC", "ge2");
+  //doMulti("pfpf", "ge1_P_start0", 6, "PYTHIA QCD MC", "ge1");
+  //doMulti("pfpf", "ge1_PU_start0", 6, "PYTHIA Pileup QCD MC, >= 1 b-tags", "ge1");
+  //doMulti("pfpf", "ge2_PU_start0", 1, "PYTHIA Pileup QCD MC", "ge2");
+  //doMulti("pfpf", "pre_PU_start0", 30, "PYTHIA Pileup QCD MC, pretag", "pre");
+
+  //doMulti("pfpf", "ge1_PUR_start0", 6, "PYTHIA Pileup QCD MC w/ JERbias, >=1 b-tags", "ge1");
+  //doMulti("pfpf", "ge2_PUR_start0", 2, "PYTHIA Pileup QCD MC w/ JERbias, >=2 b-tags", "ge2");
+
+  
+  doMulti("pfpf","CR_eq1_PU_start60", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PU_start60", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PU_start60", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+  doMulti("pfpf","CR_eq1_PU_start65", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PU_start65", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PU_start65", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+  doMulti("pfpf","CR_eq1_PU_start70", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PU_start70", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PU_start70", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+  doMulti("pfpf","CR_eq1_PU_start75", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PU_start75", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PU_start75", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+  doMulti("pfpf","CR_eq1_PU_start80", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PU_start80", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PU_start80", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+  doMulti("pfpf","CR_eq1_PU_start85", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PU_start85", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PU_start85", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+  doMulti("pfpf","CR_eq1_PU_start90", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PU_start90", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PU_start90", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+  doMulti("pfpf","CR_eq1_PU_start95", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PU_start95", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PU_start95", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+  doMulti("pfpf","CR_eq1_PU_start100", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PU_start100", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PU_start100", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+
+
+
+
+
 }
