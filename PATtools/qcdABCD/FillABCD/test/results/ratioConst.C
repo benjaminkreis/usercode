@@ -108,56 +108,56 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
 void ratioConst(){
 
   TString tag;
-  const int aMax = 9;
-  const int lMax = 9;
-  TString o1[aMax], o2[aMax], o3[aMax];
+  const int highMax = 1;
+  const int lowMax = 15;
+  TString o1[lowMax], o2[lowMax], o3[lowMax];
 
-  double low;
-  double lowA[lMax] = {60, 65, 70, 75, 80, 85, 90, 95, 100};
-  double a[aMax]={110, 115, 120, 125, 130, 135, 140, 145, 150};
+  double high;
+  double highA[highMax] = {140};
+  double lowA[lowMax]={60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130};
   
-  for(int j = 0; j<lMax; j++){
-    low = lowA[j];
+  for(int j = 0; j<highMax; j++){
+    high = highA[j];
       
     tag="eq1";
     cout << endl;
     cout << tag << endl;
-    for(int i = 0; i<aMax; i++){
-      o1[i] = doRatioConst(tag, low, a[i]);
+    for(int i = 0; i<lowMax; i++){
+      o1[i] = doRatioConst(tag, lowA[i], high);
     }
     
     tag="ge1";
     cout << endl;
     cout << tag << endl;
-    for(int i = 0; i<aMax; i++){
-      o2[i] = doRatioConst(tag, low, a[i]);
+    for(int i = 0; i<lowMax; i++){
+      o2[i] = doRatioConst(tag, lowA[i], high);
     }
     
     tag="ge2";
     cout << endl;
     cout << tag << endl;
-    for(int i = 0; i<aMax; i++){
-      o3[i] = doRatioConst(tag, low, a[i]);
+    for(int i = 0; i<lowMax; i++){
+      o3[i] = doRatioConst(tag, lowA[i], high);
     }
     
     
     
     // print results /////////////////////
-    cout << "LOW: " << low << endl;
+    cout << "HIGH: " << high << endl;
     cout << "eq1 results: " << endl;
-    for(int i = 0; i<aMax; i++){
+    for(int i = 0; i<lowMax; i++){
       cout << o1[i] << endl;
     }
     cout << endl;
     
     cout << "ge1 results: " << endl;
-    for(int i = 0; i<aMax; i++){
+    for(int i = 0; i<lowMax; i++){
       cout << o2[i] << endl;
     }
     cout << endl;
     
     cout << "ge2 results: " << endl;
-    for(int i = 0; i<aMax; i++){
+    for(int i = 0; i<lowMax; i++){
       cout << o3[i] << endl;
     }
     cout << endl;

@@ -74,8 +74,8 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   TCanvas *myC = new TCanvas("myC", "myC");
   myC->cd();
   
-  const int size = 9;
-  const int k = 9;
+  const int size = 15;
+  const int k = 15;
   TH1D *hrEb = new TH1D("hrEb", "hrEb", size, -0.5, size-0.5);
 
   double numEb, numEb_err, numEb_mean=0, numEb_sd=0, numEb_errT=0;
@@ -149,17 +149,23 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   xA->SetLabelSize(0.04);
   xA->SetTitle("Fit range max [MET in GeV]");
   */
-  xA->SetBinLabel(1,"110");
-  xA->SetBinLabel(2,"115");
-  xA->SetBinLabel(3,"120");
-  xA->SetBinLabel(4,"125");
-  xA->SetBinLabel(5,"130");
-  xA->SetBinLabel(6,"135");
-  xA->SetBinLabel(7,"140");
-  xA->SetBinLabel(8,"145");
-  xA->SetBinLabel(9,"150");
+  xA->SetBinLabel(1,"60");
+  xA->SetBinLabel(2,"65");
+  xA->SetBinLabel(3,"70");
+  xA->SetBinLabel(4,"75");
+  xA->SetBinLabel(5,"80");
+  xA->SetBinLabel(6,"85");
+  xA->SetBinLabel(7,"90");
+  xA->SetBinLabel(8,"95");
+  xA->SetBinLabel(9,"100");
+  xA->SetBinLabel(10,"105");
+  xA->SetBinLabel(11,"110");
+  xA->SetBinLabel(12,"115");
+  xA->SetBinLabel(13,"120");
+  xA->SetBinLabel(14,"125");
+  xA->SetBinLabel(15,"130");
   xA->SetLabelSize(0.04);                                                                                                                                                                                                                                          
-  xA->SetTitle("control region max [MET in GeV]");
+  xA->SetTitle("control region min [MET in GeV]");
 
   TLegend *leg = new TLegend(.17,.77,.35,.8);
   leg->AddEntry(hrEb, legEntry, "P");// leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
@@ -259,7 +265,7 @@ void multi(){
   //doMulti("pfpf", "ge1_PUR_start0", 6, "PYTHIA Pileup QCD MC w/ JERbias, >=1 b-tags", "ge1");
   //doMulti("pfpf", "ge2_PUR_start0", 2, "PYTHIA Pileup QCD MC w/ JERbias, >=2 b-tags", "ge2");
 
-  
+  /*
   doMulti("pfpf","CR_eq1_PU_start60", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
   doMulti("pfpf","CR_ge1_PU_start60", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
   doMulti("pfpf","CR_ge2_PU_start60", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
@@ -287,7 +293,11 @@ void multi(){
   doMulti("pfpf","CR_eq1_PU_start100", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
   doMulti("pfpf","CR_ge1_PU_start100", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
   doMulti("pfpf","CR_ge2_PU_start100", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+  */
 
+  doMulti("pfpf","CR_eq1_PU_end140", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PU_end140", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PU_end140", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
 
 
 
