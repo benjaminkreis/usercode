@@ -89,12 +89,18 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
   double nD = histD->GetBinContent(1,1);
   double nD_err = histD->GetBinError(1,1);
  
-  if(verbose)cout << "truth: " << histC->GetBinContent(1,1) << " +- " << histC->GetBinError(1,1) << endl; 
   TString out = "";
   out+= nD*single;
   out += " +- ";
   out += abError(nD, nD_err, single, single_err);
-  cout << out << endl;
+
+  cout << bcut << ", " << singleLow << ", " << singleHigh << endl;
+  cout << "nA: " << histSL->GetBinContent(1,1) << " +- " << histSU->GetBinError(1,1) << endl;
+  cout << "nB: " << histSU->GetBinContent(1,1) << " +- " << histSU->GetBinError(1,1) << endl;
+  cout << "nC: " << histC->GetBinContent(1,1) << " +- " << histC->GetBinError(1,1) << endl; 
+  cout << "nD: " << histD->GetBinContent(1,1) << " +- " << histD->GetBinError(1,1) << endl; 
+  cout << "r: " << single << " +- " << single_err << endl;
+  cout << "ABCD: " << out << endl;
     
   histC->Clear();
   histD->Clear();
@@ -106,6 +112,11 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
 
 
 void ratioConst(){
+  
+  //doRatioConst("eq1", 120, 150);
+  //doRatioConst("ge1", 120, 150);
+  //doRatioConst("ge2", 120, 150);
+  //return;
 
   TString tag;
   const int highMax = 1;
