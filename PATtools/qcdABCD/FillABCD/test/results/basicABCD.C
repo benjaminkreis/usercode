@@ -16,15 +16,18 @@
 #include "TF1.h"
 #include "TGraphErrors.h"
 
+#include "TCanvas.h"
+
+
 #include "analyzeFillABCDInput.h"
 
 using namespace std;
 
-//make sure the following things are set: cut passb function, subtractSM bool, SMfactor,  and fixpar?
+//make sure the following things are set: cut passb function, subtractSM bool, SMfactor, and floatC.
 
 
 bool passb(int nbtags){
-  if(nbtags==1){
+  if(nbtags>=2){
     return true;
   }
   else{
@@ -35,10 +38,13 @@ bool passb(int nbtags){
 
 
 TString *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 0.){
+  gROOT->SetStyle("CMS");
+  gStyle->SetOptFit(1);
+
   bool verbose = true;
-  bool subtractSM =true;
-  double SMfactor = 1.3;
-  bool floatC =true;
+  bool subtractSM =false;
+  double SMfactor = 1.0;
+  bool floatC =false;
 
   double pi=4*atan(1.0)+.0001;
   double borderv2a=150.0;
@@ -137,7 +143,13 @@ TString *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 
     if(verbose)cout << "ratio: (" << gr1x[i] << " +- " << gr1x_error[i] <<", " << gr1y[i] << " +- " << gr1y_error[i] << ")" << endl;
   }//end fill arrays for graph to fit
   TGraphErrors * gr1 = new TGraphErrors(fitNum, gr1x, gr1y, gr1x_error, gr1y_error);  
-
+  TCanvas * c1 = new TCanvas("fit", "fit", 600, 600);
+  c1->cd();
+  gPad->SetLogy(1);
+  gr1->GetXaxis()->SetTitle("E_{T}^{miss} [GeV]");
+  gr1->GetYaxis()->SetTitle("r(E_{T}^{miss})");
+  gr1->Draw("AP");
+  
 
 
 
@@ -152,7 +164,7 @@ TString *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 
   else{
     fexp2->FixParameter(2,0.0);
   }
-  assert(!( gr1->Fit("fexp2", "R0 E") ));
+  assert(!( gr1->Fit("fexp2", "R E") ));
   Double_t par_exp2[3];  
   fexp2->GetParameters(par_exp2);
   TString goodFit = " problem!";
@@ -162,7 +174,7 @@ TString *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 
   else{
     if(gMinuit->fLimset==0 && gMinuit->fCstatu.Contains("SUCCESSFUL")) goodFit= "";
   }
-
+  c1->Print("fit.pdf");
 
 
   ///////////////////
@@ -245,6 +257,9 @@ void basicABCD(){
   gStyle->SetOptFit(1);
   cout << "begin basicABCD" << endl;
 
+  TString *a00 = doBasicABCD(0.,80.,10);
+  return;
+
   TString *a0 = doBasicABCD(0.,70.,10);
   TString *a1 = doBasicABCD(0.,80.,10);
   TString *a2 = doBasicABCD(0.,90.,10);
@@ -259,7 +274,7 @@ void basicABCD(){
    
   cout << endl;
   cout << endl;
-  /*  cout << a0[0] << " +/- " << a0[1] << " " << a0[2] << endl; 
+  cout << a0[0] << " +/- " << a0[1] << " " << a0[2] << endl; 
   cout << a1[0] << " +/- " << a1[1] << " " << a1[2] << endl;
   cout << a2[0] << " +/- " << a2[1] << " " << a2[2] << endl;
   cout << a3[0] << " +/- " << a3[1] << " " << a3[2] << endl;
@@ -267,7 +282,7 @@ void basicABCD(){
   cout << a5[0] << " +/- " << a5[1] << " " << a5[2] << endl;
   cout << a6[0] << " +/- " << a6[1] << " " << a6[2] << endl;
   cout << a7[0] << " +/- " << a7[1] << " " << a7[2] << endl;
-  cout << a8[0] << " +/- " << a8[1] << " " << a8[2] << endl;*/
+  cout << a8[0] << " +/- " << a8[1] << " " << a8[2] << endl;
   cout << endl;
   cout << a0[0] << a0[2] << endl; 
   cout << a1[0] << a1[2] << endl; 
