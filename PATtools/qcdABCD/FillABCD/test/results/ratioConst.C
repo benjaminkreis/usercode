@@ -74,21 +74,36 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
   InputChain->SetBranchAddress("weight",&weight);
   InputChain->SetBranchAddress("nbSSVM",&nbtags);
   
+  TH1D* histmL = new TH1D("l","l",50,0., 3.142);
+  TH1D* histmU = new TH1D("u","u",50,0., 3.142);
+  histmL->Sumw2();
+  histmU->Sumw2();
+  histmL->SetLineWidth(2);
+  histmU->SetLineWidth(2);
+  histmL->SetLineColor(kBlue);
+  histmU->SetLineColor(kRed);
+
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
     
     if(!(bcontinue(nbtags, bcut))) continue;
-    
+ 
     histSU->Fill(x,y, weight);
     histSL->Fill(x,y, weight);
     histC->Fill(x,y,weight);
     histD->Fill(x,y,weight);
+
+    if(x>100. && x<150) histmL->Fill(y,weight);
+    if(x>150) histmU->Fill(y,weight);
   }
   double single = histSU->GetBinContent(1,1)/histSL->GetBinContent(1,1);
   double single_err = aObError( histSU->GetBinContent(1,1), histSU->GetBinError(1,1), histSL->GetBinContent(1,1), histSL->GetBinError(1,1) );
   double nD = histD->GetBinContent(1,1);
   double nD_err = histD->GetBinError(1,1);
  
+  histmL->DrawNormalized("E");
+  histmU->DrawNormalized("SAMES E");
+
   TString out = "";
   out+= nD*single;
   out += " +- ";
@@ -113,10 +128,10 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
 
 void ratioConst(){
   
-  //doRatioConst("eq1", 120, 150);
-  //doRatioConst("ge1", 120, 150);
-  //doRatioConst("ge2", 120, 150);
-  //return;
+  doRatioConst("eq1", 100, 150);
+  //  doRatioConst("ge1", 100, 150);
+  doRatioConst("ge2", 100, 150);
+  return;
 
   TString tag;
   const int highMax = 1;
