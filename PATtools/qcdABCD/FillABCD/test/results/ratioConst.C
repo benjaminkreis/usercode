@@ -9,6 +9,9 @@
 #include "TH2D.h"
 #include "TChain.h"
 
+#include "TCanvas.h"
+#include "TLegend.h"
+
 #include "analyzeFillABCDInput.h"
 
 using namespace std;
@@ -54,12 +57,12 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
   double borderh2a=0.3;
   double borderh2b=3.142;
 
-  TH2D*  histSU = new TH2D("histSU", "histSU", 1, singleLow, singleHigh, 1, borderh2a, borderh2b);
-  TH2D*  histSL = new TH2D("histSL", "histSL", 1, singleLow, singleHigh, 1, borderh1a, borderh1b);
+  TH2D*  histB = new TH2D("histB", "histB", 1, singleLow, singleHigh, 1, borderh2a, borderh2b);
+  TH2D*  histA = new TH2D("histA", "histA", 1, singleLow, singleHigh, 1, borderh1a, borderh1b);
   TH2D* histC = new TH2D("histC", "histC", 1, borderv2a, borderv2b, 1, borderh2a, borderh2b);
   TH2D* histD = new TH2D("histD", "histD", 1, borderv2a, borderv2b, 1, borderh1a, borderh1b);
-  histSL->Sumw2();
-  histSU->Sumw2();
+  histA->Sumw2();
+  histB->Sumw2();
   histC->Sumw2();
   histD->Sumw2();
 
@@ -83,26 +86,52 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
   histmL->SetLineColor(kBlue);
   histmU->SetLineColor(kRed);
 
+  //temp
+  int nSBuw = 0; 
+  int nSIGuw = 0;
+  double maxWeight =0;
+
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
     
     if(!(bcontinue(nbtags, bcut))) continue;
  
-    histSU->Fill(x,y, weight);
-    histSL->Fill(x,y, weight);
+    histB->Fill(x,y, weight);
+    histA->Fill(x,y, weight);
     histC->Fill(x,y,weight);
     histD->Fill(x,y,weight);
 
-    if(x>100. && x<150) histmL->Fill(y,weight);
-    if(x>150) histmU->Fill(y,weight);
+    if(x>singleLow && x<singleHigh) histmL->Fill(y,weight);
+    if(x>singleHigh) histmU->Fill(y,weight);
+
+    //temp
+    //if(x>singleLow && x<singleHigh) nSBuw++;
+    if(x>singleHigh && y>=0.3){
+      nSIGuw++;
+      if(weight>maxWeight) maxWeight = weight;
+    }
   }
-  double single = histSU->GetBinContent(1,1)/histSL->GetBinContent(1,1);
-  double single_err = aObError( histSU->GetBinContent(1,1), histSU->GetBinError(1,1), histSL->GetBinContent(1,1), histSL->GetBinError(1,1) );
+  double single = histB->GetBinContent(1,1)/histA->GetBinContent(1,1);
+  double single_err = aObError( histB->GetBinContent(1,1), histB->GetBinError(1,1), histA->GetBinContent(1,1), histA->GetBinError(1,1) );
   double nD = histD->GetBinContent(1,1);
   double nD_err = histD->GetBinError(1,1);
  
-  histmL->DrawNormalized("E");
-  histmU->DrawNormalized("SAMES E");
+  TCanvas * c1 = new TCanvas("c1", "c1", 640, 480);
+  histmU->GetXaxis()->SetTitle("minDeltaPhiMET");
+  histmU->GetYaxis()->SetTitle("Events (unit normalized)");
+  histmU->GetXaxis()->SetRangeUser(0,0.5);
+  histmU->DrawNormalized("E");
+  histmL->DrawNormalized("SAMES E");
+  TLegend *leg = new TLegend(0.25, 0.80, 0.6, 0.88);
+  leg->AddEntry(histmU, "MET > 150 GeV", "l");
+  leg->AddEntry(histmL, "100 GeV < MET < 150 GeV", "l");
+  leg->SetFillColor(0);
+  leg->SetLineColor(0);
+  leg->SetTextSize(0.04);
+  leg->SetBorderSize(0);
+  leg->SetLineStyle(0);
+  leg->Draw();
+  c1->Print(bcut+"_mdp_zoom.pdf");
 
   TString out = "";
   out+= nD*single;
@@ -110,17 +139,31 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
   out += abError(nD, nD_err, single, single_err);
 
   cout << bcut << ", " << singleLow << ", " << singleHigh << endl;
-  cout << "nA: " << histSL->GetBinContent(1,1) << " +- " << histSU->GetBinError(1,1) << endl;
-  cout << "nB: " << histSU->GetBinContent(1,1) << " +- " << histSU->GetBinError(1,1) << endl;
+  cout << "nA: " << histA->GetBinContent(1,1) << " +- " << histA->GetBinError(1,1) << endl;
+  cout << "nB: " << histB->GetBinContent(1,1) << " +- " << histB->GetBinError(1,1) << endl;
   cout << "nC: " << histC->GetBinContent(1,1) << " +- " << histC->GetBinError(1,1) << endl; 
   cout << "nD: " << histD->GetBinContent(1,1) << " +- " << histD->GetBinError(1,1) << endl; 
   cout << "r: " << single << " +- " << single_err << endl;
   cout << "ABCD: " << out << endl;
-    
+  cout << endl;
+  double nA=histA->GetBinContent(1,1);
+  double nA_err = histA->GetBinError(1,1);
+  double nB=histB->GetBinContent(1,1);
+  double nB_err = histB->GetBinError(1,1);
+  double nC=histC->GetBinContent(1,1);
+  double nC_err = histC->GetBinError(1,1);
+
+  cout << "nA/nB: " << nA/nB << " +- " << aObError(nA, nA_err, nB, nB_err) << endl;
+  cout << "nD/nC: " << nD/nC << " +- " << aObError(nD, nD_err, nC, nC_err) << endl;
+  cout << "nD/nA: " << nD/nA << " +- " << aObError(nD, nD_err, nA, nA_err) << endl;
+  cout << "nC/nB: " << nC/nB << " +- " << aObError(nC, nC_err, nB, nB_err) << endl;
+
+  cout << "nSBuw: " << nSBuw << endl;
+  cout << "nSIGuw: " << nSIGuw <<", maxWeight: "  << maxWeight << endl;
   histC->Clear();
   histD->Clear();
-  histSU->Clear();
-  histSL->Clear();
+  histB->Clear();
+  histA->Clear();
   
   return out;
 }
@@ -128,10 +171,10 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
 
 void ratioConst(){
   
-  doRatioConst("eq1", 100, 150);
-  //  doRatioConst("ge1", 100, 150);
-  doRatioConst("ge2", 100, 150);
-  return;
+  //doRatioConst("eq1", 100, 150);
+  //doRatioConst("ge1", 100, 150);
+  //doRatioConst("ge2", 100, 150);
+  //return;
 
   TString tag;
   const int highMax = 1;
@@ -139,7 +182,7 @@ void ratioConst(){
   TString o1[lowMax], o2[lowMax], o3[lowMax];
 
   double high;
-  double highA[highMax] = {140};
+  double highA[highMax] = {150};
   double lowA[lowMax]={60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130};
   
   for(int j = 0; j<highMax; j++){

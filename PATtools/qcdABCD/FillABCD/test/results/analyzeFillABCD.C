@@ -35,8 +35,7 @@ using namespace std;
 
 bool bcontinue(int nbtags, int min){
   
-  if(nbtags>=min){
-    //if(nbtags==0){
+  if(nbtags==min){
     return true;
   }
   else{
@@ -44,7 +43,7 @@ bool bcontinue(int nbtags, int min){
   }
 }
 
-int passbtagcut(int nbtags){
+int passbtagcut(int nbtags){//just used for Dfrac
   if(nbtags>=2){
     return 1;
   }
@@ -86,8 +85,8 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   bool useHTcut = false; //assumes HT>300 has already been applied (important for extrapolation aka points in D)
   double HTcut = 500.;
   bool drawLines=false;
-  double singleLow=85;
-  double singleHigh=135;
+  double singleLow=100;
+  double singleHigh=150;
   
   // int fitNum = 10; //number of bins in xL region, used to fit ratio
   int extendedNum = 11; //number of bins in xR region, used in extrapolation
@@ -1144,7 +1143,7 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   par_exp3_0+=par_exp3[0];
   par_exp3_1+=par_exp3[1];
   par_exp3_2+=par_exp3[2];
-  par_exp3_3+=par_exp3[3];
+  //  par_exp3_3+=par_exp3[3];
 
   pt_exp->SetFillColor(0);
   pt_exp->SetTextSize(0.02);
@@ -1443,11 +1442,12 @@ void analyzeFillABCD(){
   
   TString type = "pfpf";
 
-  double *array00 = doAnalyzeFillABCD(type, 2, 0, 150, 15, true, "0");
+  double *array00 = doAnalyzeFillABCD(type, 1, 0, 150, 15, true, "0");
   return;
 
-  int binNumScale = 2;
-  int nbs = 1;
+  int binNumScale = 1;
+  int nbs = 2;
+  
   double *array0 = doAnalyzeFillABCD(type, nbs, 0, 60, binNumScale*6, false, "0");
   double *array1 = doAnalyzeFillABCD(type, nbs, 0, 70, binNumScale*7, false, "1");
   double *array2 = doAnalyzeFillABCD(type, nbs, 0, 80, binNumScale*8, false, "2");
@@ -1464,17 +1464,34 @@ void analyzeFillABCD(){
   double *array13 = doAnalyzeFillABCD(type, nbs, 0, 190, binNumScale*19, false, "11");
   double *array14 = doAnalyzeFillABCD(type, nbs, 0, 200, binNumScale*20, false, "11");
   
- 
+  /*
+  double *array0 = doAnalyzeFillABCD(type, nbs, 0, 60, 3, false, "0");
+  double *array1 = doAnalyzeFillABCD(type, nbs, 0, 70, 3, false, "1");
+  double *array2 = doAnalyzeFillABCD(type, nbs, 0, 80, 4, false, "2");
+  double *array3 = doAnalyzeFillABCD(type, nbs, 0, 90, 4, false, "3");
+  double *array4 = doAnalyzeFillABCD(type, nbs, 0, 100, 5, false, "4");
+  double *array5 = doAnalyzeFillABCD(type, nbs, 0, 110, 5, false, "5");
+  double *array6 = doAnalyzeFillABCD(type, nbs, 0, 120, 6, false, "6");
+  double *array7 = doAnalyzeFillABCD(type, nbs, 0, 130, 6, false, "7");
+  double *array8 = doAnalyzeFillABCD(type, nbs, 0, 140, 7, false, "8");
+  double *array9 = doAnalyzeFillABCD(type, nbs, 0, 150, 7, false, "9");
+  double *array10 = doAnalyzeFillABCD(type, nbs, 0, 160, 8, false, "10");
+  double *array11 = doAnalyzeFillABCD(type, nbs, 0, 170, 8, false, "11");
+  double *array12 = doAnalyzeFillABCD(type, nbs, 0, 180, 9, false, "11");
+  double *array13 = doAnalyzeFillABCD(type, nbs, 0, 190, 9, false, "11");
+  double *array14 = doAnalyzeFillABCD(type, nbs, 0, 200, 10, false, "11");
+  */
+
+
   double *array1f = Dfrac(type,1);
   double *array2f = Dfrac(type,2);
   
   cout << endl;
   cout << "dfrac 1tag: " << array1f[0] << " " << array1f[1] << endl;
   cout << "dfrac 2tag: " << array2f[0] << " " << array2f[1] << endl;
- 
-
-   cout << endl;
-  cout << "nob" << endl;
+  
+  
+  cout << endl;
   cout << array0[2] << " +/- " << array0[3] << endl;
   cout << array1[2] << " +/- " << array1[3] << endl;
   cout << array2[2] << " +/- " << array2[3] << endl;
@@ -1490,10 +1507,10 @@ void analyzeFillABCD(){
   cout << array12[2] << " +/- " << array12[3] << endl;
   cout << array13[2] << " +/- " << array13[3] << endl;
   cout << array14[2] << " +/- " << array14[3] << endl;
-   return;
-
-
-
+  return;
+  
+  
+  
   cout << endl;
   cout << "btagging 1 tag" << endl;
   cout << array0[2]*array1f[0] << " +/- " << sqrt(array0[2]*array1f[1]*array0[2]*array1f[1]+array0[3]*array1f[0]*array0[3]*array1f[0]) << endl;

@@ -37,16 +37,43 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
       cout << "need nums" << endl;
     }
     else if(tagType=="eq1"){
+      //PU
       trueN  = 3.53319;
       trueN_err = 1.37855;
+
+      //MG
+      trueN = 1.36258 ;
+      trueN_err = 0.161072;
+
+      //PUfull
+      trueN =  1.42141;
+      trueN_err = 0.293979;
     } 
     else if(tagType=="ge1"){
+      //PU
       trueN = 4.03775;
       trueN_err = 1.39968;
+
+      //MG
+      trueN =1.48387 ;
+      trueN_err =0.165424;
+
+      //PUfull
+      trueN = 1.65056;
+      trueN_err =  0.297513;
     }
     else if(tagType=="ge2"){
+      //PU
       trueN = 0.504563;
       trueN_err = 0.242294;
+      
+      //MG
+      trueN =0.121288;
+      trueN_err =0.0376947;
+    
+      //PUfull
+      trueN = 0.229155;
+      trueN_err=0.0457174;
     }
     else  if(tagType=="data"){
       drawLines=false;
@@ -129,8 +156,9 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   
   hrEb->SetTitle(type);
   yA->SetTitle("Predicted Number of QCD Events");
+  //yA->SetTitle("Ratio (mean nB/mean nA)");
   //  yA->SetTitleOffset(1.2);
-  /*
+  
   xA->SetBinLabel(1,"60");
   xA->SetBinLabel(2,"70");
   xA->SetBinLabel(3,"80"); 
@@ -148,7 +176,7 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   xA->SetBinLabel(15,"200"); 
   xA->SetLabelSize(0.04);
   xA->SetTitle("Fit range max [MET in GeV]");
-  */
+  /*
   xA->SetBinLabel(1,"60");
   xA->SetBinLabel(2,"65");
   xA->SetBinLabel(3,"70");
@@ -164,8 +192,9 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
   xA->SetBinLabel(13,"120");
   xA->SetBinLabel(14,"125");
   xA->SetBinLabel(15,"130");
-  xA->SetLabelSize(0.04);                                                                                                                                                                                                                                          
-  xA->SetTitle("control region min [MET in GeV]");
+  xA->SetLabelSize(0.04);                                                                                                                                                                                                                  */                        
+  //  xA->SetTitle("control region min [MET in GeV]");
+  xA->SetTitle("fit region max [MET in GeV]");
 
   TLegend *leg = new TLegend(.17,.77,.35,.8);
   leg->AddEntry(hrEb, legEntry, "P");// leg->AddEntry(hrEb, "a*exp(b*x)+c", "l");
@@ -200,7 +229,7 @@ void doMulti(TString type = "pfpf", TString fileName= "", double ymax= 50., TStr
  
     
   // text1->Draw();
-  text2->Draw();
+  //  text2->Draw();
   leg->Draw();
   gPad->SetRightMargin(0.05);
   if(drawLines){
@@ -295,11 +324,32 @@ void multi(){
   doMulti("pfpf","CR_ge2_PU_start100", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
   */
 
+  /*
   doMulti("pfpf","CR_eq1_PU_end140", 16, "PYTHIA PU QCD MC, =1 b-tags", "eq1");
   doMulti("pfpf","CR_ge1_PU_end140", 16, "PYTHIA PU QCD MC, >=1 b-tags", "ge1");
   doMulti("pfpf","CR_ge2_PU_end140", 5, "PYTHIA PU QCD MC, >=2 b-tags", "ge2");
+  */
 
+  /*
+  doMulti("pfpf", "r_eq1_end145", 1.1, "PYTHIA PU QCD MC, =1 b-tags", "data");
+  doMulti("pfpf", "r_ge1_end145", 1.1, "PYTHIA PU QCD MC, >=1 b-tags", "data");
+  doMulti("pfpf", "r_ge2_end145", 1.1, "PYTHIA PU QCD MC, >=2 b-tags", "data");
+  */
 
+  //doMulti("pfpf","CR_eq1_MG_end140", 9, "MadGraph QCD MC, =1 b-tags", "eq1");
+  //doMulti("pfpf","CR_ge1_MG_end140", 9, "MadGraph QCD MC, >=1 b-tags", "ge1");
+  //doMulti("pfpf","CR_ge2_MG_end140", 1.3, "MadGraph QCD MC, >=2 b-tags", "ge2"); 
 
+  /*
+  doMulti("pfpf","CR_eq1_PUfull_end150", 16, "PYTHIA PU full QCD MC, =1 b-tags", "eq1");
+  doMulti("pfpf","CR_ge1_PUfull_end150", 16, "PYTHIA PU full QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","CR_ge2_PUfull_end150", 2, "PYTHIA PU full QCD MC, >=2 b-tags", "ge2");
+  */
+
+  doMulti("pfpf","eq1_PUfull_start0w", 16, "PYTHIA PU full QCD MC, =1 b-tags", "ge1");
+  doMulti("pfpf","eq1_PUfull_start0", 16, "PYTHIA PU full QCD MC, =1 b-tags", "ge1");
+  doMulti("pfpf","ge1_PUfull_start0", 16, "PYTHIA PU full QCD MC, >=1 b-tags", "ge1");
+  doMulti("pfpf","ge2_PUfull_start0", 0.5, "PYTHIA PU full QCD MC, >=2 b-tags", "ge2");
+  doMulti("pfpf","ge2_PUfull_start0w", 0.5, "PYTHIA PU full QCD MC, >=2 b-tags", "ge2");
 
 }

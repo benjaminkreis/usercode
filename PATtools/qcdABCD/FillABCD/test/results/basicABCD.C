@@ -27,7 +27,7 @@ using namespace std;
 
 
 bool passb(int nbtags){
-  if(nbtags>=2){
+  if(nbtags>=1){
     return true;
   }
   else{
@@ -44,7 +44,7 @@ TString *doBasicABCD(double borderv1a = 0., double borderv1b = 0., int fitNum = 
   bool verbose = true;
   bool subtractSM =false;
   double SMfactor = 1.0;
-  bool floatC =false;
+  bool floatC =true;
 
   double pi=4*atan(1.0)+.0001;
   double borderv2a=150.0;
@@ -257,7 +257,7 @@ void basicABCD(){
   gStyle->SetOptFit(1);
   cout << "begin basicABCD" << endl;
 
-  TString *a00 = doBasicABCD(0.,80.,10);
+  TString *a00 = doBasicABCD(0.,150.,15);
   return;
 
   TString *a0 = doBasicABCD(0.,70.,10);

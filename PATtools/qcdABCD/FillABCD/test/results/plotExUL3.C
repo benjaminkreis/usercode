@@ -56,9 +56,9 @@ void doExtrapPlot(TString name1 = "multi_calo_nob", TString name2 = "multi_calo_
   myC->cd();
   
   TLegend *leg = new TLegend(.19,.15,.3,.3);
-  leg->AddEntry(gr1, "QCD MC", "P");
-  leg->AddEntry(gr2, "QCD+SM MC", "P");
-  leg->AddEntry(gr3, "QCD+SM+LM13 MC", "P");
+  leg->AddEntry(gr1, "MadGraph QCD MC", "P");
+  leg->AddEntry(gr2, "PYTHIA Pileup QCD MC", "P");
+  // leg->AddEntry(gr3, "All SM + LM13 MC", "P");
   //leg->AddEntry(gr1, "minDeltaPhiMET30_eta5", "P");
   //leg->AddEntry(gr2, "minDeltaPhiMET30_eta5, idVeto", "P");
   //leg->AddEntry(gr3, "3", "P"); 
@@ -90,14 +90,14 @@ void doExtrapPlot(TString name1 = "multi_calo_nob", TString name2 = "multi_calo_
   gr1->GetYaxis()->SetRangeUser(0.001, 40);
   gr1->GetYaxis()->SetTitle("r(E_{T}^{miss})");
   gr1->GetXaxis()->SetTitle("E_{T}^{miss} [GeV]");
-  // gr1->GetXaxis()->SetRangeUser(0,200);
+  //gr1->GetXaxis()->SetRangeUser(0,450);
   gr1->Draw();
  
 
   gr2->Draw("SAME");
-  gr3->Draw("SAME");
+  //gr3->Draw("SAME");
   //text1->Draw();
-  text2->Draw();
+  //text2->Draw();
   gPad->SetRightMargin(0.05);
   myC->SetLogy(1);
   myC->Modified();
@@ -125,8 +125,10 @@ void plotExUL3(){
 
   //note jan30 
   //doExtrapPlot("plotsQCDpre", "plotsQCDSMpre", "plotsQCDSMLM13pre");
-  // doExtrapPlot("plotsQCDe1", "plotsQCDSMe1", "plotsQCDSMLM13e1");
+  //  doExtrapPlot("plotsQCDe1", "plotsQCDSMe1", "plotsQCDSMLM13e1");
   //doExtrapPlot("plotsQCDge1", "plotsQCDSMge1", "plotsQCDSMLM13ge1");
-  doExtrapPlot("plotsQCDge2", "plotsQCDSMge2", "plotsQCDSMLM13ge2");
+  //doExtrapPlot("plotsQCDge2", "plotsQCDSMge2", "plotsQCDSMLM13ge2");
+
+  doExtrapPlot("plotsMG", "plotsPUfull", "plots0");
 
 }
