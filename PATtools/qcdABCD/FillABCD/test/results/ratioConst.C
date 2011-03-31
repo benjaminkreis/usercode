@@ -9,8 +9,11 @@
 #include "TH2D.h"
 #include "TChain.h"
 
+//not necessary for anything except plot
 #include "TCanvas.h"
 #include "TLegend.h"
+#include "TStyle.h"
+#include "TROOT.h"
 
 #include "analyzeFillABCDInput.h"
 
@@ -46,6 +49,7 @@ double aObError(double a, double aE, double b, double bE){
 
 
 TString doRatioConst(TString bcut, double singleLow, double singleHigh){
+  gROOT->SetStyle("CMS");
 
   //double singleLow=85;
   //double singleHigh=135;
@@ -77,19 +81,26 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
   InputChain->SetBranchAddress("weight",&weight);
   InputChain->SetBranchAddress("nbSSVM",&nbtags);
   
-  TH1D* histmL = new TH1D("l","l",50,0., 3.142);
-  TH1D* histmU = new TH1D("u","u",50,0., 3.142);
+  TH1D* histmL = new TH1D("mediumMET","l",50,0., 3.142);
+  TH1D* histmU = new TH1D("highMET","u",50,0., 3.142);
   histmL->Sumw2();
   histmU->Sumw2();
   histmL->SetLineWidth(2);
   histmU->SetLineWidth(2);
   histmL->SetLineColor(kBlue);
   histmU->SetLineColor(kRed);
+  histmL->SetMarkerSize(0);
+  histmU->SetMarkerSize(0);
 
   //temp
   int nSBuw = 0; 
   int nSIGuw = 0;
   double maxWeight =0;
+
+  double singleLowPlot=50;
+  double singleHighPlot=150;
+  TString sLP = "100";
+  TString sHP = "150";
 
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
@@ -101,8 +112,8 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
     histC->Fill(x,y,weight);
     histD->Fill(x,y,weight);
 
-    if(x>singleLow && x<singleHigh) histmL->Fill(y,weight);
-    if(x>singleHigh) histmU->Fill(y,weight);
+    if(x>singleLowPlot && x<singleHighPlot) histmL->Fill(y,weight);
+    if(x>singleHighPlot) histmU->Fill(y,weight);
 
     //temp
     //if(x>singleLow && x<singleHigh) nSBuw++;
@@ -120,11 +131,11 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
   histmU->GetXaxis()->SetTitle("minDeltaPhiMET");
   histmU->GetYaxis()->SetTitle("Events (unit normalized)");
   histmU->GetXaxis()->SetRangeUser(0,0.5);
-  histmU->DrawNormalized("E");
-  histmL->DrawNormalized("SAMES E");
-  TLegend *leg = new TLegend(0.25, 0.80, 0.6, 0.88);
-  leg->AddEntry(histmU, "MET > 150 GeV", "l");
-  leg->AddEntry(histmL, "100 GeV < MET < 150 GeV", "l");
+  histmU->DrawNormalized("HIST E");
+  histmL->DrawNormalized("HIST SAMES E");
+  TLegend *leg = new TLegend(0.35, 0.80, 0.7, 0.88);
+  leg->AddEntry(histmU, "MET > "+sHP+" GeV", "l");
+  leg->AddEntry(histmL, sLP+" GeV < MET < "+sHP+" GeV", "l");
   leg->SetFillColor(0);
   leg->SetLineColor(0);
   leg->SetTextSize(0.04);
@@ -173,8 +184,8 @@ void ratioConst(){
   
   //doRatioConst("eq1", 100, 150);
   //doRatioConst("ge1", 100, 150);
-  //doRatioConst("ge2", 100, 150);
-  //return;
+  doRatioConst("ge2", 100, 150);
+  return;
 
   TString tag;
   const int highMax = 1;
