@@ -33,6 +33,21 @@
 
 using namespace std;
 
+bool bcontinue(int nbtags, TString bcut){
+  bool returnTrue = false; 
+  if(bcut=="eq1"){
+    if(nbtags==1) returnTrue = true;
+  }
+  else if(bcut=="ge1"){
+    if(nbtags>=1) returnTrue = true;
+  }
+  else if(bcut=="ge2"){
+    if(nbtags>=2) returnTrue = true;
+  }
+  else{assert(0);}
+  return returnTrue;
+}
+
 bool bcontinue(int nbtags, int min){
   
   if(nbtags==min){
@@ -69,7 +84,7 @@ double aObError(double a, double aE, double b, double bE){
   return Err;
 }
 
-double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv1a = 50, double borderv1b = 150, int fitNum = 6, bool verbose = false, TString fName = ""){
+double *doAnalyzeFillABCD(TString joshType = "calo", TString bcont="", double borderv1a = 50, double borderv1b = 150, int fitNum = 6, bool verbose = false, TString fName = ""){
   cout << endl;
   if(verbose)cout << "Begin analyzeFillABCD" << endl;
   //gROOT->SetStyle("Plain");
@@ -226,12 +241,14 @@ double *doAnalyzeFillABCD(TString joshType = "calo", int bcont=0, double borderv
   
   TH2D*  histSU = new TH2D("histSU", "histSU", 1, singleLow, singleHigh, 1, borderh2a, borderh2b);
   TH2D*  histSL = new TH2D("histSL", "histSL", 1, singleLow, singleHigh, 1, borderh1a, borderh1b);
-  //TH1D* histU = new TH1D("histU", "histU", 30, borderv1a, borderv2b_plot);
-  //TH1D* histL = new TH1D("histL", "histL", 30, borderv1a, borderv2b_plot);
-  //TH1D* histUL = new TH1D("histUL", "histUL", 30, borderv1a, borderv2b_plot);
-  TH1D* histU = new TH1D("histU", "histU", 60,borderv1a, borderv2b_plot); 
-  TH1D* histL = new TH1D("histL", "histL", 60,borderv1a, borderv2b_plot); 
-  TH1D* histUL = new TH1D("histUL", "histUL", 60,borderv1a, borderv2b_plot); 
+  const int nULbins=13;
+  const Double_t ULbins[] = {0,20,40,60,80,100,120,140,160,180,200,240,280,400};
+  TH1D* histU = new TH1D("histU", "histU", nULbins, ULbins);
+  TH1D* histL = new TH1D("histL", "histL", nULbins, ULbins);
+  TH1D* histUL = new TH1D("histUL", "histUL", nULbins, ULbins);
+  //TH1D* histU = new TH1D("histU", "histU", 60,borderv1a, borderv2b_plot); 
+  //TH1D* histL = new TH1D("histL", "histL", 60,borderv1a, borderv2b_plot); 
+  //TH1D* histUL = new TH1D("histUL", "histUL", 60,borderv1a, borderv2b_plot); 
   TH1D* histUSM = new TH1D("histUSM", "histUSM", 60,borderv1a, borderv2b_plot); 
   TH1D* histLSM = new TH1D("histLSM", "histLSM", 60,borderv1a, borderv2b_plot); 
   TH1D* histULSM = new TH1D("histULSM", "histULSM", 60,borderv1a, borderv2b_plot); 
@@ -1442,7 +1459,9 @@ void analyzeFillABCD(){
   
   TString type = "pfpf";
 
-  double *array00 = doAnalyzeFillABCD(type, 1, 0, 150, 15, true, "0");
+  //double *array00 = doAnalyzeFillABCD(type, "eq1", 0, 150, 15, true, "_eq1_M");
+  //double *array00 = doAnalyzeFillABCD(type, "ge1", 0, 150, 15, true, "_ge1_M");
+  double *array00 = doAnalyzeFillABCD(type, "ge2", 0, 150, 15, true, "_ge2_M");
   return;
 
   int binNumScale = 1;
