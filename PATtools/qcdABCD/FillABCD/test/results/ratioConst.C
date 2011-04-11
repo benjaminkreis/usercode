@@ -61,15 +61,29 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
   double borderh2a=0.3;
   double borderh2b=3.142;
 
-  TH2D*  histB = new TH2D("histB", "histB", 1, singleLow, singleHigh, 1, borderh2a, borderh2b);
-  TH2D*  histA = new TH2D("histA", "histA", 1, singleLow, singleHigh, 1, borderh1a, borderh1b);
+
+  TH2D* histA = new TH2D("histA", "histA", 1, singleLow, singleHigh, 1, borderh1a, borderh1b);
+  TH2D* histB = new TH2D("histB", "histB", 1, singleLow, singleHigh, 1, borderh2a, borderh2b);
   TH2D* histC = new TH2D("histC", "histC", 1, borderv2a, borderv2b, 1, borderh2a, borderh2b);
   TH2D* histD = new TH2D("histD", "histD", 1, borderv2a, borderv2b, 1, borderh1a, borderh1b);
+
+  TH2D* histAB = new TH2D("histAB", "histAB", 1, singleLow, singleHigh, 1, borderh1a, borderh2b);
+  TH2D* histCD = new TH2D("histCD", "histCD", 1, borderv2a, borderv2b, 1, borderh1a, borderh2b);
+
+  TH2D* histMU = new TH2D("histMU", "histMU", 1, 50., 100., 1, borderh2a, borderh2b);
+  TH2D* histML = new TH2D("histML", "histML", 1, 50., 100., 1, borderh1a, borderh1b);
+  TH2D* histMUL = new TH2D("histMUL", "histMUL", 1, 50., 100., 1, borderh1a, borderh2b);
+
   histA->Sumw2();
   histB->Sumw2();
   histC->Sumw2();
   histD->Sumw2();
-
+  histAB->Sumw2();
+  histCD->Sumw2();
+  histMU->Sumw2();
+  histML->Sumw2();
+  histMUL->Sumw2();
+  
   TChain* InputChain = FormChainJosh("pfpf");
   const int numEntries = InputChain->GetEntries();
   if(verbose)cout <<"numEntries: " << numEntries << endl;
@@ -92,16 +106,11 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
   histmL->SetMarkerSize(0);
   histmU->SetMarkerSize(0);
 
-  //temp
-  int nSBuw = 0; 
-  int nSIGuw = 0;
-  double maxWeight =0;
-
   double singleLowPlot=50;
   double singleHighPlot=150;
   TString sLP = "100";
   TString sHP = "150";
-
+  
   for(int i = 0; i<numEntries; i++){
     InputChain->GetEvent(i);
     
@@ -109,24 +118,39 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
  
     histB->Fill(x,y, weight);
     histA->Fill(x,y, weight);
-    histC->Fill(x,y,weight);
-    histD->Fill(x,y,weight);
+    histC->Fill(x,y, weight);
+    histD->Fill(x,y, weight);
+    histAB->Fill(x,y, weight);
+    histCD->Fill(x,y, weight);
+    histML->Fill(x,y, weight);
+    histMU->Fill(x,y, weight);
+    histMUL->Fill(x,y, weight);
 
     if(x>singleLowPlot && x<singleHighPlot) histmL->Fill(y,weight);
     if(x>singleHighPlot) histmU->Fill(y,weight);
-
-    //temp
-    //if(x>singleLow && x<singleHigh) nSBuw++;
-    if(x>singleHigh && y>=0.3){
-      nSIGuw++;
-      if(weight>maxWeight) maxWeight = weight;
-    }
   }
   double single = histB->GetBinContent(1,1)/histA->GetBinContent(1,1);
   double single_err = aObError( histB->GetBinContent(1,1), histB->GetBinError(1,1), histA->GetBinContent(1,1), histA->GetBinError(1,1) );
+  double nA=histA->GetBinContent(1,1);
+  double nA_err = histA->GetBinError(1,1);
+  double nB=histB->GetBinContent(1,1);
+  double nB_err = histB->GetBinError(1,1);
+  double nC=histC->GetBinContent(1,1);
+  double nC_err = histC->GetBinError(1,1);
   double nD = histD->GetBinContent(1,1);
   double nD_err = histD->GetBinError(1,1);
- 
+  double nAB = histAB->GetBinContent(1,1);
+  double nAB_err = histAB->GetBinError(1,1);
+  double nCD = histCD->GetBinContent(1,1);
+  double nCD_err = histCD->GetBinError(1,1);
+  
+  double nMU = histMU->GetBinContent(1,1);
+  double nMU_err = histMU->GetBinError(1,1);
+  double nML = histML->GetBinContent(1,1);
+  double nML_err = histML->GetBinError(1,1);
+  double nMUL = histMUL->GetBinContent(1,1);
+  double nMUL_err = histMUL->GetBinError(1,1);
+
   TCanvas * c1 = new TCanvas("c1", "c1", 640, 480);
   histmU->GetXaxis()->SetTitle("minDeltaPhiMET");
   histmU->GetYaxis()->SetTitle("Events (unit normalized)");
@@ -150,31 +174,39 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
   out += abError(nD, nD_err, single, single_err);
 
   cout << bcut << ", " << singleLow << ", " << singleHigh << endl;
-  cout << "nA: " << histA->GetBinContent(1,1) << " +- " << histA->GetBinError(1,1) << endl;
-  cout << "nB: " << histB->GetBinContent(1,1) << " +- " << histB->GetBinError(1,1) << endl;
-  cout << "nC: " << histC->GetBinContent(1,1) << " +- " << histC->GetBinError(1,1) << endl; 
-  cout << "nD: " << histD->GetBinContent(1,1) << " +- " << histD->GetBinError(1,1) << endl; 
+  cout << "nA: " << nA << " +- " << nA_err << endl;
+  cout << "nB: " << nB << " +- " << nB_err << endl;
+  cout << "nC: " << nC << " +- " << nC_err << endl;
+  cout << "nD: " << nD << " +- " << nD_err << endl;
+  cout << "nAB: " << nAB << " +- " << nAB_err << endl;
+  cout << "nCD: " << nCD << " +- " << nCD_err << endl;
   cout << "r: " << single << " +- " << single_err << endl;
   cout << "ABCD: " << out << endl;
   cout << endl;
-  double nA=histA->GetBinContent(1,1);
-  double nA_err = histA->GetBinError(1,1);
-  double nB=histB->GetBinContent(1,1);
-  double nB_err = histB->GetBinError(1,1);
-  double nC=histC->GetBinContent(1,1);
-  double nC_err = histC->GetBinError(1,1);
+
 
   cout << "nA/nB: " << nA/nB << " +- " << aObError(nA, nA_err, nB, nB_err) << endl;
   cout << "nD/nC: " << nD/nC << " +- " << aObError(nD, nD_err, nC, nC_err) << endl;
   cout << "nD/nA: " << nD/nA << " +- " << aObError(nD, nD_err, nA, nA_err) << endl;
   cout << "nC/nB: " << nC/nB << " +- " << aObError(nC, nC_err, nB, nB_err) << endl;
+  cout << endl;
 
-  cout << "nSBuw: " << nSBuw << endl;
-  cout << "nSIGuw: " << nSIGuw <<", maxWeight: "  << maxWeight << endl;
+  cout << "nMU/nMUL: " << nMU/nMUL << " +- " << aObError(nMU, nMU_err, nMUL, nMUL_err) << endl;
+  cout << "nB/nAB: " << nB/nAB << " +- " << aObError(nB, nB_err, nAB, nAB_err) << endl;
+  cout << "nC/nCD: " << nC/nCD << " +- " << aObError(nC, nC_err, nCD, nCD_err) << endl;
+  
+
   histC->Clear();
   histD->Clear();
   histB->Clear();
   histA->Clear();
+  histAB->Clear();
+  histCD->Clear();
+  histMU->Clear();
+  histML->Clear();
+  histMUL->Clear();
+  histmL->Clear();
+  histmU->Clear();
   
   return out;
 }
@@ -182,8 +214,8 @@ TString doRatioConst(TString bcut, double singleLow, double singleHigh){
 
 void ratioConst(){
   
-  //doRatioConst("eq1", 100, 150);
-  //doRatioConst("ge1", 100, 150);
+  doRatioConst("eq1", 100, 150);
+  doRatioConst("ge1", 100, 150);
   doRatioConst("ge2", 100, 150);
   return;
 
