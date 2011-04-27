@@ -501,8 +501,9 @@ DonRA2::beginJob()
   nEvPass8b_ = 0;
   nEvPass8c_ = 0;
 
-  edm::Service<TFileService> fs;
-  hist1_ = fs->make<TH1D>("hist1", "cutflow hist",13,-0.5,12.5);
+  //edm::Service<TFileService> fs;
+  // hist1_ = fs->make<TH1D>("hist1", "cutflow hist",13,-0.5,12.5);
+  hist1_ = new TH1D("hist1", "cutflow hist",13,-0.5,12.5);
   hist1_->Sumw2();
 }
 
