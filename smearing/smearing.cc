@@ -39,23 +39,64 @@ gROOT->Reset();
  hf->Sumw2();
  hpf->Sumw2();
 
+ //MET bins
  const int na = 7;
  TH1F* ha[na];
+ TH1F* hc1[na];
+ TH1F* hc2[na];
+ TH1F* hc3[na];
+ TH1F* hc4[na];
+ TH1F* hc5[na];
  for(int i=0; i<na; i++){
    TString ns = "";
    ns+=i;
    ha[i]=new TH1F("ha"+ns,"minDeltaPhiN",50,0.0,5.0);
    ha[i]->SetLineColor(i+1);
    ha[i]->SetLineWidth(2);
+
+   hc1[i]=new TH1F("hc1"+ns,"minDeltaPhiN",20,0.0,5.0);
+   hc2[i]=new TH1F("hc2"+ns,"minDeltaPhiN",20,0.0,5.0);
+   hc3[i]=new TH1F("hc3"+ns,"minDeltaPhiN",20,0.0,5.0);
+   hc4[i]=new TH1F("hc4"+ns,"minDeltaPhiN",20,0.0,5.0);
+   hc5[i]=new TH1F("hc5"+ns,"minDeltaPhiN",20,0.0,5.0);
+   hc1[i]->SetFillColor(1);
+   hc2[i]->SetFillColor(2);
+   hc3[i]->SetFillColor(3);
+   hc4[i]->SetFillColor(4);
+   hc5[i]->SetFillColor(5);
+   
  }
+
+ //HT bins
+ const int nb = 5;//400-600,600-800,800-1000,1000-1200,>1200
+ TH1F* hbp[nb];
+ TH1F* hbf[nb];
+
+ for(int i=0; i<nb; i++){
+   TString ns = "";
+   ns+=i;
+   hbp[i]=new TH1F("hbp"+ns,"pass vs met",15,0,1000);
+   hbp[i]->SetFillColor(i+1);
+   hbp[i]->SetLineWidth(2);
+   
+   hbf[i]=new TH1F("hbf"+ns,"fail vs met",15,0,1000);
+   hbf[i]->SetFillColor(i+1);
+   hbf[i]->SetLineWidth(2);
+
+ }
+
+
  TFile * fin = new TFile("inputs.root","READ");
  TH1F* htdist = (TH1F*)fin->Get("HT");
  
- for (int i=0;i<100000;i++){
- //for (int i=0;i<100000000;i++){
+ int ntoys = 10000000;
+ for (int i=0;i<ntoys;i++){
+   
+   if(i%10000==0) cout << " toy " << i << ", percent done=" << (int)(i/(double)ntoys*100.)<<endl;
+   
    double sum=0.0;
-   double ht_unsmeared=1000;
-   // ht_unsmeared = htdist->GetRandom();
+   double ht_unsmeared=2000;
+   ht_unsmeared = htdist->GetRandom();
    //if(ht_unsmeared < 1000) continue;
    double pt1=rnd.Rndm();
    double phi1=two_pi*rnd.Rndm();
@@ -75,7 +116,7 @@ gROOT->Reset();
    double phi3=atan2(p3y,p3x);
 
    double ht_scaling=ht_unsmeared/(pt1+pt2+pt3);
-
+   
    pt1*=ht_scaling;
    pt2*=ht_scaling;
    pt3*=ht_scaling;
@@ -91,7 +132,9 @@ gROOT->Reset();
    double pt1s=pt1+frac_sigma*pt1*(rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()-3.0)*sqrt(12/6);
    double pt2s=pt2+frac_sigma*pt2*(rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()-3.0)*sqrt(12/6);
    double pt3s=pt3+frac_sigma*pt3*(rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()-3.0)*sqrt(12/6);
+   double ht_smeared = pt1s+pt2s+pt3s;
 
+   
    double phi_smear=0.06;
 
    double phi1s=phi1+phi_smear*(rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()+rnd.Rndm()-3.0)*sqrt(12/6);
@@ -105,6 +148,16 @@ gROOT->Reset();
 
    double phi_MET=atan2(METy,METx);
 
+
+
+   /*
+   double htscale = 1000./ht_smeared;
+   //htscale=1;
+   pt1s=pt1s*htscale;
+   pt2s=pt2s*htscale;
+   pt3s=pt3s*htscale;
+   MET=MET*htscale;
+   */
 
 
    double alpha1=phi1s-phi1s;
@@ -185,19 +238,110 @@ gROOT->Reset();
      hist4->Fill(mindeltaPhiN);
    }
 
-   if(mindeltaPhiN>=4)hp->Fill(MET);
-   if(mindeltaPhiN<4) hf->Fill(MET);
-   if(MET>0 && MET<50) ha[0]->Fill(mindeltaPhiN);
-   if(MET>50 && MET<100) ha[1]->Fill(mindeltaPhiN);
-   if(MET>100 && MET<150) ha[2]->Fill(mindeltaPhiN);
-   if(MET>150 && MET<200) ha[3]->Fill(mindeltaPhiN);
-   if(MET>200 && MET<300) ha[4]->Fill(mindeltaPhiN);
-   if(MET>300 && MET<400) ha[5]->Fill(mindeltaPhiN);
-   if(MET>400) ha[6]->Fill(mindeltaPhiN);
+   if(mindeltaPhiN>=4){
+     hp->Fill(MET);
+     if(ht_smeared<600) {
+       hbp[0]->Fill(MET);
+     }
+     else if(ht_smeared>=600 && ht_smeared<800) {
+       hbp[1]->Fill(MET);
+     }
+     else if(ht_smeared>=800 && ht_smeared<1000) {
+       hbp[2]->Fill(MET);
+     }
+     else if(ht_smeared>=1000 && ht_smeared<1200) {
+       hbp[3]->Fill(MET);
+     }
+     else if(ht_smeared>=1200) {
+       hbp[4]->Fill(MET);
+     }
+     else{assert(0);}
 
+   }
+   else if(mindeltaPhiN<4){
+     hf->Fill(MET);
+     if(ht_smeared<600) {
+       hbf[0]->Fill(MET);
+     }
+     else if(ht_smeared>=600 && ht_smeared<800) {
+       hbf[1]->Fill(MET);
+     }
+     else if(ht_smeared>=800 && ht_smeared<1000) {
+       hbf[2]->Fill(MET);
+     }
+     else if(ht_smeared>=1000 && ht_smeared<1200) {
+       hbf[3]->Fill(MET);
+     }
+     else if(ht_smeared>=1200) {
+       hbf[4]->Fill(MET);
+     }
+     else{assert(0);}
+   }     
+   else {assert(0);}
+   
+   if(MET>=0 && MET<50){
+     ha[0]->Fill(mindeltaPhiN);
 
+     if(ht_smeared<600) hc1[0]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=600 && ht_smeared<800) hc2[0]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=800 && ht_smeared<1000) hc3[0]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1000 && ht_smeared<1200) hc4[0]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1200) hc5[0]->Fill(mindeltaPhiN);
+     
+   }     
+   else if(MET>=50 && MET<100) {
+     ha[1]->Fill(mindeltaPhiN);
+
+     if(ht_smeared<600) hc1[1]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=600 && ht_smeared<800) hc2[1]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=800 && ht_smeared<1000) hc3[1]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1000 && ht_smeared<1200) hc4[1]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1200) hc5[1]->Fill(mindeltaPhiN);
+   }
+   else if(MET>=100 && MET<150){
+     ha[2]->Fill(mindeltaPhiN);
+     if(ht_smeared<600) hc1[2]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=600 && ht_smeared<800) hc2[2]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=800 && ht_smeared<1000) hc3[2]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1000 && ht_smeared<1200) hc4[2]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1200) hc5[2]->Fill(mindeltaPhiN);
+   }     
+   else if(MET>=150 && MET<200){
+     ha[3]->Fill(mindeltaPhiN);
+     if(ht_smeared<600) hc1[3]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=600 && ht_smeared<800) hc2[3]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=800 && ht_smeared<1000) hc3[3]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1000 && ht_smeared<1200) hc4[3]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1200) hc5[3]->Fill(mindeltaPhiN);
+   }
+   else if(MET>=200 && MET<300){
+     ha[4]->Fill(mindeltaPhiN);
+     if(ht_smeared<600) hc1[4]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=600 && ht_smeared<800) hc2[4]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=800 && ht_smeared<1000) hc3[4]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1000 && ht_smeared<1200) hc4[4]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1200) hc5[4]->Fill(mindeltaPhiN);
+   }     
+   else if(MET>=300 && MET<400){
+     ha[5]->Fill(mindeltaPhiN);
+     if(ht_smeared<600) hc1[5]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=600 && ht_smeared<800) hc2[5]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=800 && ht_smeared<1000) hc3[5]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1000 && ht_smeared<1200) hc4[5]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1200) hc5[5]->Fill(mindeltaPhiN);
+   }
+   else if(MET>=400){
+     ha[6]->Fill(mindeltaPhiN);
+     if(ht_smeared<600) hc1[6]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=600 && ht_smeared<800) hc2[6]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=800 && ht_smeared<1000) hc3[6]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1000 && ht_smeared<1200) hc4[6]->Fill(mindeltaPhiN);
+     else if(ht_smeared>=1200) hc5[6]->Fill(mindeltaPhiN);
+   }
+   else {assert(0);}
+   
  }
-
+ 
 
  c1->cd(1);
  hist1->Draw();
@@ -243,6 +387,61 @@ gROOT->Reset();
   hts += (int) ht_unsmeared;
   c1->Print("central_limit_phis_"+hts+".pdf");
   c1->Print("central_limit_phis_"+hts+".png");
+
+  /*
+  for(int i=0; i<nb; i++) {
+    hbp[i]->Divide(hp);
+    hbf[i]->Divide(hf);
+    hbp[i]->SetFillColor(i+1);
+    hbf[i]->SetFillColor(i+1);
+    hbp[i]->SetLineColor(i+1);
+    hbf[i]->SetLineColor(i+1);
+  }
+  */
+
+  THStack* hbpstack = new THStack("hbpstack", "pass");
+  hbpstack->Add(hbp[0]);
+  hbpstack->Add(hbp[1]);
+  hbpstack->Add(hbp[2]);
+  hbpstack->Add(hbp[3]);
+  hbpstack->Add(hbp[4]);
+
+  THStack* hbfstack = new THStack("hbfstack", "fail");
+  hbfstack->Add(hbf[0]);
+  hbfstack->Add(hbf[1]);
+  hbfstack->Add(hbf[2]);
+  hbfstack->Add(hbf[3]);
+  hbfstack->Add(hbf[4]);
+
+  TCanvas *c2 = new TCanvas("c2","c2",640,480*2);
+  c2->Divide(1,2);
+  c2->cd(1);
+  hbpstack->Draw();
+  c2->cd(2);
+  hbfstack->Draw();
+  c2->Print("c2.pdf");
+  c2->Print("c2.png");
+
+  TCanvas *c3 = new TCanvas("c3","c3",1000,300);
+  c3->Divide(5,1);
+  THStack* mstack[na];
+  for(int i=2; i<na; i++) {//i is met bin
+    TString ns = "";
+    ns+=i;
+    mstack[i]=new THStack("m"+ns,"stack");
+    mstack[i]->Add(hc1[i]);
+    mstack[i]->Add(hc2[i]);
+    mstack[i]->Add(hc3[i]);
+    mstack[i]->Add(hc4[i]);
+    mstack[i]->Add(hc5[i]);
+    c3->cd(i-1);
+    mstack[i]->Draw();
+
+  }
+  c3->Print("c3.pdf");
+  c3->Print("c3.png");
+
+
 
 }
 
