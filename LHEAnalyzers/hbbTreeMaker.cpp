@@ -56,6 +56,45 @@ bool isLepton(int pdgid)
   else return false;
 }
 
+bool isFermion(int pdgid)
+{
+  if (pdgid == 1 ||
+      pdgid == 2 ||
+      pdgid == 3 ||
+      pdgid == 4 ||
+      pdgid == 5 ||
+      pdgid == 6 ||
+      pdgid == 11 ||   //PG electron
+      pdgid == 13 ||   //PG muon
+      pdgid == 15 ||   //PG tau
+      pdgid == 12 ||   //PG neutrino
+      pdgid == 14 ||   //PG neutrino
+      pdgid == 16)  
+    {
+      return true;
+    }
+  else return false;
+}
+
+bool isAntiFermion(int pdgid)
+{
+  if (pdgid == -1 ||
+      pdgid == -2 ||
+      pdgid == -3 ||
+      pdgid == -4 ||
+      pdgid == -5 ||
+      pdgid == -6 ||
+      pdgid == -11 ||   //PG electron
+      pdgid == -13 ||   //PG muon
+      pdgid == -15 ||   //PG tau
+      pdgid == -12 ||   //PG neutrino
+      pdgid == -14 ||   //PG neutrino
+      pdgid == -16)  
+    {
+      return true;
+    }
+  else return false;
+}
 
 ////////////////////////////////////
 //     M      A     I     N      //
@@ -152,6 +191,10 @@ int main(int argc, char **argv)
 	  {
 	    //cout << "Event " << eventCount << ", outgoing: " << lheReader.hepeup.IDUP.at (iPart) << endl;
 	    finalFermions.push_back (iPart) ;
+	    
+	    if(     isFermion(lheReader.hepeup.IDUP.at(iPart)) ) i_f0 = iPart;
+	    if( isAntiFermion(lheReader.hepeup.IDUP.at(iPart)) ) i_f1 = iPart;	 
+
 	  }//end of outgoing if statement
 	else { assert(0); } //sanity check that all particles are either incoming, intermediate, or outgoing.
 	
@@ -159,10 +202,7 @@ int main(int argc, char **argv)
       
       //some sanity checks
       assert( (VisZ && !VisW) || (VisW && !VisZ) );
-      assert( finalFermions.size() == 2 );
-      
-      i_f0 = finalFermions.at(0);
-      i_f1 = finalFermions.at(1);
+      assert( finalFermions.size() == 2 ); //if not the case, have to be smarter with assigning i_f0 and i_f1
       assert( (i_f0 != -1) && (i_f1 != -1) && (i_H != -1) && (i_V != -1) );
 
             
@@ -301,6 +341,169 @@ int main(int argc, char **argv)
 
   return 0;
 }
+
+
+
+
+/*
+
+//OLD code for ZllHbb
+
+int main(int argc, char **argv)
+{
+
+  // Define tree to fill
+  TFile file(argv[2],"RECREATE");
+  TTree* tree = new TTree("tree","tree");
+
+  float mZ, mH, mZH; //masses
+  float costheta1, costheta2, costhetastar, phi, phi1; //angles
+  float rapidityZH;
+
+  tree->Branch("mZ",  &mZ,  "mZ/F");
+  tree->Branch("mH",  &mH,  "mH/F");
+  tree->Branch("mZH", &mZH, "mZH/F");
+  tree->Branch("costheta1",&costheta1,"costheta1/F");
+  tree->Branch("costheta2",&costheta2,"costheta2/F");
+  tree->Branch("costhetastar",&costhetastar,"costhetastar/F");
+  tree->Branch("phi",&phi,"phi/F");
+  tree->Branch("phi1",&phi1,"phi1/F");
+  tree->Branch("rapidityZH",&rapidityZH,"rapidityZH/F");
+
+  // Reader object
+  cout << "Creating reader object for input LHE file " << argv[1] << endl;
+  std::ifstream ifsLHE (argv[1]) ;
+  LHEF::Reader lheReader (ifsLHE) ;
+  
+  // Loop over events
+  int eventCount = 0;
+  while ( lheReader.readEvent() ) 
+    {
+      eventCount++;
+
+      // Assuming Z(ll)H(bb) decay from JHUGen 
+      // -- I think this means I don't need to bother with quark assigment in anaPhantom.
+      if( lheReader.hepeup.IDUP.size() != 8 )
+	{
+	  cout << "Error! Expected 8 particles in the event." << endl;
+	  return 0;
+	}
+      
+      // Indices for final state particles
+      int i_lep0 = -1; //lep particle
+      int i_lep1 = -1; //lep antiparticle 
+      int i_b0   = -1; //b particle
+      int i_b1   = -1; //b anti particle
+      
+      // Loop over particles
+      for (int iPart = 0 ; iPart < lheReader.hepeup.IDUP.size (); ++iPart){
+
+	if( lheReader.hepeup.ISTUP.at (iPart) == -1  ) // incoming
+	  {
+	    //cout << "Event " << eventCount << ", incoming: " << lheReader.hepeup.IDUP.at (iPart) << endl;
+	    //do nothing
+	  }
+	else if( lheReader.hepeup.ISTUP.at (iPart) == 2  ) // intermediate
+	  {
+	    //cout << "Event " << eventCount << ", intermediate: " << lheReader.hepeup.IDUP.at (iPart) << endl;
+	    //do nothing
+	  }
+	else if(  lheReader.hepeup.ISTUP.at (iPart) == 1 ) //outgoing
+	  {
+	    //cout << "Event " << eventCount << ", outgoing: " << lheReader.hepeup.IDUP.at (iPart) << endl;
+	    
+	    if( lheReader.hepeup.IDUP.at(iPart) == 11 || //e 
+		lheReader.hepeup.IDUP.at(iPart) == 13 || //mu
+		lheReader.hepeup.IDUP.at(iPart) == 15)   //tau
+	      {
+		i_lep0 = iPart;
+	      }
+	    else if( lheReader.hepeup.IDUP.at(iPart) == -11 || //e anti
+		     lheReader.hepeup.IDUP.at(iPart) == -13 || //mu anti
+		     lheReader.hepeup.IDUP.at(iPart) == -15)   //tau anti
+	      {
+		i_lep1 = iPart;
+	      }
+	    else if( lheReader.hepeup.IDUP.at(iPart) == 5 ) //b
+	      {
+		i_b0 = iPart;
+	      }
+	    else if( lheReader.hepeup.IDUP.at(iPart) == -5 ) //b anti
+	      {
+		i_b1 = iPart;
+	      }
+	  }//end of outgoing if statement
+	else { assert(0); } //sanity check that all particles are either incoming, intermediate, or outgoing.
+	
+      }// End loop over particles
+      assert( (i_lep0 != -1) && (i_lep1 != -1) && (i_b0 != -1) && (i_b1 != -1) );// sanity check that we found all the outgoing particles
+	    
+      //Create the TLorentzVectors 
+      TLorentzVector fs_lep0
+        (
+         lheReader.hepeup.PUP.at(i_lep0).at(0), //PG px
+         lheReader.hepeup.PUP.at(i_lep0).at(1), //PG py
+         lheReader.hepeup.PUP.at(i_lep0).at(2), //PG pz
+         lheReader.hepeup.PUP.at(i_lep0).at(3)  //PG E
+         ) ;
+      TLorentzVector fs_lep1
+        (
+         lheReader.hepeup.PUP.at(i_lep1).at(0), //PG px
+         lheReader.hepeup.PUP.at(i_lep1).at(1), //PG py
+         lheReader.hepeup.PUP.at(i_lep1).at(2), //PG pz
+         lheReader.hepeup.PUP.at(i_lep1).at(3)  //PG E
+         ) ;
+      TLorentzVector fs_b0
+        (
+         lheReader.hepeup.PUP.at(i_b0).at(0), //PG px
+         lheReader.hepeup.PUP.at(i_b0).at(1), //PG py
+         lheReader.hepeup.PUP.at(i_b0).at(2), //PG pz
+         lheReader.hepeup.PUP.at(i_b0).at(3)  //PG E
+         ) ;
+      TLorentzVector fs_b1
+        (
+         lheReader.hepeup.PUP.at(i_b1).at(0), //PG px
+         lheReader.hepeup.PUP.at(i_b1).at(1), //PG py
+         lheReader.hepeup.PUP.at(i_b1).at(2), //PG pz
+         lheReader.hepeup.PUP.at(i_b1).at(3)  //PG E
+         ) ;
+
+      TLorentzVector p4_Zll = fs_lep0 + fs_lep1;
+      TLorentzVector p4_Hbb = fs_b0 + fs_b1;
+      TLorentzVector p4_ZH = p4_Zll + p4_Hbb;
+      
+      double a_costheta1, a_costheta2, a_costhetastar, a_Phi, a_Phi1;
+      computeAngles( p4_ZH, p4_Zll, fs_lep0, fs_lep1, p4_Hbb, fs_b0, fs_b1, 
+		     a_costheta1, a_costheta2, a_Phi, a_costhetastar, a_Phi1);
+      
+      mZH = (float) p4_ZH.M();
+      rapidityZH = (float) p4_ZH.Rapidity();
+      mZ = (float) p4_Zll.M();
+      mH = (float) p4_Hbb.M();        
+      costheta1 = (float) a_costheta1;                
+      costheta2 = (float) a_costheta2;
+      phi = (float) a_Phi;
+      costhetastar = (float) a_costhetastar;
+      phi1 = (float) a_Phi1;
+      
+      tree->Fill();
+
+    }// End loop over events
+  
+  cout << "Total number of events processed: " << eventCount << endl;
+
+
+  // Write to file
+  file.cd();
+  tree->Write();
+  file.Close();
+
+  return 0;
+}
+
+
+
+*/
 
 
 //////////////////////////////////
