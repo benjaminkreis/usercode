@@ -121,7 +121,7 @@ int main(int argc, char **argv)
   float costheta1, costheta2, costhetastar, phi, phi1; //angles
   float rapidityVH;
   int isLeptonic;
-  int isUpType;
+  int isUpTypeQuark;
 
   tree->Branch("mZ",  &mZ,  "mZ/F");
   tree->Branch("mH",  &mH,  "mH/F");
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
   tree->Branch("phi1",&phi1,"phi1/F");
   tree->Branch("rapidityVH",&rapidityVH,"rapidityVH/F");
   tree->Branch("isLeptonic",&isLeptonic,"isLeptonic/I");
-  tree->Branch("isUpType",&isUpType,"isUpType/I");
+  tree->Branch("isUpTypeQuark",&isUpTypeQuark,"isUpTypeQuark/I");
   
   // Reader object
   cout << "Creating reader object for input LHE file " << argv[1] << endl;
@@ -223,26 +223,26 @@ int main(int argc, char **argv)
 	{
 	  hadronicWCount++;
 	  isLeptonic=0;
-	  isUpType=0;
+	  isUpTypeQuark=0;
 	}
       else if( VisW && isLepton(lheReader.hepeup.IDUP.at(finalFermions.at(0))) && isLepton(lheReader.hepeup.IDUP.at(finalFermions.at(1))) ) //leptonic W
 	{
 	  leptonicWCount++;
 	  isLeptonic=1;
-	  isUpType=0;
+	  isUpTypeQuark=0;
 	}
       else if( VisZ && isQuark(lheReader.hepeup.IDUP.at(finalFermions.at(0))) && isQuark(lheReader.hepeup.IDUP.at(finalFermions.at(1))) ) //hadronic Z
 	{
 	  hadronicZCount++;
 	  isLeptonic=0;
-	  isUpType=0;
-	  if( isUpType( lheReader.hepeup.IDUP.at(finalFermions.at(0)) ) ) isUpType=1;
+	  isUpTypeQuark=0;
+	  if( isUpType( lheReader.hepeup.IDUP.at(finalFermions.at(0)) ) ) isUpTypeQuark=1;
 	}
       else if( VisZ && isLepton(lheReader.hepeup.IDUP.at(finalFermions.at(0))) && isLepton(lheReader.hepeup.IDUP.at(finalFermions.at(1))) ) //leptonic Z
 	{
 	  leptonicZCount++;
 	  isLeptonic=1;
-	  isUpType=0;
+	  isUpTypeQuark=0;
 	}
       else {assert(0);}
       
@@ -324,7 +324,7 @@ int main(int argc, char **argv)
       phi = (float) a_Phi;
       costhetastar = (float) a_costhetastar;
       phi1 = (float) a_Phi1;
-      //isLeptonic, isUpType already filled
+      //isLeptonic, isUpTypeQuark already filled
 
       tree->Fill();
 
