@@ -1,0 +1,175 @@
+unsetenv INDEX
+
+setenv NBJETSSTATUS nBJetsLT2
+#setenv NBJETSSTATUS nBJetsEQ2
+#setenv NBJETSSTATUS nBJetsGT2
+
+setenv SAMPLE LM0
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM1
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM2
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM3
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM4
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM5
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM6
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM7
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM8
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM9
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM10
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM11
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM12
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM13
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE TTBar-PYTHIA
+setenv INDEX 3
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+unsetenv INDEX
+
+
+
+
+
+
+
+
+
+unsetenv INDEX
+
+#setenv NBJETSSTATUS nBJetsLT2
+setenv NBJETSSTATUS nBJetsEQ2
+#setenv NBJETSSTATUS nBJetsGT2
+
+setenv SAMPLE LM0
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM1
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM2
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM3
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM4
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM5
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM6
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM7
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM8
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM9
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM10
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM11
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM12
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM13
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE TTBar-PYTHIA
+setenv INDEX 3
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+unsetenv INDEX
+
+
+
+
+
+
+
+unsetenv INDEX
+
+#setenv NBJETSSTATUS nBJetsLT2
+#setenv NBJETSSTATUS nBJetsEQ2
+setenv NBJETSSTATUS nBJetsGT2
+
+setenv SAMPLE LM0
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM1
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM2
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM3
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM4
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM5
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM6
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM7
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM8
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM9
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM10
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM11
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM12
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE LM13
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+setenv SAMPLE TTBar-PYTHIA
+setenv INDEX 3
+bsub -q 8nh -J $SAMPLE -o makeplots.${SAMPLE}.${NBJETSSTATUS}_jets.log runAJob_jets.csh
+
+unsetenv INDEX

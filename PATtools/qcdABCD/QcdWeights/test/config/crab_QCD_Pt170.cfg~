@@ -1,0 +1,20 @@
+[CRAB]
+jobtype                 = cmssw
+scheduler               = glite
+use_server              = 1
+
+[CMSSW]
+datasetpath             = /QCD_Pt800/kreis-PAT-Summer09-7TeV-v1-f41133fe495e030be28b065045a31527/USER
+dbs_url                 = http://lnx6211.lepp.cornell.edu:8880/DBS/servlet/DBSServlet
+pset                    = qcdweights_QCD_Pt170_cfg.py 
+total_number_of_events  = -1
+events_per_job          = 10000
+output_file             = T_weight_QCD_Pt170.root
+
+[USER]
+check_user_remote_dir = 0
+copy_data = 1
+storage_element = srm-cms.cern.ch
+storage_path = /srm/managerv2?SFN=/castor/cern.ch
+user_remote_dir=/user/k/kreis/CUSusy/QCD/
+eMail = kreis@cern.ch
