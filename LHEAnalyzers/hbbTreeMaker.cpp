@@ -42,6 +42,17 @@ bool isQuark(int pdgid)
   else return false;
 }
 
+bool isUpType(int pdgid)
+{
+  if (abs (pdgid) == 2 ||
+      abs (pdgid) == 4 ||
+      abs (pdgid) == 6)
+    {
+      return true;
+    }
+  else return false;
+}
+
 bool isLepton(int pdgid)
 {
   if (abs (pdgid) == 11 ||   //PG electron
@@ -110,6 +121,7 @@ int main(int argc, char **argv)
   float costheta1, costheta2, costhetastar, phi, phi1; //angles
   float rapidityVH;
   int isLeptonic;
+  int isUpType;
 
   tree->Branch("mZ",  &mZ,  "mZ/F");
   tree->Branch("mH",  &mH,  "mH/F");
@@ -121,6 +133,7 @@ int main(int argc, char **argv)
   tree->Branch("phi1",&phi1,"phi1/F");
   tree->Branch("rapidityVH",&rapidityVH,"rapidityVH/F");
   tree->Branch("isLeptonic",&isLeptonic,"isLeptonic/I");
+  tree->Branch("isUpType",&isUpType,"isUpType/I");
   
   // Reader object
   cout << "Creating reader object for input LHE file " << argv[1] << endl;
@@ -135,6 +148,7 @@ int main(int argc, char **argv)
   int leptonicZCount = 0;
   int BR_Zee=0, BR_Zmm=0, BR_Ztt=0, BR_Znn=0, BR_Zuu=0, BR_Zcc=0, BR_Zdd=0, BR_Zss=0, BR_Zbb=0;
   int BR_Wen=0, BR_Wmn=0, BR_Wtn=0, BR_Wud=0, BR_Wcs=0;
+  int BR_Znene=0, BR_Znmnm=0, BR_Zntnt=0;
 
   while ( lheReader.readEvent() ) 
     {
@@ -191,10 +205,8 @@ int main(int argc, char **argv)
 	  {
 	    //cout << "Event " << eventCount << ", outgoing: " << lheReader.hepeup.IDUP.at (iPart) << endl;
 	    finalFermions.push_back (iPart) ;
-	    
 	    if(     isFermion(lheReader.hepeup.IDUP.at(iPart)) ) i_f0 = iPart;
 	    if( isAntiFermion(lheReader.hepeup.IDUP.at(iPart)) ) i_f1 = iPart;	 
-
 	  }//end of outgoing if statement
 	else { assert(0); } //sanity check that all particles are either incoming, intermediate, or outgoing.
 	
@@ -211,22 +223,28 @@ int main(int argc, char **argv)
 	{
 	  hadronicWCount++;
 	  isLeptonic=0;
+	  isUpType=0;
 	}
       else if( VisW && isLepton(lheReader.hepeup.IDUP.at(finalFermions.at(0))) && isLepton(lheReader.hepeup.IDUP.at(finalFermions.at(1))) ) //leptonic W
 	{
 	  leptonicWCount++;
 	  isLeptonic=1;
+	  isUpType=0;
 	}
       else if( VisZ && isQuark(lheReader.hepeup.IDUP.at(finalFermions.at(0))) && isQuark(lheReader.hepeup.IDUP.at(finalFermions.at(1))) ) //hadronic Z
 	{
 	  hadronicZCount++;
 	  isLeptonic=0;
+	  isUpType=0;
+	  if( isUpType( lheReader.hepeup.IDUP.at(finalFermions.at(0)) ) ) isUpType=1;
 	}
       else if( VisZ && isLepton(lheReader.hepeup.IDUP.at(finalFermions.at(0))) && isLepton(lheReader.hepeup.IDUP.at(finalFermions.at(1))) ) //leptonic Z
 	{
 	  leptonicZCount++;
 	  isLeptonic=1;
+	  isUpType=0;
 	}
+      else {assert(0);}
       
       //More detailed
       if(VisZ)
@@ -234,9 +252,9 @@ int main(int argc, char **argv)
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==11 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==11  ) BR_Zee++;
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==13 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==13  ) BR_Zmm++;
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==15 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==15  ) BR_Ztt++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==12 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==12  ) BR_Znn++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==14 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==14  ) BR_Znn++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==16 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==16  ) BR_Znn++;
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==12 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==12  ) BR_Znene++;
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==14 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==14  ) BR_Znmnm++;
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==16 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==16  ) BR_Zntnt++;
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==2 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==2  ) BR_Zuu++;
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==4 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==4  ) BR_Zcc++;
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==1 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==1  ) BR_Zdd++;
@@ -256,7 +274,7 @@ int main(int argc, char **argv)
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==4 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==3
 	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==3 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==4) BR_Wcs++;
 	}
-
+      else {assert(0);}
 
 
       //Create the TLorentzVectors 
@@ -306,11 +324,13 @@ int main(int argc, char **argv)
       phi = (float) a_Phi;
       costhetastar = (float) a_costhetastar;
       phi1 = (float) a_Phi1;
-      //isLeptonic already filled
+      //isLeptonic, isUpType already filled
 
       tree->Fill();
 
     }// End loop over events
+
+  BR_Znn = BR_Znene + BR_Znmnm + BR_Zntnt;
   
   cout << "Total number of events processed: " << eventCount << endl;
   cout << leptonicWCount << " Leptonic W fraction: " << ((double)leptonicWCount)/((double)eventCount) << endl;
@@ -322,6 +342,9 @@ int main(int argc, char **argv)
   cout << "BR_Zee " << ((double)BR_Zee)/((double)eventCount) << endl;
   cout << "BR_Zmm " << ((double)BR_Zmm)/((double)eventCount) << endl;
   cout << "BR_Ztt " << ((double)BR_Ztt)/((double)eventCount) << endl;
+  cout << "BR_Znene " << ((double)BR_Znene)/((double)eventCount) << endl;
+  cout << "BR_Znmnm " << ((double)BR_Znmnm)/((double)eventCount) << endl;
+  cout << "BR_Zntnt " << ((double)BR_Zntnt)/((double)eventCount) << endl;
   cout << "BR_Zinv " << ((double)BR_Znn)/((double)eventCount) << endl;
   cout << "BR_Zuu " << ((double)BR_Zuu)/((double)eventCount) << endl;
   cout << "BR_Zcc " << ((double)BR_Zcc)/((double)eventCount) << endl;
