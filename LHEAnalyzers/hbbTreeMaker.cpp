@@ -113,6 +113,8 @@ bool isAntiFermion(int pdgid)
 int main(int argc, char **argv)
 {
 
+  bool verbose = true;;
+
   // Define tree to fill
   TFile file(argv[2],"RECREATE");
   TTree* tree = new TTree("tree","tree");
@@ -122,6 +124,7 @@ int main(int argc, char **argv)
   float rapidityVH;
   int isLeptonic;
   int isUpTypeQuark;
+  int decayMode;
 
   tree->Branch("mZ",  &mZ,  "mZ/F");
   tree->Branch("mH",  &mH,  "mH/F");
@@ -134,7 +137,11 @@ int main(int argc, char **argv)
   tree->Branch("rapidityVH",&rapidityVH,"rapidityVH/F");
   tree->Branch("isLeptonic",&isLeptonic,"isLeptonic/I");
   tree->Branch("isUpTypeQuark",&isUpTypeQuark,"isUpTypeQuark/I");
-  
+  tree->Branch("decayMode",&decayMode,"decayMode/I");
+  //Zee=0, Zmm=1, Ztt=2, Zuu=3, Zcc=4, Zdd=5, Zss=6, Zbb=7
+  //Wen=8, Wmn=9, Wtn=10, Wud=11, Wcs=12
+  //Znene=13, Znmnm=14, Zntnt=15
+
   // Reader object
   cout << "Creating reader object for input LHE file " << argv[1] << endl;
   std::ifstream ifsLHE (argv[1]) ;
@@ -153,7 +160,7 @@ int main(int argc, char **argv)
   while ( lheReader.readEvent() ) 
     {
       eventCount++;
-      if (eventCount % 100000 == 0) std::cout << "Event " << eventCount << "\n" ;
+      if (eventCount % 100000 == 0 && verbose) std::cout << "Event " << eventCount << "\n" ;
 
       // Assuming HV from JHUGen, without H decay 
       if( lheReader.hepeup.IDUP.size() != 6 ) //two incoming, two intermediate (V,H), two outgoing (V decay)
@@ -170,7 +177,8 @@ int main(int argc, char **argv)
 
       bool VisZ = false;
       bool VisW = false;
-
+      decayMode = -1;
+      
       std::vector<int> finalFermions ;
 
       // Loop over particles
@@ -249,30 +257,78 @@ int main(int argc, char **argv)
       //More detailed
       if(VisZ)
 	{
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==11 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==11  ) BR_Zee++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==13 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==13  ) BR_Zmm++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==15 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==15  ) BR_Ztt++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==12 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==12  ) BR_Znene++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==14 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==14  ) BR_Znmnm++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==16 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==16  ) BR_Zntnt++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==2 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==2  ) BR_Zuu++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==4 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==4  ) BR_Zcc++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==1 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==1  ) BR_Zdd++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==3 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==3  ) BR_Zss++;
-	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==5 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==5  ) BR_Zbb++;
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==11 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==11  ){
+	    BR_Zee++;
+	    decayMode=0;
+	  }
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==13 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==13  ){
+	    BR_Zmm++;
+	    decayMode=1;
+	  }
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==15 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==15  ){
+	    BR_Ztt++;
+	    decayMode=2;
+	  }
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==12 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==12  ){
+	    BR_Znene++;
+	    decayMode=13;
+	  }
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==14 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==14  ){
+	    BR_Znmnm++;
+	    decayMode=14;
+	  }
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==16 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==16  ){
+	    BR_Zntnt++;
+	    decayMode=15;
+	  }
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==2 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==2  ){
+	    BR_Zuu++;
+	    decayMode=3;
+	  }
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==4 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==4  ){
+	    BR_Zcc++;
+	    decayMode=4;
+	  }
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==1 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==1  ){
+	    BR_Zdd++;
+	    decayMode=5;
+	  }
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==3 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==3  ){
+	    BR_Zss++;
+	    decayMode=6;
+	  }
+	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==5 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==5  ){
+	    BR_Zbb++;
+	    decayMode=7;
+	  }
 	}
       else if(VisW)
 	{
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==11 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==12
-	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==12 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==11) BR_Wen++;
+	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==12 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==11){
+	    BR_Wen++;
+	    decayMode=8;
+	  }
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==13 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==14
-	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==14 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==13) BR_Wmn++;
+	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==14 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==13){
+	    BR_Wmn++;
+	    decayMode=9;
+	  }
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==15 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==16
-	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==16 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==15) BR_Wtn++;
+	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==16 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==15){
+	    BR_Wtn++;
+	    decayMode=10;
+	  }
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==2 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==1
-	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==1 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==2) BR_Wud++;
+	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==1 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==2){
+	    BR_Wud++;
+	    decayMode=11;
+	  }
 	  if( abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==4 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==3
-	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==3 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==4) BR_Wcs++;
+	      || abs(lheReader.hepeup.IDUP.at(finalFermions.at(0)))==3 && abs(lheReader.hepeup.IDUP.at(finalFermions.at(1)))==4){
+	    BR_Wcs++;
+	    decayMode=12;
+	  }
 	}
       else {assert(0);}
 
@@ -324,7 +380,7 @@ int main(int argc, char **argv)
       phi = (float) a_Phi;
       costhetastar = (float) a_costhetastar;
       phi1 = (float) a_Phi1;
-      //isLeptonic, isUpTypeQuark already filled
+      //isLeptonic, isUpTypeQuark, and decayMode already filled
 
       tree->Fill();
 
@@ -332,30 +388,32 @@ int main(int argc, char **argv)
 
   BR_Znn = BR_Znene + BR_Znmnm + BR_Zntnt;
   
-  cout << "Total number of events processed: " << eventCount << endl;
-  cout << leptonicWCount << " Leptonic W fraction: " << ((double)leptonicWCount)/((double)eventCount) << endl;
-  cout << hadronicWCount << " Hadronic W fraction: " << ((double)hadronicWCount)/((double)eventCount) << endl;
-  cout << leptonicZCount << " Leptonic Z fraction: " << ((double)leptonicZCount)/((double)eventCount) << endl;
-  cout << hadronicZCount << " Hadronic Z fraction: " << ((double)hadronicZCount)/((double)eventCount) << endl;
-
-  //detail
-  cout << "BR_Zee " << ((double)BR_Zee)/((double)eventCount) << endl;
-  cout << "BR_Zmm " << ((double)BR_Zmm)/((double)eventCount) << endl;
-  cout << "BR_Ztt " << ((double)BR_Ztt)/((double)eventCount) << endl;
-  cout << "BR_Znene " << ((double)BR_Znene)/((double)eventCount) << endl;
-  cout << "BR_Znmnm " << ((double)BR_Znmnm)/((double)eventCount) << endl;
-  cout << "BR_Zntnt " << ((double)BR_Zntnt)/((double)eventCount) << endl;
-  cout << "BR_Zinv " << ((double)BR_Znn)/((double)eventCount) << endl;
-  cout << "BR_Zuu " << ((double)BR_Zuu)/((double)eventCount) << endl;
-  cout << "BR_Zcc " << ((double)BR_Zcc)/((double)eventCount) << endl;
-  cout << "BR_Zdd " << ((double)BR_Zdd)/((double)eventCount) << endl;
-  cout << "BR_Zss " << ((double)BR_Zss)/((double)eventCount) << endl;
-  cout << "BR_Zbb " << ((double)BR_Zbb)/((double)eventCount) << endl;
-  cout << "BR_Wen " << ((double)BR_Wen)/((double)eventCount) << endl;
-  cout << "BR_Wmn " << ((double)BR_Wmn)/((double)eventCount) << endl;
-  cout << "BR_Wtn " << ((double)BR_Wtn)/((double)eventCount) << endl;
-  cout << "BR_Wud " << ((double)BR_Wud)/((double)eventCount) << endl;
-  cout << "BR_Wcs " << ((double)BR_Wcs)/((double)eventCount) << endl;
+  if(verbose) {
+    cout << "Total number of events processed: " << eventCount << endl;
+    cout << leptonicWCount << " Leptonic W fraction: " << ((double)leptonicWCount)/((double)eventCount) << endl;
+    cout << hadronicWCount << " Hadronic W fraction: " << ((double)hadronicWCount)/((double)eventCount) << endl;
+    cout << leptonicZCount << " Leptonic Z fraction: " << ((double)leptonicZCount)/((double)eventCount) << endl;
+    cout << hadronicZCount << " Hadronic Z fraction: " << ((double)hadronicZCount)/((double)eventCount) << endl;
+    
+    //detail
+    cout << "BR_Zee " << ((double)BR_Zee)/((double)eventCount) << endl;
+    cout << "BR_Zmm " << ((double)BR_Zmm)/((double)eventCount) << endl;
+    cout << "BR_Ztt " << ((double)BR_Ztt)/((double)eventCount) << endl;
+    cout << "BR_Znene " << ((double)BR_Znene)/((double)eventCount) << endl;
+    cout << "BR_Znmnm " << ((double)BR_Znmnm)/((double)eventCount) << endl;
+    cout << "BR_Zntnt " << ((double)BR_Zntnt)/((double)eventCount) << endl;
+    cout << "BR_Zinv " << ((double)BR_Znn)/((double)eventCount) << endl;
+    cout << "BR_Zuu " << ((double)BR_Zuu)/((double)eventCount) << endl;
+    cout << "BR_Zcc " << ((double)BR_Zcc)/((double)eventCount) << endl;
+    cout << "BR_Zdd " << ((double)BR_Zdd)/((double)eventCount) << endl;
+    cout << "BR_Zss " << ((double)BR_Zss)/((double)eventCount) << endl;
+    cout << "BR_Zbb " << ((double)BR_Zbb)/((double)eventCount) << endl;
+    cout << "BR_Wen " << ((double)BR_Wen)/((double)eventCount) << endl;
+    cout << "BR_Wmn " << ((double)BR_Wmn)/((double)eventCount) << endl;
+    cout << "BR_Wtn " << ((double)BR_Wtn)/((double)eventCount) << endl;
+    cout << "BR_Wud " << ((double)BR_Wud)/((double)eventCount) << endl;
+    cout << "BR_Wcs " << ((double)BR_Wcs)/((double)eventCount) << endl;
+  }
 
   // Write to file
   file.cd();
