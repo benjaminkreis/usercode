@@ -13,6 +13,7 @@
 #include "TRandom3.h"
 #include "TMath.h"
 #include "TPaveText.h"
+#include "TArrow.h"
 #include "Math/DistFunc.h"
 
 #include "RooGlobalFunc.h"
@@ -347,14 +348,19 @@ void createRooHistPdfs_post(TString inputFileName = "plots.root"){
 
 
 
-//Taken from
-//https://github.com/cms-analysis/HiggsAnalysis-HZZ4l_Combination/blob/master/SignalSeparation/extractSignificanceStats.C
-//NOTE: SM and PS are swapped between code and plot legend!!!!! Be careful about getting order of arguments right.
 int analyzeToysHZZ4l(TH1D* hSM, std::vector<float> v_SM, TH1D* hPS, std::vector<float> v_PS){
+
+  //Dummy stuff for now
+  TH1D* hObs = 0;
+  std::vector<float> v_Obs;
+  TString legALT="0^{-}";
+  TString nameALT="0-";
+  
+  bool unblind = false;
 
   sort(v_SM.begin(),v_SM.end());//sort in ascending order
   sort(v_PS.begin(),v_PS.end()); 
-  //sort(v_Obs.begin(),v_Obs.end());
+  sort(v_Obs.begin(),v_Obs.end());
   int ntoysSM= hSM->GetEntries();
   int ntoysPS= hPS->GetEntries();
 
@@ -364,6 +370,12 @@ int analyzeToysHZZ4l(TH1D* hSM, std::vector<float> v_SM, TH1D* hPS, std::vector<
     cout<<"Please edit the code and change the sign of q when filling histos and vectors in the loop on tree entries"<<endl;
     return 1;
   }
+
+  if((int(v_SM.size())!= ntoysSM)||(int(v_PS.size())!= ntoysPS)){
+    cout<<"Mismatch in size of vectors and #entries of historgams ! v_SM.size()="<< v_SM.size() <<"  ntoysSM="<<ntoysSM<<endl;
+    return 1;
+  }
+
   float medianSM=v_SM.at(int(ntoysSM/2));
   float medianPS=v_PS.at(int(ntoysPS/2));
   cout<<"Toys generated "<<ntoysSM<<"\t"<<ntoysPS<<endl;
@@ -379,52 +391,65 @@ int analyzeToysHZZ4l(TH1D* hSM, std::vector<float> v_SM, TH1D* hPS, std::vector<
   int startSM=ntoysSM-1, startPS=0;
   cout<<"Starting to loop with cut at "<<cut<<endl;
 
-  /*
+  //apply a cut on the vectors with the results of toys,
+  //for each cut check the area in the tail for PS and SM
+  //and calculate the difference.
+  //Find the value of cut that minimizes the difference.
+ 
+
   while(cut<=v_SM.at(ntoysSM-1)+step){
     //    if(int(cut*100)%100==0)
-cout<<"Cutting at "<<cut<<endl;
-    for(int iSM=startSM;iSM>=0;iSM--){
-      
-      if(v_SM.at(iSM)<cut){
-	startSM=ntoysSM-iSM;
-	//break;
+    // cout<<"Cutting at "<<cut<<endl;
+    float cutSM=-1.0,cutPS=-1.0;
+
+    for(int iSM=startSM;iSM>=0;iSM--){      
+      //entries in v_SM and v_PS are sorted
+      if(v_SM.at(iSM)<cut){//gotcha
+	cutSM=ntoysSM-iSM;
+	break;
       }
-      else cout<<"SM "<<v_SM.at(iSM)<<" > "<<cut<<endl;
+      //      //      else cout<<"SM "<<v_SM.at(iSM)<<" > "<<cut<<endl;
     }
 
     for(int iPS=startPS;iPS<ntoysPS;iPS++){
-      if(v_PS.at(iPS)>cut){
-	startPS=iPS;
-	//break;
+      if(v_PS.at(iPS)>cut){//gotcha
+	cutPS=iPS;
+	break;
       }
-      else cout<<v_PS.at(iPS)<<" < "<<cut<<endl;
+      ////      else cout<<v_PS.at(iPS)<<" < "<<cut<<endl;
   
     }
-    float fracSM=(ntoysSM-startSM)/ntoysSM;
-    float fracPS=startPS/ntoysPS;
-    cout<<"Frac "<<fracSM<<" "<<fracPS<<endl;
-    if(fabs(fracSM-fracPS)<diff){
-      diff=fabs(fracSM-fracPS);
-      coverage=fabs(fracSM-fracPS)/2.0;
-      crosspoint=cut;
-      cout<<"New coverage="<<coverage<<" at xpoint="<<crosspoint<<"  "<<startSM<<endl;
-    }
+
+    if(cutSM>=0&&cutPS>=0){
+      float fracSM=(ntoysSM-cutSM)/ntoysSM;
+      float fracPS=(ntoysPS-cutPS)/ntoysPS;
+      // //   cout<<"FracSM: "<<fracSM<<"   FracPS: "<<fracPS<<endl;
+      if(fabs(fracSM-fracPS)<diff){
+	diff=fabs(fracSM-fracPS);
+	coverage=fabs(fracSM+fracPS)/2.0;
+	crosspoint=cut;
+	//cout<<"New coverage="<<coverage<<" at xpoint="<<crosspoint<<" with diff "<<diff<<"  FracSM="<<fracSM<<"  FracPS="<<fracPS<<endl;
+      }
+      ////      else cout<<"Diff is too high: "<<fabs(fracSM-fracPS)<<"   fracSM="<<fracSM<<"  fracPS="<<fracPS<<endl;
+    }//end if both cuutSM and cutPS are >=0
+    //// else cout<<"For cut="<<cut <<" Negative cutSM/cutPS: "<<cutSM<<"  "<<cutPS<<endl;
+
     cut+=step;
   }//end while loop
-  */
-  cout<<"Finished loop on vector elements, min is "<<diff<<" cut is at "<<cut<<endl;
-  cout<<"q value where SM and ALT distributions have same area on opposite sides: "<<crosspoint<<endl;
-  cout<<"Coverage "<<coverage<<endl;
+ 
+  cout<<"Finished loop on vector elements, min diff is "<<diff<<", looped until cut_fin="<<cut<<endl;
+  cout<<"q value where SM and ALT distributions have same area on opposite sides: "<<crosspoint<<"  Coverage="<<coverage<<endl;
   float separation=2*ROOT::Math::normal_quantile_c(1.0 - coverage, 1.0);
-  cout<<"Separation: "<<separation<<endl<<endl<<endl;
+  cout<<"Separation from tail prob: "<<separation<<endl<<endl<<endl;
+  
 
   float integralSM=hSM->Integral();
   float integralPS=hPS->Integral();
  
   float tailSM=hSM->Integral(1,hSM->FindBin(medianPS))/integralSM;
   float tailPS=hPS->Integral(hPS->FindBin(medianSM),hPS->GetNbinsX())/integralPS;
-  cout<<"Tail prob SM: "<<tailSM<<"  ("<<ROOT::Math::normal_quantile_c(tailSM,1.0) <<" sigma)"<<endl;
-  cout<<"Tail prob PS: "<<tailPS<<"  ("<<ROOT::Math::normal_quantile_c(tailPS,1.0) <<" sigma)"<<endl;
+  cout<<"Median point prob SM: "<<tailSM<<"  ("<<ROOT::Math::normal_quantile_c(tailSM,1.0) <<" sigma)"<<endl;
+  cout<<"Median point prob PS: "<<tailPS<<"  ("<<ROOT::Math::normal_quantile_c(tailPS,1.0) <<" sigma)"<<endl;
 
   diff=10.0;
   coverage=0.0;
@@ -442,80 +467,158 @@ cout<<"Cutting at "<<cut<<endl;
   float sepH= 2*ROOT::Math::normal_quantile_c(1.0 - coverage, 1.0);
   cout<<"Separation from histograms = "<<sepH<<" with coverage "<<coverage<<endl;
 
-  /*
-  cout << "OBSERVED SIGNIFICANCE" << endl;
+  if(unblind){
+    if(v_Obs.size()!=1 && (v_Obs.at(0) != v_Obs.at(1))){
+      cout<<"Ooops ! The size of the vector with the observed separation is not 1 but "<<v_Obs.size()<<" ! I am not going to plot the observed results."<<endl;
+      unblind=false;
+    }
+    else{
+      float obsTailSM=hSM->Integral(1,hSM->FindBin(v_Obs.at(0)))/integralSM;
+      float obsTailPS=hPS->Integral(hPS->FindBin(v_Obs.at(0)),hPS->GetNbinsX())/integralPS;
+      cout<<"P(SM < Obs): "<<obsTailSM<<"  ("<<ROOT::Math::normal_quantile_c(obsTailSM,1.0) <<" sigma)"<<endl;
+      cout<<"P(PS > Obs): "<<obsTailPS<<"  ("<<ROOT::Math::normal_quantile_c(obsTailPS,1.0) <<" sigma)"<<endl;
 
-  cout << "observation: " << v_Obs[0] << endl;
-  cout << "bin: " << hObs->GetMaximumBin() << endl;
+      float obsCLsRatio = obsTailPS / (1.0 - obsTailSM);
+      cout<<"CLs criterion P(PS > Obs) / P(SM > Obs) : "<<obsCLsRatio<<"  ("<<ROOT::Math::normal_quantile_c(obsCLsRatio,1.0) <<" sigma)"<<endl;
+    }
   
-  cout << " --------------- " << endl;
-  double obsPval_SM = 1-hSM->Integral(0,hObs->GetMaximumBin())/hSM->Integral();
-  cout << "pvalue SM: " << obsPval_SM << endl;
-  cout << "signif SM: " << ROOT::Math::normal_quantile_c(obsPval_SM,1.0) << endl;;
-  double obsPval_PS =  hPS->Integral(0,hObs->GetMaximumBin())/hPS->Integral();
-  cout << "pvalue PS: " << obsPval_PS << endl;
-  cout << "signif PS: " << ROOT::Math::normal_quantile_c(obsPval_PS,1.0) << endl;;
-  */
 
+    /*
+    cout << "\n\nOBSERVED SIGNIFICANCE" << endl;
+    cout << "observation: " << v_Obs[0] << endl;
+    cout << "bin: " << hObs->GetMaximumBin() << endl;
+    cout << " --------------- " << endl;
+    double obsPval_SM = 1-hSM->Integral(0,hObs->GetMaximumBin())/integralSM;
+    cout << "pvalue SM: " << obsPval_SM << endl;
+    cout << "signif SM: " << ROOT::Math::normal_quantile_c(obsPval_SM,1.0) << endl;
+    double obsPval_PS =  hPS->Integral(0,hObs->GetMaximumBin())/integralPS;
+    cout << "pvalue PS: " << obsPval_PS << endl;
+    cout << "signif PS: " << ROOT::Math::normal_quantile_c(obsPval_PS,1.0) << endl<<endl<<endl;
+    */
+
+  }//end if unblinding
+
+  //Plotting
+ //Plotting
   gStyle->SetOptStat(0);
-  TCanvas *c1=new TCanvas("c1","c1",500,500);
+  TCanvas *c1=new TCanvas("c","c",500,500);
   c1->cd();
   hSM->Rebin(50);
   hPS->Rebin(50);
+  TString xtitle=" -2 #times ln(L_{"+legALT+"} / L_{0^{+}})";
+  hSM->SetXTitle(xtitle);
+  hSM->SetYTitle("Pseudoexperiments");
+  hPS->SetXTitle(xtitle);
+  hPS->SetYTitle("Pseudoexperiments");
+  hSM->SetLineColor(kRed+2);
+  hSM->SetLineStyle(2);
+  hSM->SetFillColor(798);
+  hSM->SetLineWidth(2);
+  hPS->SetFillColor(kAzure+7);
+  hPS->SetLineColor(kBlue);
+  hPS->SetLineWidth(1);
+  hPS->SetFillStyle(3001);
+
+  if(unblind){
+    hObs->SetLineColor(kRed);
+    hObs->SetLineWidth(2);
+  }
+
+  TGraph *grObs=new TGraph();//dummy, just for the legend
+  grObs->SetLineColor(kRed);
+  grObs->SetLineWidth(1);
+  
+  hSM->GetXaxis()->SetRangeUser(-30.0,30.0);
+  hSM->GetXaxis()->SetLabelFont(42);
+  hSM->GetXaxis()->SetLabelOffset(0.007);
+  hSM->GetXaxis()->SetLabelSize(0.045);
+  hSM->GetXaxis()->SetTitleSize(0.05);
+  hSM->GetXaxis()->SetTitleOffset(1.15);
+  hSM->GetXaxis()->SetTitleFont(42);
+  hSM->GetYaxis()->SetLabelFont(42);
+  hSM->GetYaxis()->SetLabelOffset(0.007);
+  hSM->GetYaxis()->SetLabelSize(0.045);
+  hSM->GetYaxis()->SetTitleSize(0.05);
+  hSM->GetYaxis()->SetTitleOffset(1.8);
+  hSM->GetYaxis()->SetTitleFont(42); 
+  //TGaxis::SetMaxDigits(2); 
+  hSM->Scale(1./hSM->Integral("width"));
+  hPS->Scale(1./hPS->Integral("width"));
   float maxhSM=hSM->GetBinContent(hSM->GetMaximumBin());
   float maxhPS=hPS->GetBinContent(hPS->GetMaximumBin());
   if(maxhPS>maxhSM){
-    hSM->SetMaximum(maxhPS*1.15);
-    hPS->SetMaximum(maxhPS*1.15);
+    hSM->SetMaximum(maxhPS*1.3);
+    hPS->SetMaximum(maxhPS*1.3);
   }
   else{
-    hSM->SetMaximum(maxhSM*1.15);
-    hPS->SetMaximum(maxhSM*1.15);
+    hSM->SetMaximum(maxhSM*1.3);
+    hPS->SetMaximum(maxhSM*1.3);
   }
-  hSM->SetXTitle("S = -2 #times ln(L_{1}/L_{2})");
-  hSM->SetYTitle("Generated experiments");
-  hPS->SetXTitle("S = -2 #times ln(L_{1}/L_{2})");
-  hPS->SetYTitle("Generated experiments");
-  hSM->SetLineColor(kMagenta-3);
-  hSM->SetFillColor(kMagenta-3);
-  hSM->SetLineWidth(2);
-  hSM->SetFillStyle(3605);
-  hPS->SetLineColor(kBlue+1);
-  hPS->SetFillColor(kBlue+1);
-  hPS->SetLineWidth(2);
-  hPS->SetFillStyle(3695);
-  //hObs->SetLineColor(kGreen+3);
-  //hObs->SetLineWidth(2);
+
+  TH1F* hSM2= (TH1F*)(hSM->Clone("hSM2")); 
+  hSM2->SetFillStyle(0);
+  hSM2->SetFillColor(0);
+  hSM2->SetLineColor(kRed+2);
+  hSM2->SetLineStyle(2);
+  hSM2->SetLineWidth(2);
+
   hSM->Draw();
   hPS->Draw("sames");
-  
-  /*
-  TArrow *obsArrow  = new TArrow(v_Obs[0],hSM->GetMaximum()/2.,v_Obs[0],0.0,.05,"|>");
-  obsArrow->SetLineWidth(3);
-  obsArrow->Draw("same");
-  //hObs->Draw("sames");
-  */
+  hSM2->Draw("sames");
 
-  TLegend *leg1 = new TLegend(0.7,0.6,0.9,0.9);
+  if(unblind) {
+    TArrow *obsArrow=0;
+    double observedQ = v_Obs.at(0);
+    if(unblind)cout << "ObservedQ: " << observedQ << endl;
+    if(unblind)obsArrow=new TArrow(observedQ,hSM->GetMaximum()/5.0,observedQ,0.0,0.05,"|->");
+    else obsArrow=new TArrow(0.0,hSM->GetMaximum()/5.0,0.0,0.0,0.05,"|->");
+    obsArrow->SetLineColor(kRed);
+    obsArrow->SetLineWidth(2.0);
+    if(unblind)  obsArrow->Draw();
+  }
+
+  TLegend *leg1 = new TLegend(0.63,0.73,0.88,0.93);
   leg1->SetFillColor(0);
+  leg1->SetLineColor(0);
   leg1->SetBorderSize(0);
-  leg1->AddEntry(hSM,"  PS, 0-","f");
-  leg1->AddEntry(hPS,"  SM, 0+","f");
+  leg1->SetFillStyle(0);
+  leg1->SetTextFont(42);
+
+  leg1->AddEntry(hSM, "0^{+}","f");
+  leg1->AddEntry(hPS, legALT,"f");
+  if(unblind) leg1->AddEntry(hObs,"CMS data","L");
+  
+  c1->SetFillColor(0);
+  c1->SetBorderMode(0);
+  c1->SetBorderSize(2);
+  c1->SetTickx(1);
+  c1->SetTicky(1);
+  c1->SetLeftMargin(0.18);
+  c1->SetRightMargin(0.05);
+  c1->SetTopMargin(0.05);
+  c1->SetBottomMargin(0.15);
+  c1->SetFrameFillStyle(0);
+  c1->SetFrameBorderMode(0);
+  c1->SetFrameFillStyle(0);
+  c1->SetFrameBorderMode(0);
+  
+  TPaveText *pt = new TPaveText(0.1577181,0.9562937,0.9580537,0.9947552,"brNDC");
+  pt->SetBorderSize(0);
+  pt->SetTextAlign(12);
+  pt->SetFillStyle(0);
+  pt->SetTextFont(42);
+  pt->SetTextSize(0.03);
+  //TText *text = pt->AddText(0.01,0.5,"CMS preliminary");
+  //text = pt->AddText(0.3,0.6,"#sqrt{s} = 7 TeV, L = 5.1 fb^{-1}  #sqrt{s} = 8 TeV, L = 19.6 fb^{-1}");
+  pt->Draw();   
+  
+  
   leg1->Draw();
-
-
-  TPaveText pt(0.16,0.95,0.45,0.99,"NDC");
-  pt.SetFillColor(0);
-  pt.AddText("CMS Expected");
-  pt.SetBorderSize(0);
-  TPaveText pt2(0.55,0.95,0.99,0.99,"NDC");
-  pt2.SetFillColor(0);
-  //pt2.AddText(Form(" #sqrt{s} = 7 TeV, L = %.3f fb^{-1}; #sqrt{s} = 8 TeV, L = %.3f fb^{-1}",lumi7TeV,lumi8TeV));
-  pt2.SetBorderSize(0);
-  pt.Draw();
-  pt2.Draw();
-  c1->SaveAs("sigsep_combine.eps");
-  c1->SaveAs("sigsep_combine.root");
+  
+  c1->SaveAs("sigsep_combine_"+nameALT+".eps");
+  c1->SaveAs("sigsep_combine_"+nameALT+".png");
+  c1->SaveAs("sigsep_combine_"+nameALT+".root");
+  c1->SaveAs("sigsep_combine_"+nameALT+".C");
 
   return 0;
 
@@ -610,28 +713,38 @@ void doHypothesisTest(){
   //Toys (RooFit Manual Ch 3)
   //////////////////////////////
   
-  TH1D* hTestStatistic_data0 = new TH1D("hTestStatistic_data0", "hTestSTatistic_data0", 8000, -15, 15);
-  TH1D* hTestStatistic_data1 = new TH1D("hTestStatistic_data1", "hTestSTatistic_data1", 8000, -15, 15);
+  //TH1D* hTestStatistic_data0 = new TH1D("hTestStatistic_data0", "hTestSTatistic_data0", 16000, -30, 30);
+  //TH1D* hTestStatistic_data1 = new TH1D("hTestStatistic_data1", "hTestSTatistic_data1", 16000, -30, 30);
+  TH1D* hTestStatistic_data0 = new TH1D("hTestStatistic_data0", "hTestSTatistic_data0", 36000, -45, 30);
+  TH1D* hTestStatistic_data1 = new TH1D("hTestStatistic_data1", "hTestSTatistic_data1", 36000, -45, 30);
   std::vector<float> v_data0, v_data1;
 
   for(int i=0; i<nToys; i++){
+    if(i%1000 ==0) cout << i << endl;
 
     RooDataSet* data0 = model0.generate(x, Extended(kTRUE));
-    RooFitResult* r_data0_model0 = model0.fitTo(*data0, Extended(kTRUE), Save(kTRUE));
-    RooFitResult* r_data0_model1 = model1.fitTo(*data0, Extended(kTRUE), Save(kTRUE));
-    double testStatistic_data0 = 2.*(r_data0_model0->minNll()-r_data0_model1->minNll()); //Same as -2ln(L1/L0) //FIXME sign?
+    RooFitResult* r_data0_model0 = model0.fitTo(*data0, Extended(kTRUE), Save(kTRUE), PrintLevel(-1));
+    RooFitResult* r_data0_model1 = model1.fitTo(*data0, Extended(kTRUE), Save(kTRUE), PrintLevel(-1));
+    double testStatistic_data0 = - 2.*(r_data0_model0->minNll()-r_data0_model1->minNll()); //don't forget N = negative!
     hTestStatistic_data0->Fill(testStatistic_data0);
     v_data0.push_back(testStatistic_data0);
 
     RooDataSet* data1 = model1.generate(x, Extended(kTRUE));
-    RooFitResult* r_data1_model0 = model0.fitTo(*data1, Extended(kTRUE), Save(kTRUE));
-    RooFitResult* r_data1_model1 = model1.fitTo(*data1, Extended(kTRUE), Save(kTRUE));
-    double testStatistic_data1 = 2.*(r_data1_model0->minNll()-r_data1_model1->minNll()); //Same as -2ln(L1/L0) //FIXME sign?
+    RooFitResult* r_data1_model0 = model0.fitTo(*data1, Extended(kTRUE), Save(kTRUE), PrintLevel(-1));
+    RooFitResult* r_data1_model1 = model1.fitTo(*data1, Extended(kTRUE), Save(kTRUE), PrintLevel(-1));
+    double testStatistic_data1 = - 2.*(r_data1_model0->minNll()-r_data1_model1->minNll()); //don't forget N = negative!
     hTestStatistic_data1->Fill(testStatistic_data1);
     v_data1.push_back(testStatistic_data1);
 
-    cout << testStatistic_data0 << endl;
-    cout << testStatistic_data1 << endl;
+    delete data0;
+    delete data1;
+    delete r_data0_model0;
+    delete r_data0_model1;
+    delete r_data1_model0;
+    delete r_data1_model1;
+
+    //cout << testStatistic_data0 << endl;
+    //cout << testStatistic_data1 << endl;
 
     /*
     //Draw one toy
@@ -646,10 +759,9 @@ void doHypothesisTest(){
     */
   }//toy loop
 
-  //analyzeToysHZZ4l(hTestStatistic_data0, v_data0, hTestStatistic_data1, v_data1);
   
   if(true) {
-    analyzeToysHZZ4l(hTestStatistic_data1, v_data1, hTestStatistic_data0, v_data0); //swapped
+    analyzeToysHZZ4l(hTestStatistic_data0, v_data0, hTestStatistic_data1, v_data1); 
   }
   else{
     hTestStatistic_data0->Rebin(50);
