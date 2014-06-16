@@ -113,7 +113,7 @@ bool isAntiFermion(int pdgid)
 int main(int argc, char **argv)
 {
 
-  bool verbose = true;;
+  bool verbose = false;
 
   // Define tree to fill
   TFile file(argv[2],"RECREATE");
@@ -125,6 +125,8 @@ int main(int argc, char **argv)
   int isLeptonic;
   int isUpTypeQuark;
   int decayMode;
+  int passEta;
+  int isWplus;
 
   tree->Branch("mZ",  &mZ,  "mZ/F");
   tree->Branch("mH",  &mH,  "mH/F");
@@ -138,6 +140,8 @@ int main(int argc, char **argv)
   tree->Branch("isLeptonic",&isLeptonic,"isLeptonic/I");
   tree->Branch("isUpTypeQuark",&isUpTypeQuark,"isUpTypeQuark/I");
   tree->Branch("decayMode",&decayMode,"decayMode/I");
+  tree->Branch("passEta",&passEta,"passEta/I");
+  tree->Branch("isWplus",&isWplus,"isWplus/I");
   //Zee=0, Zmm=1, Ztt=2, Zuu=3, Zcc=4, Zdd=5, Zss=6, Zbb=7
   //Wen=8, Wmn=9, Wtn=10, Wud=11, Wcs=12
   //Znene=13, Znmnm=14, Zntnt=15
@@ -163,7 +167,8 @@ int main(int argc, char **argv)
       if (eventCount % 100000 == 0 && verbose) std::cout << "Event " << eventCount << "\n" ;
 
       // Assuming HV from JHUGen, without H decay 
-      if( lheReader.hepeup.IDUP.size() != 6 ) //two incoming, two intermediate (V,H), two outgoing (V decay)
+      //if( lheReader.hepeup.IDUP.size() != 6 ) //two incoming, two intermediate (V,H), two outgoing (V decay)
+      if( lheReader.hepeup.IDUP.size() != 8 ) 
 	{
 	  cout << "Error! Expected 6 particles in the event." << endl;
 	  return 0;
@@ -172,6 +177,8 @@ int main(int argc, char **argv)
       // Indices for particles of interest
       int i_f0 = -1; //final fermion particle
       int i_f1 = -1; //final fermion antiparticle 
+      int i_b0 = -1; //final b particle
+      int i_b1 = -1; //final b antiparticle 
       int i_H  = -1; //intermediate higgs 
       int i_V  = -1; //intermediate V  
 
@@ -207,11 +214,18 @@ int main(int argc, char **argv)
 	      {
 		i_V = iPart;
 		VisW = true;
+		isWplus=1;
+		if(lheReader.hepeup.IDUP.at(iPart)==-24) isWplus=0;
 	      }
 	  }
 	else if(  lheReader.hepeup.ISTUP.at (iPart) == 1 ) //outgoing 
 	  {
 	    //cout << "Event " << eventCount << ", outgoing: " << lheReader.hepeup.IDUP.at (iPart) << endl;
+
+	    if ( lheReader.hepeup.IDUP.at(iPart) == 5 ) i_b0 = iPart;
+	    if ( lheReader.hepeup.IDUP.at(iPart) == -5 ) i_b1 = iPart;
+	    if( abs(lheReader.hepeup.IDUP.at(iPart) ) == 5) continue;
+	    
 	    finalFermions.push_back (iPart) ;
 	    if(     isFermion(lheReader.hepeup.IDUP.at(iPart)) ) i_f0 = iPart;
 	    if( isAntiFermion(lheReader.hepeup.IDUP.at(iPart)) ) i_f1 = iPart;	 
@@ -355,31 +369,63 @@ int main(int argc, char **argv)
          lheReader.hepeup.PUP.at(i_H).at(2), //PG pz
          lheReader.hepeup.PUP.at(i_H).at(3)  //PG E
          ) ;
+      TLorentzVector fs_b0
+        (
+         lheReader.hepeup.PUP.at(i_b0).at(0), //PG px
+         lheReader.hepeup.PUP.at(i_b0).at(1), //PG py
+         lheReader.hepeup.PUP.at(i_b0).at(2), //PG pz
+         lheReader.hepeup.PUP.at(i_b0).at(3)  //PG E
+         ) ;
+      TLorentzVector fs_b1
+        (
+         lheReader.hepeup.PUP.at(i_b1).at(0), //PG px
+         lheReader.hepeup.PUP.at(i_b1).at(1), //PG py
+         lheReader.hepeup.PUP.at(i_b1).at(2), //PG pz
+         lheReader.hepeup.PUP.at(i_b1).at(3)  //PG E
+         ) ;
 
       //fake the H decay
-      TLorentzVector fs_b0 = (0.5)*fs_H; 
-      TLorentzVector fs_b1 = (0.5)*fs_H;
+      //fs_b0 = (0.5)*fs_H; 
+      //fs_b1 = (0.5)*fs_H;
       //cout << "Total: " << fs_H.E() << " " << fs_H.Px() << " " << fs_H.Py() << " " << fs_H.Pz() << endl; //check that this works
       //cout << "b0: " << fs_b0.E() << " " << fs_b0.Px() << " " << fs_b0.Py() << " " << fs_b0.Pz() << endl;
       //cout << "b1: " << fs_b1.E() << " " << fs_b1.Px() << " " << fs_b1.Py() << " " << fs_b1.Pz() << endl;
+
+      //acceptance test
+      passEta = 0;
+      if(fabs(fs_f0.PseudoRapidity())<2.4 && fabs(fs_f1.PseudoRapidity())<2.4 && 
+	 fabs(fs_b0.PseudoRapidity())<2.4 && fabs(fs_b1.PseudoRapidity())<2.4){
+	
+	//if(fabs(fs_f0.Pt())>30 && fabs(fs_f1.Pt())>30 && 
+	//fabs(fs_b0.Pt())>30 && fabs(fs_b1.Pt())>30) 
+	passEta = 1;
+
+      }
 
       TLorentzVector p4_Vff = fs_f0 + fs_f1;
       TLorentzVector p4_Hbb = fs_b0 + fs_b1;
       TLorentzVector p4_VH = p4_Vff + p4_Hbb;
       
+      //cuts
+      //if(p4_Vff.Pt()<100 || p4_Hbb.Pt()<100) continue;
+
       double a_costheta1, a_costheta2, a_costhetastar, a_Phi, a_Phi1;
       computeAngles( p4_VH, p4_Vff, fs_f0, fs_f1, p4_Hbb, fs_b0, fs_b1, 
 		     a_costheta1, a_costheta2, a_Phi, a_costhetastar, a_Phi1);
       
+      //cout << a_costheta2 << endl;
+      
+      //remap to convention of arXiv:1309.4819
+      costheta1 = (float) a_costheta1;
+      costheta2 = (float) a_costhetastar;
+      phi = (float) a_Phi1;
+      costhetastar = (float) a_costheta2;
+      phi1 = (float) a_Phi;
+
       mVH = (float) p4_VH.M();
       rapidityVH = (float) p4_VH.Rapidity();
       mZ = (float) p4_Vff.M();
-      mH = (float) p4_Hbb.M();        
-      costheta1 = (float) a_costheta1;                
-      costheta2 = (float) a_costheta2;
-      phi = (float) a_Phi;
-      costhetastar = (float) a_costhetastar;
-      phi1 = (float) a_Phi1;
+      mH = (float) p4_Hbb.M();
       //isLeptonic, isUpTypeQuark, and decayMode already filled
 
       tree->Fill();
