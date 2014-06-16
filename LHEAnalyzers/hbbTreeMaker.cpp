@@ -1,7 +1,12 @@
-//Ben Kreis
+//Ben Kreis, based on code from Nhan 
 //c++ -o hbbTreeMaker `root-config --glibs --cflags` hbbTreeMaker.cpp
 
+#include <cmath>
+#include <cassert>
+#include <iostream>
+
 #include "LHEF.h"
+
 #include "TROOT.h"
 #include "TH1.h"
 #include "TH2.h"
@@ -9,10 +14,8 @@
 #include "THStack.h"
 #include "TCanvas.h"
 #include "TLorentzVector.h"
-#include <cmath>
 #include "TTree.h"
-#include <cassert>
-#include <iostream>
+#include "TMath.h"
 
 using namespace std;
 
@@ -22,20 +25,21 @@ void computeAngles(TLorentzVector thep4H, TLorentzVector thep4Z1, TLorentzVector
 
 double deltaPhi (double phi1, double phi2)
 {
-    double deltaphi=fabs(phi1-phi2);
-    if (deltaphi > 6.283185308) deltaphi -= 6.283185308;
-    if (deltaphi > 3.141592654) deltaphi = 6.283185308-deltaphi;
-    return deltaphi;
+  return acos(cos(phi1-phi2));
+  //double deltaphi=fabs(phi1-phi2);
+  //if (deltaphi > 6.283185308) deltaphi -= 6.283185308;
+  //if (deltaphi > 3.141592654) deltaphi = 6.283185308-deltaphi;
+  //return deltaphi;
 }
 
 bool isQuark(int pdgid)
 {
-  if (abs (pdgid) == 1 ||
-      abs (pdgid) == 2 ||
-      abs (pdgid) == 3 ||
-      abs (pdgid) == 4 ||
-      abs (pdgid) == 5 ||
-      abs (pdgid) == 6)
+  if (abs (pdgid) == 1 || //PG d quark
+      abs (pdgid) == 2 || //PG u quark
+      abs (pdgid) == 3 || //PG s quark
+      abs (pdgid) == 4 || //PG c quark
+      abs (pdgid) == 5 || //PG b quark
+      abs (pdgid) == 6)   //PG t quark
     {
       return true;
     }
@@ -44,9 +48,9 @@ bool isQuark(int pdgid)
 
 bool isUpType(int pdgid)
 {
-  if (abs (pdgid) == 2 ||
-      abs (pdgid) == 4 ||
-      abs (pdgid) == 6)
+  if (abs (pdgid) == 2 || //PG u quark
+      abs (pdgid) == 4 || //PG c quark
+      abs (pdgid) == 6)   //PG t quark
     {
       return true;
     }
@@ -69,12 +73,12 @@ bool isLepton(int pdgid)
 
 bool isFermion(int pdgid)
 {
-  if (pdgid == 1 ||
-      pdgid == 2 ||
-      pdgid == 3 ||
-      pdgid == 4 ||
-      pdgid == 5 ||
-      pdgid == 6 ||
+  if (pdgid == 1 ||    //PG d quark
+      pdgid == 2 ||    //PG u qjark
+      pdgid == 3 ||    //PG s quark
+      pdgid == 4 ||    //PG c quark
+      pdgid == 5 ||    //PG b quark
+      pdgid == 6 ||    //PG t quark
       pdgid == 11 ||   //PG electron
       pdgid == 13 ||   //PG muon
       pdgid == 15 ||   //PG tau
@@ -89,12 +93,12 @@ bool isFermion(int pdgid)
 
 bool isAntiFermion(int pdgid)
 {
-  if (pdgid == -1 ||
-      pdgid == -2 ||
-      pdgid == -3 ||
-      pdgid == -4 ||
-      pdgid == -5 ||
-      pdgid == -6 ||
+  if (pdgid == -1 ||    //PG d quark
+      pdgid == -2 ||    //PG u quark
+      pdgid == -3 ||    //PG s quark
+      pdgid == -4 ||    //PG c quark
+      pdgid == -5 ||    //PG b quark
+      pdgid == -6 ||    //PG t quark
       pdgid == -11 ||   //PG electron
       pdgid == -13 ||   //PG muon
       pdgid == -15 ||   //PG tau
@@ -107,6 +111,7 @@ bool isAntiFermion(int pdgid)
   else return false;
 }
 
+
 ////////////////////////////////////
 //     M      A     I     N      //
 ///////////////////////////////////
@@ -114,6 +119,7 @@ int main(int argc, char **argv)
 {
 
   bool verbose = false;
+  bool higgsDecay = true;
 
   // Define tree to fill
   TFile file(argv[2],"RECREATE");
@@ -124,9 +130,9 @@ int main(int argc, char **argv)
   float rapidityVH;
   int isLeptonic;
   int isUpTypeQuark;
-  int decayMode;
   int passEta;
-  int isWplus;
+  int isWplus;  
+  int decayMode;
 
   tree->Branch("mZ",  &mZ,  "mZ/F");
   tree->Branch("mH",  &mH,  "mH/F");
@@ -139,9 +145,9 @@ int main(int argc, char **argv)
   tree->Branch("rapidityVH",&rapidityVH,"rapidityVH/F");
   tree->Branch("isLeptonic",&isLeptonic,"isLeptonic/I");
   tree->Branch("isUpTypeQuark",&isUpTypeQuark,"isUpTypeQuark/I");
-  tree->Branch("decayMode",&decayMode,"decayMode/I");
   tree->Branch("passEta",&passEta,"passEta/I");
   tree->Branch("isWplus",&isWplus,"isWplus/I");
+  tree->Branch("decayMode",&decayMode,"decayMode/I");
   //Zee=0, Zmm=1, Ztt=2, Zuu=3, Zcc=4, Zdd=5, Zss=6, Zbb=7
   //Wen=8, Wmn=9, Wtn=10, Wud=11, Wcs=12
   //Znene=13, Znmnm=14, Zntnt=15
@@ -166,14 +172,20 @@ int main(int argc, char **argv)
       eventCount++;
       if (eventCount % 100000 == 0 && verbose) std::cout << "Event " << eventCount << "\n" ;
 
-      // Assuming HV from JHUGen, without H decay 
-      //if( lheReader.hepeup.IDUP.size() != 6 ) //two incoming, two intermediate (V,H), two outgoing (V decay)
-      if( lheReader.hepeup.IDUP.size() != 8 ) 
+      //Sanity check on number of particles
+      if( higgsDecay && lheReader.hepeup.IDUP.size() != 8 ) 
+	{
+	  cout << "Error! Expected 8 particles in the event." << endl;
+	  return 0;
+	}
+      /*
+      else if( higgsDecay==0 && lheReader.hepeup.IDUP.size() != 6 ) 
 	{
 	  cout << "Error! Expected 6 particles in the event." << endl;
 	  return 0;
 	}
-      
+      */
+
       // Indices for particles of interest
       int i_f0 = -1; //final fermion particle
       int i_f1 = -1; //final fermion antiparticle 
@@ -239,7 +251,6 @@ int main(int argc, char **argv)
       assert( finalFermions.size() == 2 ); //if not the case, have to be smarter with assigning i_f0 and i_f1
       assert( (i_f0 != -1) && (i_f1 != -1) && (i_H != -1) && (i_V != -1) );
 
-            
       //Add to branching fraction counters and check if leptonic
       if( VisW && isQuark(lheReader.hepeup.IDUP.at(finalFermions.at(0))) && isQuark(lheReader.hepeup.IDUP.at(finalFermions.at(1))) ) //hadronic W
 	{
@@ -384,7 +395,7 @@ int main(int argc, char **argv)
          lheReader.hepeup.PUP.at(i_b1).at(3)  //PG E
          ) ;
 
-      //fake the H decay
+      //fake the H decay -- this creates problems for computeAngles.  Do i need to boost?
       //fs_b0 = (0.5)*fs_H; 
       //fs_b1 = (0.5)*fs_H;
       //cout << "Total: " << fs_H.E() << " " << fs_H.Px() << " " << fs_H.Py() << " " << fs_H.Pz() << endl; //check that this works
@@ -393,13 +404,8 @@ int main(int argc, char **argv)
 
       //acceptance test
       passEta = 0;
-      if(fabs(fs_f0.PseudoRapidity())<2.4 && fabs(fs_f1.PseudoRapidity())<2.4 && 
-	 fabs(fs_b0.PseudoRapidity())<2.4 && fabs(fs_b1.PseudoRapidity())<2.4){
-	
-	//if(fabs(fs_f0.Pt())>30 && fabs(fs_f1.Pt())>30 && 
-	//fabs(fs_b0.Pt())>30 && fabs(fs_b1.Pt())>30) 
+      if(fabs(fs_f0.PseudoRapidity())<2.4 && fabs(fs_f1.PseudoRapidity())<2.4 && fabs(fs_b0.PseudoRapidity())<2.4 && fabs(fs_b1.PseudoRapidity())<2.4){
 	passEta = 1;
-
       }
 
       TLorentzVector p4_Vff = fs_f0 + fs_f1;
@@ -413,15 +419,13 @@ int main(int argc, char **argv)
       computeAngles( p4_VH, p4_Vff, fs_f0, fs_f1, p4_Hbb, fs_b0, fs_b1, 
 		     a_costheta1, a_costheta2, a_Phi, a_costhetastar, a_Phi1);
       
-      //cout << a_costheta2 << endl;
       
-      //remap to convention of arXiv:1309.4819
-      costheta1 = (float) a_costheta1;
-      costheta2 = (float) a_costhetastar;
+      //remap to convention of arXiv:1309.4819, including fix from Sinan&Alex
+      costheta2 = (float) a_costheta1;
+      costheta1 = (float) a_costhetastar;
       phi = (float) a_Phi1;
       costhetastar = (float) a_costheta2;
       phi1 = (float) a_Phi;
-
       mVH = (float) p4_VH.M();
       rapidityVH = (float) p4_VH.Rapidity();
       mZ = (float) p4_Vff.M();
@@ -468,169 +472,6 @@ int main(int argc, char **argv)
 
   return 0;
 }
-
-
-
-
-/*
-
-//OLD code for ZllHbb
-
-int main(int argc, char **argv)
-{
-
-  // Define tree to fill
-  TFile file(argv[2],"RECREATE");
-  TTree* tree = new TTree("tree","tree");
-
-  float mZ, mH, mZH; //masses
-  float costheta1, costheta2, costhetastar, phi, phi1; //angles
-  float rapidityZH;
-
-  tree->Branch("mZ",  &mZ,  "mZ/F");
-  tree->Branch("mH",  &mH,  "mH/F");
-  tree->Branch("mZH", &mZH, "mZH/F");
-  tree->Branch("costheta1",&costheta1,"costheta1/F");
-  tree->Branch("costheta2",&costheta2,"costheta2/F");
-  tree->Branch("costhetastar",&costhetastar,"costhetastar/F");
-  tree->Branch("phi",&phi,"phi/F");
-  tree->Branch("phi1",&phi1,"phi1/F");
-  tree->Branch("rapidityZH",&rapidityZH,"rapidityZH/F");
-
-  // Reader object
-  cout << "Creating reader object for input LHE file " << argv[1] << endl;
-  std::ifstream ifsLHE (argv[1]) ;
-  LHEF::Reader lheReader (ifsLHE) ;
-  
-  // Loop over events
-  int eventCount = 0;
-  while ( lheReader.readEvent() ) 
-    {
-      eventCount++;
-
-      // Assuming Z(ll)H(bb) decay from JHUGen 
-      // -- I think this means I don't need to bother with quark assigment in anaPhantom.
-      if( lheReader.hepeup.IDUP.size() != 8 )
-	{
-	  cout << "Error! Expected 8 particles in the event." << endl;
-	  return 0;
-	}
-      
-      // Indices for final state particles
-      int i_lep0 = -1; //lep particle
-      int i_lep1 = -1; //lep antiparticle 
-      int i_b0   = -1; //b particle
-      int i_b1   = -1; //b anti particle
-      
-      // Loop over particles
-      for (int iPart = 0 ; iPart < lheReader.hepeup.IDUP.size (); ++iPart){
-
-	if( lheReader.hepeup.ISTUP.at (iPart) == -1  ) // incoming
-	  {
-	    //cout << "Event " << eventCount << ", incoming: " << lheReader.hepeup.IDUP.at (iPart) << endl;
-	    //do nothing
-	  }
-	else if( lheReader.hepeup.ISTUP.at (iPart) == 2  ) // intermediate
-	  {
-	    //cout << "Event " << eventCount << ", intermediate: " << lheReader.hepeup.IDUP.at (iPart) << endl;
-	    //do nothing
-	  }
-	else if(  lheReader.hepeup.ISTUP.at (iPart) == 1 ) //outgoing
-	  {
-	    //cout << "Event " << eventCount << ", outgoing: " << lheReader.hepeup.IDUP.at (iPart) << endl;
-	    
-	    if( lheReader.hepeup.IDUP.at(iPart) == 11 || //e 
-		lheReader.hepeup.IDUP.at(iPart) == 13 || //mu
-		lheReader.hepeup.IDUP.at(iPart) == 15)   //tau
-	      {
-		i_lep0 = iPart;
-	      }
-	    else if( lheReader.hepeup.IDUP.at(iPart) == -11 || //e anti
-		     lheReader.hepeup.IDUP.at(iPart) == -13 || //mu anti
-		     lheReader.hepeup.IDUP.at(iPart) == -15)   //tau anti
-	      {
-		i_lep1 = iPart;
-	      }
-	    else if( lheReader.hepeup.IDUP.at(iPart) == 5 ) //b
-	      {
-		i_b0 = iPart;
-	      }
-	    else if( lheReader.hepeup.IDUP.at(iPart) == -5 ) //b anti
-	      {
-		i_b1 = iPart;
-	      }
-	  }//end of outgoing if statement
-	else { assert(0); } //sanity check that all particles are either incoming, intermediate, or outgoing.
-	
-      }// End loop over particles
-      assert( (i_lep0 != -1) && (i_lep1 != -1) && (i_b0 != -1) && (i_b1 != -1) );// sanity check that we found all the outgoing particles
-	    
-      //Create the TLorentzVectors 
-      TLorentzVector fs_lep0
-        (
-         lheReader.hepeup.PUP.at(i_lep0).at(0), //PG px
-         lheReader.hepeup.PUP.at(i_lep0).at(1), //PG py
-         lheReader.hepeup.PUP.at(i_lep0).at(2), //PG pz
-         lheReader.hepeup.PUP.at(i_lep0).at(3)  //PG E
-         ) ;
-      TLorentzVector fs_lep1
-        (
-         lheReader.hepeup.PUP.at(i_lep1).at(0), //PG px
-         lheReader.hepeup.PUP.at(i_lep1).at(1), //PG py
-         lheReader.hepeup.PUP.at(i_lep1).at(2), //PG pz
-         lheReader.hepeup.PUP.at(i_lep1).at(3)  //PG E
-         ) ;
-      TLorentzVector fs_b0
-        (
-         lheReader.hepeup.PUP.at(i_b0).at(0), //PG px
-         lheReader.hepeup.PUP.at(i_b0).at(1), //PG py
-         lheReader.hepeup.PUP.at(i_b0).at(2), //PG pz
-         lheReader.hepeup.PUP.at(i_b0).at(3)  //PG E
-         ) ;
-      TLorentzVector fs_b1
-        (
-         lheReader.hepeup.PUP.at(i_b1).at(0), //PG px
-         lheReader.hepeup.PUP.at(i_b1).at(1), //PG py
-         lheReader.hepeup.PUP.at(i_b1).at(2), //PG pz
-         lheReader.hepeup.PUP.at(i_b1).at(3)  //PG E
-         ) ;
-
-      TLorentzVector p4_Zll = fs_lep0 + fs_lep1;
-      TLorentzVector p4_Hbb = fs_b0 + fs_b1;
-      TLorentzVector p4_ZH = p4_Zll + p4_Hbb;
-      
-      double a_costheta1, a_costheta2, a_costhetastar, a_Phi, a_Phi1;
-      computeAngles( p4_ZH, p4_Zll, fs_lep0, fs_lep1, p4_Hbb, fs_b0, fs_b1, 
-		     a_costheta1, a_costheta2, a_Phi, a_costhetastar, a_Phi1);
-      
-      mZH = (float) p4_ZH.M();
-      rapidityZH = (float) p4_ZH.Rapidity();
-      mZ = (float) p4_Zll.M();
-      mH = (float) p4_Hbb.M();        
-      costheta1 = (float) a_costheta1;                
-      costheta2 = (float) a_costheta2;
-      phi = (float) a_Phi;
-      costhetastar = (float) a_costhetastar;
-      phi1 = (float) a_Phi1;
-      
-      tree->Fill();
-
-    }// End loop over events
-  
-  cout << "Total number of events processed: " << eventCount << endl;
-
-
-  // Write to file
-  file.cd();
-  tree->Write();
-  file.Close();
-
-  return 0;
-}
-
-
-
-*/
 
 
 //////////////////////////////////
