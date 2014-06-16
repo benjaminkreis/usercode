@@ -3,7 +3,20 @@
 #include <iostream>
 
 using namespace std;
-using namespace RooFit;
+//using namespace RooFit;
+
+void branchingFractions(){
+  
+  sampleVector.clear();
+
+  sample sample0("/uscms_data/d2/kreis/benSave_20140110/ZHiggs0P_M-125p6_7TeV-JHUGenV4_*");
+  sample0.humanName = "xxx";
+  sample0.color = kAzure-3;
+  sampleVector.push_back(sample0);
+
+  drawPlots("costheta1", 20, -1, 1, "cos#theta_{1}", "Events");
+
+}
 
 void hbb_zll_lheDistributions(){
   

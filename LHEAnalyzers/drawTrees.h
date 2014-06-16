@@ -172,6 +172,7 @@ class sample {
   UInt_t color;
 
   TChain* chain;
+  TH1D lastHistogram;
 };
 sample::sample(TString inputName) {
   name = inputName;
@@ -180,17 +181,13 @@ sample::sample(TString inputName) {
   filename += ".root";
   chain = new TChain("tree");
   chain->Add(filename);
-  //std::cout << chain->GetEntries() << std::endl;
+  std::cout << filename << ": " << chain->GetEntries() << std::endl;
 }
 
 
 
 TCanvas* thecanvas = 0;
 TLegend* leg = 0;
-float leg_x1 = 0.67;
-float leg_x2=0.9;
-float leg_y1=0.4;
-float leg_y2=0.2;
 double plotMinimum_ = 0;
 
 std::vector<sample> sampleVector;
@@ -218,7 +215,7 @@ void renewCanvas()
 }
 
 
-void renewLegend() {
+void renewLegend(float leg_x1=0.67, float leg_y1=0.4, float leg_x2=0.9, float leg_y2=0.2) {
 
   if (leg!=0) delete leg;
   leg = new TLegend(leg_x1, leg_y1, leg_x2, leg_y2);
@@ -255,6 +252,7 @@ void drawPlots(const TString varname, const int nbins,  const float low, const f
     TString hname = "h";
     hname+=isample;  
     histos[sampleVector.at(isample).name] = new TH1D(hname, hname, nbins, low, high);
+    histos[sampleVector.at(isample).name]->Sumw2();
 
     //Project
     (sampleVector.at(isample).chain)->Project(hname, varname);
