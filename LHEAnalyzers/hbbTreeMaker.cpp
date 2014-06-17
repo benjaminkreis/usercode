@@ -22,6 +22,24 @@ using namespace std;
 
 void computeAngles(TLorentzVector thep4H, TLorentzVector thep4Z1, TLorentzVector thep4M11, TLorentzVector thep4M12, TLorentzVector thep4Z2, TLorentzVector thep4M21, TLorentzVector thep4M22, double& costheta1, double& costheta2, double& Phi, double& costhetastar, double& Phi1);
 
+float getMT(TLorentzVector pZ, TLorentzVector pH)
+{
+  //take MET from pZ
+  float myMET = pZ.Pt();
+  float myMETx = pZ.Px();
+  float myMETy = pZ.Py();
+
+  float Et = pH.Et();
+  float px = pH.Px();
+  float py = pH.Py();
+  
+  float MT = -88;
+  float MT2 = 2*( Et * myMET - (px*myMETx + py*myMETy) ); 
+  if(MT2>0.) {MT=sqrt(MT2);}
+  else {MT = -99;}
+  
+  return MT;
+}
 
 double deltaPhi (double phi1, double phi2)
 {
@@ -125,7 +143,7 @@ int main(int argc, char **argv)
   TFile file(argv[2],"RECREATE");
   TTree* tree = new TTree("tree","tree");
 
-  float mZ, mH, mVH; //masses
+  float mZ, mH, mVH, mT; //masses
   float costheta1, costheta2, costhetastar, phi, phi1; //angles
   float rapidityVH;
   int isLeptonic;
@@ -133,21 +151,58 @@ int main(int argc, char **argv)
   int passEta;
   int isWplus;  
   int decayMode;
+  float b0_e, b0_eta, b0_phi, b0_pt;
+  float b1_e, b1_eta, b1_phi, b1_pt;
+  float f0_e, f0_eta, f0_phi, f0_pt;
+  float f1_e, f1_eta, f1_phi, f1_pt;
+  float V_e, V_eta, V_phi, V_pt;
+  float H_e, H_eta, H_phi, H_pt;
+  //float VH_e, VH_eta, VH_phi, VH_pt;
 
-  tree->Branch("mZ",  &mZ,  "mZ/F");
-  tree->Branch("mH",  &mH,  "mH/F");
-  tree->Branch("mVH", &mVH, "mVH/F");
-  tree->Branch("costheta1",&costheta1,"costheta1/F");
-  tree->Branch("costheta2",&costheta2,"costheta2/F");
-  tree->Branch("costhetastar",&costhetastar,"costhetastar/F");
-  tree->Branch("phi",&phi,"phi/F");
-  tree->Branch("phi1",&phi1,"phi1/F");
-  tree->Branch("rapidityVH",&rapidityVH,"rapidityVH/F");
-  tree->Branch("isLeptonic",&isLeptonic,"isLeptonic/I");
+
+  tree->Branch("b0_e",   &b0_e,   "b0_e/F");
+  tree->Branch("b0_eta", &b0_eta, "b0_eta/F");
+  tree->Branch("b0_phi", &b0_phi, "b0_phi/F");
+  tree->Branch("b0_pt",  &b0_pt,  "b0_pt/F");
+  tree->Branch("b1_e",   &b1_e,   "b1_e/F");
+  tree->Branch("b1_eta", &b1_eta, "b1_eta/F");
+  tree->Branch("b1_phi", &b1_phi, "b1_phi/F");
+  tree->Branch("b1_pt",  &b1_pt,  "b1_pt/F");
+  tree->Branch("f0_e",   &f0_e,   "f0_e/F");
+  tree->Branch("f0_eta", &f0_eta, "f0_eta/F");
+  tree->Branch("f0_phi", &f0_phi, "f0_phi/F");
+  tree->Branch("f0_pt",  &f0_pt,  "f0_pt/F");
+  tree->Branch("f1_e",   &f1_e,   "f1_e/F");
+  tree->Branch("f1_eta", &f1_eta, "f1_eta/F");
+  tree->Branch("f1_phi", &f1_phi, "f1_phi/F");
+  tree->Branch("f1_pt",  &f1_pt,  "f1_pt/F");
+  tree->Branch("V_e",    &V_e,   "V_e/F");
+  tree->Branch("V_eta",  &V_eta, "V_eta/F");
+  tree->Branch("V_phi",  &V_phi, "V_phi/F");
+  tree->Branch("V_pt",   &V_pt,  "V_pt/F");
+  tree->Branch("H_e",    &H_e,   "H_e/F");
+  tree->Branch("H_eta",  &H_eta, "H_eta/F");
+  tree->Branch("H_phi",  &H_phi, "H_phi/F");
+  tree->Branch("H_pt",   &H_pt,  "H_pt/F");
+  //tree->Branch("VH_e",   &VH_e,   "VH_e/F");
+  //tree->Branch("VH_eta", &VH_eta, "VH_eta/F");
+  //tree->Branch("VH_phi", &VH_phi, "VH_phi/F");
+  //tree->Branch("VH_pt",  &VH_pt,  "VH_pt/F");
+  tree->Branch("mT",     &mT,     "mT/F");
+  tree->Branch("mZ",     &mZ,     "mZ/F");
+  tree->Branch("mH",     &mH,     "mH/F");
+  tree->Branch("mVH",    &mVH,    "mVH/F");
+  tree->Branch("costheta1",    &costheta1,    "costheta1/F");
+  tree->Branch("costheta2",    &costheta2,    "costheta2/F");
+  tree->Branch("costhetastar", &costhetastar, "costhetastar/F");
+  tree->Branch("phi",          &phi,          "phi/F");
+  tree->Branch("phi1",         &phi1,         "phi1/F");
+  tree->Branch("rapidityVH",   &rapidityVH,   "rapidityVH/F");
+  tree->Branch("isLeptonic",   &isLeptonic,   "isLeptonic/I");
   tree->Branch("isUpTypeQuark",&isUpTypeQuark,"isUpTypeQuark/I");
-  tree->Branch("passEta",&passEta,"passEta/I");
-  tree->Branch("isWplus",&isWplus,"isWplus/I");
-  tree->Branch("decayMode",&decayMode,"decayMode/I");
+  tree->Branch("passEta",      &passEta,      "passEta/I");
+  tree->Branch("isWplus",      &isWplus,      "isWplus/I");
+  tree->Branch("decayMode",    &decayMode,    "decayMode/I");
   //Zee=0, Zmm=1, Ztt=2, Zuu=3, Zcc=4, Zdd=5, Zss=6, Zbb=7
   //Wen=8, Wmn=9, Wtn=10, Wud=11, Wcs=12
   //Znene=13, Znmnm=14, Zntnt=15
@@ -410,7 +465,7 @@ int main(int argc, char **argv)
 
       TLorentzVector p4_Vff = fs_f0 + fs_f1;
       TLorentzVector p4_Hbb = fs_b0 + fs_b1;
-      TLorentzVector p4_VH = p4_Vff + p4_Hbb;
+      TLorentzVector p4_VH  = p4_Vff + p4_Hbb;
       
       //cuts
       //if(p4_Vff.Pt()<100 || p4_Hbb.Pt()<100) continue;
@@ -419,18 +474,49 @@ int main(int argc, char **argv)
       computeAngles( p4_VH, p4_Vff, fs_f0, fs_f1, p4_Hbb, fs_b0, fs_b1, 
 		     a_costheta1, a_costheta2, a_Phi, a_costhetastar, a_Phi1);
       
-      
+      mT = getMT(p4_Vff, p4_Hbb);
+
       //remap to convention of arXiv:1309.4819, including fix from Sinan&Alex
-      costheta2 = (float) a_costheta1;
-      costheta1 = (float) a_costhetastar;
-      phi = (float) a_Phi1;
-      costhetastar = (float) a_costheta2;
-      phi1 = (float) a_Phi;
-      mVH = (float) p4_VH.M();
-      rapidityVH = (float) p4_VH.Rapidity();
-      mZ = (float) p4_Vff.M();
-      mH = (float) p4_Hbb.M();
+      costheta2     = (float) a_costheta1;
+      costheta1     = (float) a_costhetastar;
+      phi           = (float) a_Phi1;
+      costhetastar  = (float) a_costheta2;
+      phi1          = (float) a_Phi;
+      mVH           = (float) p4_VH.M();
+      rapidityVH    = (float) p4_VH.Rapidity();
+      mZ            = (float) p4_Vff.M();
+      mH            = (float) p4_Hbb.M();
       //isLeptonic, isUpTypeQuark, and decayMode already filled
+
+      b0_e   = fs_b0.E();
+      b0_phi = fs_b0.Phi();
+      b0_eta = fs_b0.Eta();
+      b0_pt  = fs_b0.Pt();
+      b1_e   = fs_b1.E();
+      b1_phi = fs_b1.Phi();
+      b1_eta = fs_b1.Eta();
+      b1_pt  = fs_b1.Pt();
+      f0_e   = fs_f0.E();
+      f0_phi = fs_f0.Phi();
+      f0_eta = fs_f0.Eta();
+      f0_pt  = fs_f0.Pt();
+      f1_e   = fs_f1.E();
+      f1_phi = fs_f1.Phi();
+      f1_eta = fs_f1.Eta();
+      f1_pt  = fs_f1.Pt();
+      V_e    = p4_Vff.E();
+      V_phi  = p4_Vff.Phi();
+      V_eta  = p4_Vff.Eta();
+      V_pt   = p4_Vff.Pt();
+      H_e    = p4_Hbb.E();
+      H_phi  = p4_Hbb.Phi();
+      H_eta  = p4_Hbb.Eta();
+      H_pt   = p4_Hbb.Pt();
+      //VH_e   = p4_VH.E();
+      //VH_phi = p4_VH.Phi();
+      //VH_eta = p4_VH.Eta();
+      //VH_pt  = p4_VH.Pt();
+
 
       tree->Fill();
 
