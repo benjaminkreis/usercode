@@ -32,11 +32,11 @@ float getMT(TLorentzVector pZ, TLorentzVector pH)
   float Et = pH.Et();
   float px = pH.Px();
   float py = pH.Py();
-  
-  float MT = -88;
-  float MT2 = 2*( Et * myMET - (px*myMETx + py*myMETy) ); 
+  float m  = pH.M();
+
+  float MT = -99;
+  float MT2 = m*m + 2*( Et * myMET - (px*myMETx + py*myMETy) ); 
   if(MT2>0.) {MT=sqrt(MT2);}
-  else {MT = -99;}
   
   return MT;
 }
