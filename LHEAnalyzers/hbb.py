@@ -2,7 +2,7 @@
 
 import os
 
-name = "ZnnHiggs0P_M-125p6_8TeV-JHUGenV4-private"
+name = "ZnnHiggs0PH_M-125p6_8TeV-JHUGenV4-private"
 
 
 for i in range (0,10):
@@ -10,7 +10,8 @@ for i in range (0,10):
     outName = name + "_" + str(i) + ".root"
     
     lheFile = "/eos/uscms/store/user/kreis/20140110_production/" + name + "/" + inName
-    rootFile = "rootFiles/" + outName
+    rootFile = "/eos/uscms/store/user/kreis/20140110_production/" + name + "/" + outName
+    #rootFile = "rootFiles/" + outName
     
     os.system(('./hbbTreeMaker %s %s')%(lheFile,rootFile))
     
