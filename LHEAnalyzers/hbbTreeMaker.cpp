@@ -136,7 +136,7 @@ bool isAntiFermion(int pdgid)
 int main(int argc, char **argv)
 {
 
-  bool verbose = false;
+  bool verbose = true;
   bool higgsDecay = true;
 
   // Define tree to fill
@@ -228,18 +228,17 @@ int main(int argc, char **argv)
       if (eventCount % 100000 == 0 && verbose) std::cout << "Event " << eventCount << "\n" ;
 
       //Sanity check on number of particles
-      if( higgsDecay && lheReader.hepeup.IDUP.size() != 8 ) 
+      if( higgsDecay==1 && lheReader.hepeup.IDUP.size() != 8 ) 
 	{
-	  cout << "Error! Expected 8 particles in the event." << endl;
+	  cout << "Error! Expected 8 particles in the event but got " << lheReader.hepeup.IDUP.size() << endl;
 	  return 0;
 	}
-      /*
       else if( higgsDecay==0 && lheReader.hepeup.IDUP.size() != 6 ) 
 	{
-	  cout << "Error! Expected 6 particles in the event." << endl;
+	  cout << "Error! Expected 6 particles in the event but got " << lheReader.hepeup.IDUP.size() << endl;
 	  return 0;
 	}
-      */
+
 
       // Indices for particles of interest
       int i_f0 = -1; //final fermion particle
@@ -288,10 +287,13 @@ int main(int argc, char **argv)
 	else if(  lheReader.hepeup.ISTUP.at (iPart) == 1 ) //outgoing 
 	  {
 	    //cout << "Event " << eventCount << ", outgoing: " << lheReader.hepeup.IDUP.at (iPart) << endl;
-
-	    if ( lheReader.hepeup.IDUP.at(iPart) == 5 ) i_b0 = iPart;
-	    if ( lheReader.hepeup.IDUP.at(iPart) == -5 ) i_b1 = iPart;
-	    if( abs(lheReader.hepeup.IDUP.at(iPart) ) == 5) continue;
+	    
+	    if(higgsDecay==1) 
+	      {
+		if ( lheReader.hepeup.IDUP.at(iPart) == 5 ) i_b0 = iPart;
+		if ( lheReader.hepeup.IDUP.at(iPart) == -5 ) i_b1 = iPart;
+		if( abs(lheReader.hepeup.IDUP.at(iPart) ) == 5) continue;
+	      }
 	    
 	    finalFermions.push_back (iPart) ;
 	    if(     isFermion(lheReader.hepeup.IDUP.at(iPart)) ) i_f0 = iPart;
@@ -435,28 +437,33 @@ int main(int argc, char **argv)
          lheReader.hepeup.PUP.at(i_H).at(2), //PG pz
          lheReader.hepeup.PUP.at(i_H).at(3)  //PG E
          ) ;
-      TLorentzVector fs_b0
-        (
-         lheReader.hepeup.PUP.at(i_b0).at(0), //PG px
-         lheReader.hepeup.PUP.at(i_b0).at(1), //PG py
-         lheReader.hepeup.PUP.at(i_b0).at(2), //PG pz
-         lheReader.hepeup.PUP.at(i_b0).at(3)  //PG E
-         ) ;
-      TLorentzVector fs_b1
-        (
-         lheReader.hepeup.PUP.at(i_b1).at(0), //PG px
-         lheReader.hepeup.PUP.at(i_b1).at(1), //PG py
-         lheReader.hepeup.PUP.at(i_b1).at(2), //PG pz
-         lheReader.hepeup.PUP.at(i_b1).at(3)  //PG E
-         ) ;
-
-      //fake the H decay -- this creates problems for computeAngles.  Do i need to boost?
-      //fs_b0 = (0.5)*fs_H; 
-      //fs_b1 = (0.5)*fs_H;
-      //cout << "Total: " << fs_H.E() << " " << fs_H.Px() << " " << fs_H.Py() << " " << fs_H.Pz() << endl; //check that this works
-      //cout << "b0: " << fs_b0.E() << " " << fs_b0.Px() << " " << fs_b0.Py() << " " << fs_b0.Pz() << endl;
-      //cout << "b1: " << fs_b1.E() << " " << fs_b1.Px() << " " << fs_b1.Py() << " " << fs_b1.Pz() << endl;
-
+      
+      TLorentzVector fs_b0, fs_b1;
+      if(higgsDecay==1)
+	{
+	  fs_b0.SetPxPyPzE(
+			   lheReader.hepeup.PUP.at(i_b0).at(0), //PG px
+			   lheReader.hepeup.PUP.at(i_b0).at(1), //PG py
+			   lheReader.hepeup.PUP.at(i_b0).at(2), //PG pz
+			   lheReader.hepeup.PUP.at(i_b0).at(3)  //PG E
+			   );
+	  fs_b1.SetPxPyPzE(
+			   lheReader.hepeup.PUP.at(i_b1).at(0), //PG px
+			   lheReader.hepeup.PUP.at(i_b1).at(1), //PG py
+			   lheReader.hepeup.PUP.at(i_b1).at(2), //PG pz
+			   lheReader.hepeup.PUP.at(i_b1).at(3)  //PG E
+			   );
+	}
+      else
+	{
+	  //fake the H decay -- this creates PROBLEMS for computeAngles.  Do i need to boost?
+	  fs_b0 = (0.5)*fs_H; 
+	  fs_b1 = (0.5)*fs_H;
+	  //cout << "Total: " << fs_H.E() << " " << fs_H.Px() << " " << fs_H.Py() << " " << fs_H.Pz() << endl; //check that this works
+	  //cout << "b0: " << fs_b0.E() << " " << fs_b0.Px() << " " << fs_b0.Py() << " " << fs_b0.Pz() << endl;
+	  //cout << "b1: " << fs_b1.E() << " " << fs_b1.Px() << " " << fs_b1.Py() << " " << fs_b1.Pz() << endl;
+	}
+      
       //acceptance test
       passEta = 0;
       if(fabs(fs_f0.PseudoRapidity())<2.4 && fabs(fs_f1.PseudoRapidity())<2.4 && fabs(fs_b0.PseudoRapidity())<2.4 && fabs(fs_b1.PseudoRapidity())<2.4){
