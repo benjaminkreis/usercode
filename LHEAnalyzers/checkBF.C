@@ -8,7 +8,7 @@ using namespace std;
 void checkBF(){
 
   TChain* tin_signal = new TChain("tree");
-  tin_signal->Add("/eos/uscms/store/user/kreis/20140212_production/HW_g1_13TeV/HW_g1_13TeV_*.root");
+  tin_signal->Add("out.root");
   cout << "total = " << tin_signal->GetEntries() << endl;
   
   double total=0; 
